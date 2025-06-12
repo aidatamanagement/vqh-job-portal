@@ -27,20 +27,22 @@ const JobCard: React.FC<JobCardProps> = ({ job }) => {
   return (
     <Card className="job-card p-4 bg-white border border-gray-200 hover:border-primary/30 animate-fade-in-up">
       <div className="space-y-3">
-        {/* Header */}
-        <div className="flex justify-between items-start">
-          <div className="flex-1">
-            <h3 className="font-semibold text-gray-900 text-lg leading-tight">
-              {job.title}
-            </h3>
-            <p className="text-sm text-primary font-medium mt-1">
-              {job.position}
-            </p>
-          </div>
-          <div className="flex items-center text-gray-600 text-sm ml-4">
+        {/* Position and Location */}
+        <div className="flex justify-between items-center">
+          <p className="text-sm text-primary font-medium">
+            {job.position}
+          </p>
+          <div className="flex items-center text-gray-600 text-sm">
             <MapPin className="w-4 h-4 mr-1 flex-shrink-0" />
             <span className="whitespace-nowrap">{job.location}</span>
           </div>
+        </div>
+
+        {/* Job Title */}
+        <div>
+          <h3 className="font-semibold text-gray-900 text-lg leading-tight">
+            {job.title}
+          </h3>
         </div>
 
         {/* Description */}
