@@ -22,8 +22,7 @@ import {
   XCircle,
   StickyNote,
   ExternalLink,
-  FilterX,
-  ArrowRight
+  FilterX
 } from 'lucide-react';
 import { useAppContext } from '@/contexts/AppContext';
 import { JobApplication } from '@/types';
@@ -154,71 +153,57 @@ const Submissions: React.FC = () => {
     const job = jobs.find(j => j.id === application.jobId);
     
     return (
-      <Card key={application.id} className="group hover:shadow-lg transition-all duration-300 border-0 bg-white shadow-sm hover:shadow-md">
-        <div className="p-6">
-          {/* Header with Name and Status */}
-          <div className="flex items-start justify-between mb-4">
-            <div className="flex items-center space-x-3">
-              <div className="w-12 h-12 bg-gradient-to-br from-primary/10 to-primary/20 rounded-xl flex items-center justify-center">
-                <User className="w-6 h-6 text-primary" />
-              </div>
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900 group-hover:text-primary transition-colors">
-                  {application.firstName} {application.lastName}
-                </h3>
-                <p className="text-sm text-gray-500">{application.email}</p>
-              </div>
+      <Card key={application.id} className="p-6 hover:shadow-md transition-shadow">
+        <div className="flex items-center justify-between">
+          <div className="flex-1 space-y-3">
+            {/* Candidate Name and Status */}
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-semibold text-gray-900">
+                {application.firstName} {application.lastName}
+              </h3>
+              <Badge 
+                variant={getStatusBadgeVariant(application.status)}
+                className="flex items-center space-x-1"
+              >
+                {getStatusIcon(application.status)}
+                <span className="capitalize">{application.status}</span>
+              </Badge>
             </div>
-            <Badge 
-              variant={getStatusBadgeVariant(application.status)}
-              className="flex items-center space-x-1 px-3 py-1"
-            >
-              {getStatusIcon(application.status)}
-              <span className="capitalize font-medium">{application.status}</span>
-            </Badge>
-          </div>
 
-          {/* Job Position */}
-          <div className="mb-4">
-            <div className="inline-flex items-center px-3 py-1.5 bg-primary/5 rounded-lg">
-              <div className="w-2 h-2 bg-primary rounded-full mr-2"></div>
-              <span className="text-primary font-medium text-sm">{application.appliedPosition}</span>
+            {/* Job Position */}
+            <div className="text-primary font-medium">
+              {application.appliedPosition}
             </div>
-          </div>
 
-          {/* Details Grid */}
-          <div className="grid grid-cols-2 gap-4 mb-5">
-            <div className="flex items-center space-x-2 text-sm text-gray-600">
-              <Calendar className="w-4 h-4 text-gray-400" />
-              <span>Applied {new Date(application.createdAt).toLocaleDateString()}</span>
-            </div>
-            <div className="flex items-center space-x-2 text-sm text-gray-600">
-              <MapPin className="w-4 h-4 text-gray-400" />
-              <span>{application.cityState}</span>
+            {/* Applied Date, Location */}
+            <div className="flex items-center space-x-6 text-sm text-gray-600">
+              <div className="flex items-center space-x-2">
+                <Calendar className="w-4 h-4" />
+                <span>Applied {new Date(application.createdAt).toLocaleDateString()}</span>
+              </div>
+              <div className="flex items-center space-x-2">
+                <MapPin className="w-4 h-4" />
+                <span>{application.cityState}</span>
+              </div>
+              {application.notes && (
+                <div className="flex items-center space-x-1 text-primary">
+                  <StickyNote className="w-4 h-4" />
+                  <span>Has notes</span>
+                </div>
+              )}
             </div>
           </div>
-
-          {/* Notes Indicator */}
-          {application.notes && (
-            <div className="mb-4">
-              <div className="inline-flex items-center space-x-1 text-xs text-amber-600 bg-amber-50 px-2 py-1 rounded-md">
-                <StickyNote className="w-3 h-3" />
-                <span>Has notes</span>
-              </div>
-            </div>
-          )}
 
           {/* View Button */}
-          <div className="flex justify-end">
+          <div className="ml-6">
             <Button
               variant="outline"
               size="sm"
               onClick={() => openApplicationModal(application)}
-              className="group/btn text-primary border-primary/20 hover:bg-primary hover:text-white transition-all duration-200"
+              className="text-blue-600 hover:text-blue-700"
             >
               <Eye className="w-4 h-4 mr-2" />
-              View Details
-              <ArrowRight className="w-4 h-4 ml-1 opacity-0 group-hover/btn:opacity-100 transition-opacity" />
+              View
             </Button>
           </div>
         </div>
@@ -322,9 +307,7 @@ const Submissions: React.FC = () => {
               <p className="text-gray-600">All applications have been reviewed</p>
             </Card>
           ) : (
-            <div className="grid gap-4">
-              {waitingApplications.map(renderApplicationCard)}
-            </div>
+            waitingApplications.map(renderApplicationCard)
           )}
         </TabsContent>
 
@@ -336,9 +319,7 @@ const Submissions: React.FC = () => {
               <p className="text-gray-600">No applications have been approved yet</p>
             </Card>
           ) : (
-            <div className="grid gap-4">
-              {approvedApplications.map(renderApplicationCard)}
-            </div>
+            approvedApplications.map(renderApplicationCard)
           )}
         </TabsContent>
 
@@ -350,9 +331,7 @@ const Submissions: React.FC = () => {
               <p className="text-gray-600">No applications have been declined</p>
             </Card>
           ) : (
-            <div className="grid gap-4">
-              {declinedApplications.map(renderApplicationCard)}
-            </div>
+            declinedApplications.map(renderApplicationCard)
           )}
         </TabsContent>
       </Tabs>
