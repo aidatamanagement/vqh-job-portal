@@ -14,6 +14,7 @@ type AdminView = 'post-job' | 'manage-jobs' | 'submissions' | 'settings';
 const AdminDashboard: React.FC = () => {
   const { isAuthenticated } = useAppContext();
   const [currentView, setCurrentView] = useState<AdminView>('post-job');
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   if (!isAuthenticated) {
     return <Navigate to="/admin/login" replace />;
@@ -36,10 +37,32 @@ const AdminDashboard: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <AdminHeader />
-      <div className="flex">
-        <AdminSidebar currentView={currentView} onViewChange={setCurrentView} />
-        <main className="flex-1 p-8">
+      <AdminHeader onMenuClick={() => setSidebarOpen(!sidebarOpen)} />
+      <div className="flex relative">
+        {/* Mobile Sidebar Overlay */}
+        {sidebarOpen && (
+          <div 
+            className="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden"
+            onClick={() => setSidebarOpen(false)}
+          />
+        )}
+        
+        {/* Sidebar */}
+        <div className={`
+          fixed lg:relative lg:translate-x-0 transition-transform duration-300 ease-in-out z-50
+          ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
+        `}>
+          <AdminSidebar 
+            currentView={currentView} 
+            onViewChange={(view) => {
+              setCurrentView(view);
+              setSidebarOpen(false); // Close sidebar on mobile after selection
+            }} 
+          />
+        </div>
+        
+        {/* Main Content */}
+        <main className="flex-1 p-4 lg:p-8 w-full lg:w-auto">
           <div className="max-w-7xl mx-auto">
             {renderContent()}
           </div>
