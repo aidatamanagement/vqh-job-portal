@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -20,7 +19,8 @@ import {
   Calendar,
   Briefcase,
   X,
-  Plus
+  Plus,
+  FilterX
 } from 'lucide-react';
 import { useAppContext } from '@/contexts/AppContext';
 import { Job } from '@/types';
@@ -34,6 +34,17 @@ const ManageJobs: React.FC = () => {
   const [filterStatus, setFilterStatus] = useState('all');
   const [editingJob, setEditingJob] = useState<Job | null>(null);
   const [jobForm, setJobForm] = useState<Partial<Job>>({});
+
+  // Check if any filters are active
+  const hasActiveFilters = searchTerm !== '' || filterPosition !== 'all' || filterLocation !== 'all' || filterStatus !== 'all';
+
+  // Clear all filters
+  const clearAllFilters = () => {
+    setSearchTerm('');
+    setFilterPosition('all');
+    setFilterLocation('all');
+    setFilterStatus('all');
+  };
 
   // Get application counts for each job
   const getApplicationCount = (jobId: string) => {
@@ -198,6 +209,21 @@ const ManageJobs: React.FC = () => {
             </SelectContent>
           </Select>
         </div>
+
+        {/* Clear Filters Button */}
+        {hasActiveFilters && (
+          <div className="mt-4 flex justify-start">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={clearAllFilters}
+              className="flex items-center gap-2 text-gray-600 hover:text-gray-900"
+            >
+              <FilterX className="w-4 h-4" />
+              Clear All Filters
+            </Button>
+          </div>
+        )}
       </Card>
 
       {/* Jobs List */}
@@ -250,14 +276,6 @@ const ManageJobs: React.FC = () => {
                       <Calendar className="w-4 h-4" />
                       <span>Posted {new Date(job.createdAt).toLocaleDateString()}</span>
                     </div>
-                  </div>
-
-                  <div className="flex flex-wrap gap-2">
-                    {job.facilities.map((facility, index) => (
-                      <Badge key={index} variant="outline" className="text-xs">
-                        {facility}
-                      </Badge>
-                    ))}
                   </div>
                 </div>
 

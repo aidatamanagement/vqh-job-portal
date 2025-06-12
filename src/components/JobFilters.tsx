@@ -4,7 +4,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Search, X } from 'lucide-react';
+import { Search, X, FilterX } from 'lucide-react';
 import { FilterState } from '@/types';
 import { useAppContext } from '@/contexts/AppContext';
 
@@ -16,6 +16,9 @@ interface JobFiltersProps {
 
 const JobFilters: React.FC<JobFiltersProps> = ({ filters, onFiltersChange, totalJobs }) => {
   const { positions, locations } = useAppContext();
+
+  // Check if any filters are active
+  const hasActiveFilters = filters.search !== '' || filters.positions.length > 0 || filters.location !== '';
 
   const handleSearchChange = (value: string) => {
     onFiltersChange({ ...filters, search: value });
@@ -38,6 +41,15 @@ const JobFilters: React.FC<JobFiltersProps> = ({ filters, onFiltersChange, total
 
   const clearPositionFilter = (position: string) => {
     handlePositionToggle(position);
+  };
+
+  const clearAllFilters = () => {
+    onFiltersChange({
+      search: '',
+      positions: [],
+      location: '',
+      sortBy: filters.sortBy, // Keep the sort order
+    });
   };
 
   return (
@@ -97,6 +109,21 @@ const JobFilters: React.FC<JobFiltersProps> = ({ filters, onFiltersChange, total
           </div>
         )}
       </div>
+
+      {/* Clear Filters Button */}
+      {hasActiveFilters && (
+        <div className="flex justify-start">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={clearAllFilters}
+            className="flex items-center gap-2 text-gray-600 hover:text-gray-900"
+          >
+            <FilterX className="w-4 h-4" />
+            Clear All Filters
+          </Button>
+        </div>
+      )}
 
       {/* Results Count and Sort Options */}
       <div className="flex justify-between items-center pt-4 border-t border-gray-200">
