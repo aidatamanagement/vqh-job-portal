@@ -29,9 +29,9 @@ import { toast } from '@/hooks/use-toast';
 const ManageJobs: React.FC = () => {
   const { jobs, setJobs, applications, positions, locations } = useAppContext();
   const [searchTerm, setSearchTerm] = useState('');
-  const [filterPosition, setFilterPosition] = useState('');
-  const [filterLocation, setFilterLocation] = useState('');
-  const [filterStatus, setFilterStatus] = useState('');
+  const [filterPosition, setFilterPosition] = useState('all');
+  const [filterLocation, setFilterLocation] = useState('all');
+  const [filterStatus, setFilterStatus] = useState('all');
   const [editingJob, setEditingJob] = useState<Job | null>(null);
   const [jobForm, setJobForm] = useState<Partial<Job>>({});
 
@@ -44,9 +44,9 @@ const ManageJobs: React.FC = () => {
   const filteredJobs = jobs.filter(job => {
     const matchesSearch = job.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          job.position.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesPosition = !filterPosition || job.position === filterPosition;
-    const matchesLocation = !filterLocation || job.location === filterLocation;
-    const matchesStatus = !filterStatus || 
+    const matchesPosition = filterPosition === 'all' || job.position === filterPosition;
+    const matchesLocation = filterLocation === 'all' || job.location === filterLocation;
+    const matchesStatus = filterStatus === 'all' || 
                          (filterStatus === 'active' && job.isActive) ||
                          (filterStatus === 'inactive' && !job.isActive);
     
@@ -164,7 +164,7 @@ const ManageJobs: React.FC = () => {
               <SelectValue placeholder="All Positions" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All Positions</SelectItem>
+              <SelectItem value="all">All Positions</SelectItem>
               {positions.map((position) => (
                 <SelectItem key={position.id} value={position.name}>
                   {position.name}
@@ -178,7 +178,7 @@ const ManageJobs: React.FC = () => {
               <SelectValue placeholder="All Locations" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All Locations</SelectItem>
+              <SelectItem value="all">All Locations</SelectItem>
               {locations.map((location) => (
                 <SelectItem key={location.id} value={location.name}>
                   {location.name}
@@ -192,7 +192,7 @@ const ManageJobs: React.FC = () => {
               <SelectValue placeholder="All Status" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All Status</SelectItem>
+              <SelectItem value="all">All Status</SelectItem>
               <SelectItem value="active">Active</SelectItem>
               <SelectItem value="inactive">Inactive</SelectItem>
             </SelectContent>
@@ -209,7 +209,7 @@ const ManageJobs: React.FC = () => {
             </div>
             <h3 className="text-lg font-semibold text-gray-900 mb-2">No jobs found</h3>
             <p className="text-gray-600">
-              {searchTerm || filterPosition || filterLocation || filterStatus 
+              {searchTerm || filterPosition !== 'all' || filterLocation !== 'all' || filterStatus !== 'all'
                 ? "Try adjusting your search criteria" 
                 : "No jobs have been posted yet"
               }
