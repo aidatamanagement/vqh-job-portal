@@ -289,12 +289,17 @@ const ManageJobs: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Action buttons - Mobile dropdown, desktop inline */}
-                <div className="flex sm:hidden">
+                {/* Action buttons - Mobile with status and dropdown, desktop inline */}
+                <div className="flex sm:hidden items-center justify-between">
+                  <Badge 
+                    variant={job.isActive ? "default" : "secondary"}
+                    className={job.isActive ? "bg-green-100 text-green-800 border-green-200" : "bg-gray-100 text-gray-600 border-gray-200"}
+                  >
+                    {job.isActive ? 'Active' : 'Inactive'}
+                  </Badge>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <Button variant="outline" size="sm" className="w-full">
-                        <MoreVertical className="w-4 h-4 mr-2" />
+                      <Button variant="outline" size="sm">
                         Actions
                       </Button>
                     </DropdownMenuTrigger>
