@@ -1,10 +1,8 @@
-
 import React, { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
@@ -12,6 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Plus, X, Briefcase, MapPin, Settings as SettingsIcon, Award } from 'lucide-react';
 import { useAppContext } from '@/contexts/AppContext';
 import { toast } from '@/hooks/use-toast';
+import RichTextEditor from '@/components/ui/rich-text-editor';
 
 const PostJob: React.FC = () => {
   const { positions, locations, setPositions, setLocations, jobs, setJobs, facilities, setFacilities } = useAppContext();
@@ -252,15 +251,16 @@ const PostJob: React.FC = () => {
               {/* Job Description */}
               <div>
                 <Label htmlFor="description">Job Description *</Label>
-                <Textarea
-                  id="description"
-                  value={jobForm.description}
-                  onChange={(e) => handleJobInputChange('description', e.target.value)}
-                  className="mt-1 min-h-[200px] rich-editor"
-                  placeholder="Provide a detailed description of the role, responsibilities, requirements, and benefits..."
-                />
+                <div className="mt-1">
+                  <RichTextEditor
+                    value={jobForm.description}
+                    onChange={(value) => handleJobInputChange('description', value)}
+                    placeholder="Provide a detailed description of the role, responsibilities, requirements, and benefits..."
+                    className="min-h-[200px]"
+                  />
+                </div>
                 <p className="text-xs text-gray-500 mt-1">
-                  Use clear, engaging language to attract the right candidates. Include responsibilities, requirements, and what makes this role special.
+                  Use the formatting tools to create an engaging job description. Include responsibilities, requirements, and what makes this role special.
                 </p>
               </div>
 

@@ -91,8 +91,8 @@ const JobDetails: React.FC = () => {
                 </h2>
                 <div className="prose prose-gray max-w-none">
                   <div 
-                    className="text-gray-700 leading-relaxed whitespace-pre-wrap"
-                    dangerouslySetInnerHTML={{ __html: job.description.replace(/\n/g, '<br/>') }}
+                    className="text-gray-700 leading-relaxed job-description-content"
+                    dangerouslySetInnerHTML={{ __html: job.description }}
                   />
                 </div>
 

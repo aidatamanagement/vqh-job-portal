@@ -1,16 +1,15 @@
-
 import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Card } from '@/components/ui/card';
 import { Upload, X, FileText, Calendar, MapPin } from 'lucide-react';
 import { Job } from '@/types';
 import { useAppContext } from '@/contexts/AppContext';
 import { toast } from '@/hooks/use-toast';
+import RichTextEditor from '@/components/ui/rich-text-editor';
 
 interface ApplicationModalProps {
   isOpen: boolean;
@@ -300,12 +299,15 @@ const ApplicationModal: React.FC<ApplicationModalProps> = ({ isOpen, onClose, jo
           {/* Cover Letter */}
           <Card className="p-6">
             <h3 className="text-lg font-semibold text-gray-900 mb-4">Cover Letter *</h3>
-            <Textarea
+            <RichTextEditor
               value={formData.coverLetter}
-              onChange={(e) => handleInputChange('coverLetter', e.target.value)}
-              className="min-h-[120px] rich-editor"
+              onChange={(value) => handleInputChange('coverLetter', value)}
               placeholder="Tell us why you're interested in this position and what makes you a great fit for our team..."
+              className="min-h-[200px]"
             />
+            <p className="text-xs text-gray-500 mt-2">
+              Use formatting to highlight your key qualifications and express your enthusiasm for the role.
+            </p>
           </Card>
 
           {/* File Uploads */}
