@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -33,8 +32,8 @@ const Submissions: React.FC = () => {
   const { applications, setApplications, jobs, positions, locations } = useAppContext();
   const [activeTab, setActiveTab] = useState('waiting');
   const [searchTerm, setSearchTerm] = useState('');
-  const [filterJob, setFilterJob] = useState('');
-  const [filterLocation, setFilterLocation] = useState('');
+  const [filterJob, setFilterJob] = useState('all');
+  const [filterLocation, setFilterLocation] = useState('all');
   const [viewingApplication, setViewingApplication] = useState<JobApplication | null>(null);
   const [notes, setNotes] = useState('');
 
@@ -46,8 +45,8 @@ const Submissions: React.FC = () => {
                            app.lastName.toLowerCase().includes(searchTerm.toLowerCase()) ||
                            app.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
                            app.appliedPosition.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchesJob = !filterJob || app.appliedPosition === filterJob;
-      const matchesLocation = !filterLocation || app.cityState.includes(filterLocation);
+      const matchesJob = filterJob === 'all' || app.appliedPosition === filterJob;
+      const matchesLocation = filterLocation === 'all' || app.cityState.includes(filterLocation);
       
       return matchesStatus && matchesSearch && matchesJob && matchesLocation;
     });
@@ -243,7 +242,7 @@ const Submissions: React.FC = () => {
               <SelectValue placeholder="All Positions" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All Positions</SelectItem>
+              <SelectItem value="all">All Positions</SelectItem>
               {positions.map((position) => (
                 <SelectItem key={position.id} value={position.name}>
                   {position.name}
@@ -257,7 +256,7 @@ const Submissions: React.FC = () => {
               <SelectValue placeholder="All Locations" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All Locations</SelectItem>
+              <SelectItem value="all">All Locations</SelectItem>
               {locations.map((location) => (
                 <SelectItem key={location.id} value={location.name}>
                   {location.name}
