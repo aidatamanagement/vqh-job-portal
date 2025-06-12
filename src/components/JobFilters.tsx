@@ -125,17 +125,12 @@ const JobFilters: React.FC<JobFiltersProps> = ({ filters, onFiltersChange, total
         </div>
       )}
 
-      {/* Results Count and Sort Options */}
-      <div className="flex justify-between items-center pt-4 border-t border-gray-200">
-        <div className="flex items-center space-x-4">
-          <span className="text-sm font-bold text-gray-900">
-            {totalJobs} job{totalJobs !== 1 ? 's' : ''} available
-          </span>
-        </div>
-        
-        <div className="flex items-center space-x-4">
+      {/* Results Count and Sort Options - Mobile Responsive */}
+      <div className="flex flex-col md:flex-row md:justify-between md:items-center pt-4 border-t border-gray-200 space-y-4 md:space-y-0">
+        {/* Sort and Location Controls - Show first on mobile */}
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center space-y-2 sm:space-y-0 sm:space-x-4 order-1 md:order-2">
           <Select value={filters.sortBy} onValueChange={handleSortChange}>
-            <SelectTrigger className="w-[140px] border-gray-300">
+            <SelectTrigger className="w-full sm:w-[140px] border-gray-300">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -145,7 +140,7 @@ const JobFilters: React.FC<JobFiltersProps> = ({ filters, onFiltersChange, total
           </Select>
 
           <Select value={filters.location || 'all'} onValueChange={handleLocationChange}>
-            <SelectTrigger className="w-[160px] border-gray-300">
+            <SelectTrigger className="w-full sm:w-[160px] border-gray-300">
               <SelectValue placeholder="All Locations" />
             </SelectTrigger>
             <SelectContent>
@@ -157,6 +152,13 @@ const JobFilters: React.FC<JobFiltersProps> = ({ filters, onFiltersChange, total
               ))}
             </SelectContent>
           </Select>
+        </div>
+        
+        {/* Results Count - Show after controls on mobile */}
+        <div className="flex items-center order-2 md:order-1">
+          <span className="text-sm font-bold text-gray-900">
+            {totalJobs} job{totalJobs !== 1 ? 's' : ''} available
+          </span>
         </div>
       </div>
     </div>
