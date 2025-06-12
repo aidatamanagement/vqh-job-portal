@@ -9,12 +9,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Plus, X, Briefcase, MapPin, Settings as SettingsIcon } from 'lucide-react';
+import { Plus, X, Briefcase, MapPin, Settings as SettingsIcon, Award } from 'lucide-react';
 import { useAppContext } from '@/contexts/AppContext';
 import { toast } from '@/hooks/use-toast';
 
 const PostJob: React.FC = () => {
-  const { positions, locations, setPositions, setLocations, jobs, setJobs } = useAppContext();
+  const { positions, locations, setPositions, setLocations, jobs, setJobs, facilities, setFacilities } = useAppContext();
   const [activeTab, setActiveTab] = useState('create-job');
   
   // Job form state
@@ -27,11 +27,10 @@ const PostJob: React.FC = () => {
     customFacility: '',
   });
 
-  // Position/Location management state
+  // Position/Location/Facility management state
   const [newPosition, setNewPosition] = useState('');
   const [newLocation, setNewLocation] = useState('');
-
-  const defaultFacilities = ['Full-time', 'Part-time', 'Remote', 'Flexible Schedule', 'Benefits', 'Training Provided', 'Professional Development', 'Continuing Education'];
+  const [newFacility, setNewFacility] = useState('');
 
   const handleJobInputChange = (field: string, value: string) => {
     setJobForm(prev => ({ ...prev, [field]: value }));
@@ -133,6 +132,22 @@ const PostJob: React.FC = () => {
     }
   };
 
+  const addFacilityToList = () => {
+    if (newFacility.trim() && !facilities.find(f => f.name === newFacility.trim())) {
+      const newFac = {
+        id: Date.now().toString(),
+        name: newFacility.trim(),
+        createdAt: new Date().toISOString(),
+      };
+      setFacilities(prev => [...prev, newFac]);
+      setNewFacility('');
+      toast({
+        title: "Benefit Added",
+        description: `${newFac.name} has been added to available benefits`,
+      });
+    }
+  };
+
   const removePosition = (id: string) => {
     setPositions(prev => prev.filter(p => p.id !== id));
     toast({
@@ -146,6 +161,14 @@ const PostJob: React.FC = () => {
     toast({
       title: "Location Removed",
       description: "Location has been removed",
+    });
+  };
+
+  const removeFacilityFromList = (id: string) => {
+    setFacilities(prev => prev.filter(f => f.id !== id));
+    toast({
+      title: "Benefit Removed",
+      description: "Employment benefit has been removed",
     });
   };
 
@@ -167,9 +190,9 @@ const PostJob: React.FC = () => {
             <Briefcase className="w-4 h-4" />
             <span>Create Job</span>
           </TabsTrigger>
-          <TabsTrigger value="manage-categories" className="flex items-center space-x-2">
+          <TabsTrigger value="manage-attributes" className="flex items-center space-x-2">
             <SettingsIcon className="w-4 h-4" />
-            <span>Manage Categories</span>
+            <span>Manage Attributes</span>
           </TabsTrigger>
         </TabsList>
 
@@ -246,15 +269,15 @@ const PostJob: React.FC = () => {
                 <Label>Employment Type & Benefits</Label>
                 <div className="mt-3 space-y-4">
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                    {defaultFacilities.map((facility) => (
-                      <div key={facility} className="flex items-center space-x-2">
+                    {facilities.map((facility) => (
+                      <div key={facility.id} className="flex items-center space-x-2">
                         <Checkbox
-                          id={facility}
-                          checked={jobForm.facilities.includes(facility)}
-                          onCheckedChange={() => handleFacilityToggle(facility)}
+                          id={facility.id}
+                          checked={jobForm.facilities.includes(facility.name)}
+                          onCheckedChange={() => handleFacilityToggle(facility.name)}
                         />
-                        <Label htmlFor={facility} className="text-sm text-gray-700">
-                          {facility}
+                        <Label htmlFor={facility.id} className="text-sm text-gray-700">
+                          {facility.name}
                         </Label>
                       </div>
                     ))}
@@ -316,8 +339,8 @@ const PostJob: React.FC = () => {
           </Card>
         </TabsContent>
 
-        <TabsContent value="manage-categories" className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <TabsContent value="manage-attributes" className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {/* Manage Positions */}
             <Card className="p-6">
               <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
@@ -382,6 +405,44 @@ const PostJob: React.FC = () => {
                       <span className="text-sm text-gray-900">{location.name}</span>
                       <Button
                         onClick={() => removeLocation(location.id)}
+                        variant="ghost"
+                        size="sm"
+                        className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                      >
+                        <X className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </Card>
+
+            {/* Manage Employment Benefits */}
+            <Card className="p-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                <Award className="w-5 h-5 mr-2 text-primary" />
+                Employment Benefits
+              </h3>
+              
+              <div className="space-y-4">
+                <div className="flex space-x-2">
+                  <Input
+                    value={newFacility}
+                    onChange={(e) => setNewFacility(e.target.value)}
+                    placeholder="Add new benefit"
+                    className="flex-1"
+                  />
+                  <Button onClick={addFacilityToList} size="sm" className="bg-primary hover:bg-primary/90">
+                    <Plus className="w-4 h-4" />
+                  </Button>
+                </div>
+
+                <div className="space-y-2 max-h-60 overflow-y-auto">
+                  {facilities.map((facility) => (
+                    <div key={facility.id} className="flex items-center justify-between p-2 bg-gray-50 rounded-lg">
+                      <span className="text-sm text-gray-900">{facility.name}</span>
+                      <Button
+                        onClick={() => removeFacilityFromList(facility.id)}
                         variant="ghost"
                         size="sm"
                         className="text-red-600 hover:text-red-700 hover:bg-red-50"
