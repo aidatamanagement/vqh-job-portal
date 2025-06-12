@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -20,11 +21,13 @@ import {
   Briefcase,
   X,
   Plus,
-  FilterX
+  FilterX,
+  MoreVertical
 } from 'lucide-react';
 import { useAppContext } from '@/contexts/AppContext';
 import { Job } from '@/types';
 import { toast } from '@/hooks/use-toast';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 
 const ManageJobs: React.FC = () => {
   const { jobs, setJobs, applications, positions, locations } = useAppContext();
@@ -145,21 +148,22 @@ const ManageJobs: React.FC = () => {
   const defaultFacilities = ['Full-time', 'Part-time', 'Remote', 'Flexible Schedule', 'Benefits', 'Training Provided'];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 lg:space-y-6 p-2 sm:p-0">
       {/* Header */}
       <div className="flex items-center space-x-3 animate-fade-in-up">
-        <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
-          <Briefcase className="w-6 h-6 text-white" />
+        <div className="w-8 h-8 lg:w-10 lg:h-10 bg-primary rounded-lg flex items-center justify-center">
+          <Briefcase className="w-4 h-4 lg:w-6 lg:h-6 text-white" />
         </div>
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Manage Jobs</h1>
-          <p className="text-gray-600">Edit, activate, and manage your job postings</p>
+          <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900">Manage Jobs</h1>
+          <p className="text-sm sm:text-base text-gray-600">Edit, activate, and manage your job postings</p>
         </div>
       </div>
 
       {/* Filters */}
-      <Card className="p-6 animate-fade-in">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <Card className="p-3 sm:p-4 lg:p-6 animate-fade-in">
+        <div className="space-y-3 sm:space-y-4">
+          {/* Search - Full width on mobile */}
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
             <Input
@@ -170,71 +174,74 @@ const ManageJobs: React.FC = () => {
             />
           </div>
           
-          <Select value={filterPosition} onValueChange={setFilterPosition}>
-            <SelectTrigger>
-              <SelectValue placeholder="All Positions" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Positions</SelectItem>
-              {positions.map((position) => (
-                <SelectItem key={position.id} value={position.name}>
-                  {position.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          {/* Filters - Stack on mobile, grid on larger screens */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+            <Select value={filterPosition} onValueChange={setFilterPosition}>
+              <SelectTrigger>
+                <SelectValue placeholder="All Positions" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Positions</SelectItem>
+                {positions.map((position) => (
+                  <SelectItem key={position.id} value={position.name}>
+                    {position.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
 
-          <Select value={filterLocation} onValueChange={setFilterLocation}>
-            <SelectTrigger>
-              <SelectValue placeholder="All Locations" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Locations</SelectItem>
-              {locations.map((location) => (
-                <SelectItem key={location.id} value={location.name}>
-                  {location.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+            <Select value={filterLocation} onValueChange={setFilterLocation}>
+              <SelectTrigger>
+                <SelectValue placeholder="All Locations" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Locations</SelectItem>
+                {locations.map((location) => (
+                  <SelectItem key={location.id} value={location.name}>
+                    {location.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
 
-          <Select value={filterStatus} onValueChange={setFilterStatus}>
-            <SelectTrigger>
-              <SelectValue placeholder="All Status" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Status</SelectItem>
-              <SelectItem value="active">Active</SelectItem>
-              <SelectItem value="inactive">Inactive</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-
-        {/* Clear Filters Button */}
-        {hasActiveFilters && (
-          <div className="mt-4 flex justify-start">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={clearAllFilters}
-              className="flex items-center gap-2 text-gray-600 hover:text-gray-900"
-            >
-              <FilterX className="w-4 h-4" />
-              Clear All Filters
-            </Button>
+            <Select value={filterStatus} onValueChange={setFilterStatus}>
+              <SelectTrigger>
+                <SelectValue placeholder="All Status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Status</SelectItem>
+                <SelectItem value="active">Active</SelectItem>
+                <SelectItem value="inactive">Inactive</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
-        )}
+
+          {/* Clear Filters Button */}
+          {hasActiveFilters && (
+            <div className="flex justify-start">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={clearAllFilters}
+                className="flex items-center gap-2 text-gray-600 hover:text-gray-900"
+              >
+                <FilterX className="w-4 h-4" />
+                Clear All Filters
+              </Button>
+            </div>
+          )}
+        </div>
       </Card>
 
       {/* Jobs List */}
-      <div className="space-y-4">
+      <div className="space-y-3 sm:space-y-4">
         {filteredJobs.length === 0 ? (
-          <Card className="p-8 text-center animate-fade-in">
-            <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <Briefcase className="w-8 h-8 text-gray-400" />
+          <Card className="p-6 sm:p-8 text-center animate-fade-in">
+            <div className="w-12 h-12 sm:w-16 sm:h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Briefcase className="w-6 h-6 sm:w-8 sm:h-8 text-gray-400" />
             </div>
             <h3 className="text-lg font-semibold text-gray-900 mb-2">No jobs found</h3>
-            <p className="text-gray-600">
+            <p className="text-sm sm:text-base text-gray-600">
               {searchTerm || filterPosition !== 'all' || filterLocation !== 'all' || filterStatus !== 'all'
                 ? "Try adjusting your search criteria" 
                 : "No jobs have been posted yet"
@@ -243,43 +250,76 @@ const ManageJobs: React.FC = () => {
           </Card>
         ) : (
           filteredJobs.map((job, index) => (
-            <Card key={job.id} className="p-6 animate-fade-in" style={{ animationDelay: `${index * 0.1}s` }}>
-              <div className="flex items-start justify-between">
-                <div className="flex-1 space-y-3">
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <h3 className="text-xl font-semibold text-gray-900">{job.title}</h3>
-                      <p className="text-primary font-medium">{job.position}</p>
+            <Card key={job.id} className="p-3 sm:p-4 lg:p-6 animate-fade-in" style={{ animationDelay: `${index * 0.1}s` }}>
+              <div className="space-y-3 sm:space-y-0 sm:flex sm:items-start sm:justify-between">
+                <div className="flex-1 space-y-2 sm:space-y-3">
+                  <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2">
+                    <div className="flex-1">
+                      <h3 className="text-lg sm:text-xl font-semibold text-gray-900 break-words">{job.title}</h3>
+                      <p className="text-primary font-medium text-sm sm:text-base">{job.position}</p>
                     </div>
-                    <div className="flex items-center space-x-2">
+                    
+                    {/* Status toggle - Mobile friendly */}
+                    <div className="flex items-center justify-between sm:justify-end space-x-2 bg-gray-50 p-2 rounded-lg sm:bg-transparent sm:p-0">
+                      <span className="text-sm text-gray-600 sm:order-2">
+                        {job.isActive ? 'Active' : 'Inactive'}
+                      </span>
                       <Switch
                         checked={job.isActive}
                         onCheckedChange={() => toggleJobStatus(job.id)}
-                        className="data-[state=checked]:bg-primary"
+                        className="data-[state=checked]:bg-primary sm:order-1"
                       />
-                      <span className="text-sm text-gray-600">
-                        {job.isActive ? 'Active' : 'Inactive'}
-                      </span>
                     </div>
                   </div>
 
-                  <div className="flex items-center space-x-6 text-sm text-gray-600">
+                  {/* Job details - Stack on mobile */}
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-6 text-sm text-gray-600">
                     <div className="flex items-center space-x-1">
-                      <MapPin className="w-4 h-4" />
-                      <span>{job.location}</span>
+                      <MapPin className="w-4 h-4 flex-shrink-0" />
+                      <span className="truncate">{job.location}</span>
                     </div>
                     <div className="flex items-center space-x-1">
-                      <Users className="w-4 h-4" />
+                      <Users className="w-4 h-4 flex-shrink-0" />
                       <span>{getApplicationCount(job.id)} applications</span>
                     </div>
                     <div className="flex items-center space-x-1">
-                      <Calendar className="w-4 h-4" />
+                      <Calendar className="w-4 h-4 flex-shrink-0" />
                       <span>Posted {new Date(job.createdAt).toLocaleDateString()}</span>
                     </div>
                   </div>
                 </div>
 
-                <div className="flex items-center space-x-2 ml-6">
+                {/* Action buttons - Mobile dropdown, desktop inline */}
+                <div className="flex sm:hidden">
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="outline" size="sm" className="w-full">
+                        <MoreVertical className="w-4 h-4 mr-2" />
+                        Actions
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={() => window.open(`/job/${job.id}`, '_blank')}>
+                        <Eye className="w-4 h-4 mr-2" />
+                        View Job
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => openEditModal(job)}>
+                        <Edit className="w-4 h-4 mr-2" />
+                        Edit Job
+                      </DropdownMenuItem>
+                      <DropdownMenuItem 
+                        onClick={() => deleteJob(job.id)}
+                        className="text-red-600 focus:text-red-600"
+                      >
+                        <Trash2 className="w-4 h-4 mr-2" />
+                        Delete Job
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
+
+                {/* Desktop action buttons */}
+                <div className="hidden sm:flex items-center space-x-2 ml-6">
                   <Button
                     variant="ghost"
                     size="sm"
@@ -311,19 +351,19 @@ const ManageJobs: React.FC = () => {
         )}
       </div>
 
-      {/* Edit Job Modal */}
+      {/* Edit Job Modal - Responsive */}
       <Dialog open={!!editingJob} onOpenChange={() => setEditingJob(null)}>
-        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="w-[95vw] max-w-3xl max-h-[90vh] overflow-y-auto mx-auto">
           <DialogHeader>
-            <DialogTitle className="text-2xl font-bold text-gray-900">
+            <DialogTitle className="text-xl sm:text-2xl font-bold text-gray-900 pr-6">
               Edit Job: {editingJob?.title}
             </DialogTitle>
           </DialogHeader>
 
           {editingJob && (
-            <div className="space-y-6 mt-6">
+            <div className="space-y-4 sm:space-y-6 mt-4 sm:mt-6">
               <div>
-                <Label htmlFor="edit-title">Job Title *</Label>
+                <Label htmlFor="edit-title" className="text-sm font-medium">Job Title *</Label>
                 <Input
                   id="edit-title"
                   value={jobForm.title || ''}
@@ -334,7 +374,7 @@ const ManageJobs: React.FC = () => {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="edit-position">Position Category *</Label>
+                  <Label htmlFor="edit-position" className="text-sm font-medium">Position Category *</Label>
                   <Select 
                     value={jobForm.position || ''} 
                     onValueChange={(value) => handleJobInputChange('position', value)}
@@ -353,7 +393,7 @@ const ManageJobs: React.FC = () => {
                 </div>
 
                 <div>
-                  <Label htmlFor="edit-location">Location *</Label>
+                  <Label htmlFor="edit-location" className="text-sm font-medium">Location *</Label>
                   <Select 
                     value={jobForm.location || ''} 
                     onValueChange={(value) => handleJobInputChange('location', value)}
@@ -373,18 +413,18 @@ const ManageJobs: React.FC = () => {
               </div>
 
               <div>
-                <Label htmlFor="edit-description">Job Description *</Label>
+                <Label htmlFor="edit-description" className="text-sm font-medium">Job Description *</Label>
                 <Textarea
                   id="edit-description"
                   value={jobForm.description || ''}
                   onChange={(e) => handleJobInputChange('description', e.target.value)}
-                  className="mt-1 min-h-[200px] rich-editor"
+                  className="mt-1 min-h-[150px] sm:min-h-[200px] rich-editor"
                 />
               </div>
 
               <div>
-                <Label>Employment Type & Benefits</Label>
-                <div className="mt-3 grid grid-cols-2 md:grid-cols-3 gap-3">
+                <Label className="text-sm font-medium">Employment Type & Benefits</Label>
+                <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                   {defaultFacilities.map((facility) => (
                     <div key={facility} className="flex items-center space-x-2">
                       <Checkbox
@@ -405,7 +445,7 @@ const ManageJobs: React.FC = () => {
                       <Badge
                         key={facility}
                         variant="secondary"
-                        className="bg-primary/10 text-primary border-primary/20 flex items-center gap-1"
+                        className="bg-primary/10 text-primary border-primary/20 flex items-center gap-1 text-xs"
                       >
                         {facility}
                         <Button
@@ -423,16 +463,17 @@ const ManageJobs: React.FC = () => {
                 )}
               </div>
 
-              <div className="flex justify-end space-x-4 pt-6 border-t">
+              <div className="flex flex-col sm:flex-row justify-end space-y-2 sm:space-y-0 sm:space-x-4 pt-4 sm:pt-6 border-t">
                 <Button
                   variant="outline"
                   onClick={() => setEditingJob(null)}
+                  className="w-full sm:w-auto"
                 >
                   Cancel
                 </Button>
                 <Button
                   onClick={saveJobChanges}
-                  className="bg-primary hover:bg-primary/90"
+                  className="w-full sm:w-auto bg-primary hover:bg-primary/90"
                 >
                   Save Changes
                 </Button>
