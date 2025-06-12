@@ -1,126 +1,99 @@
 
 import React, { useState } from 'react';
-import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { 
-  Search, 
-  Eye, 
-  Download,
-  FileText,
-  Calendar,
-  MapPin,
-  User,
-  Clock,
-  CheckCircle,
-  XCircle,
-  StickyNote,
-  ExternalLink,
-  FilterX
-} from 'lucide-react';
-import { useAppContext } from '@/contexts/AppContext';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Search, Filter, Eye, X, FileText, Download, ExternalLink } from 'lucide-react';
 import { JobApplication } from '@/types';
-import { toast } from '@/hooks/use-toast';
+
+// Mock data for submissions
+const mockSubmissions: JobApplication[] = [
+  {
+    id: '1',
+    jobId: '1',
+    firstName: 'John',
+    lastName: 'Doe',
+    email: 'john.doe@email.com',
+    phone: '(555) 123-4567',
+    appliedPosition: 'Registered Nurse',
+    earliestStartDate: '2024-07-01',
+    cityState: 'New York, NY',
+    coverLetter: 'I am passionate about providing compassionate care...',
+    resumeUrl: 'https://example.com/resume.pdf',
+    additionalDocsUrls: ['https://example.com/license.pdf', 'https://example.com/references.pdf'],
+    status: 'waiting',
+    notes: '',
+    createdAt: '2024-06-15T10:30:00Z',
+    updatedAt: '2024-06-15T10:30:00Z',
+  },
+  {
+    id: '2',
+    jobId: '2',
+    firstName: 'Sarah',
+    lastName: 'Johnson',
+    email: 'sarah.johnson@email.com',
+    phone: '(555) 987-6543',
+    appliedPosition: 'Social Worker',
+    earliestStartDate: '2024-08-01',
+    cityState: 'Los Angeles, CA',
+    coverLetter: 'With my background in social work and dedication to helping others...',
+    resumeUrl: 'https://example.com/resume2.pdf',
+    additionalDocsUrls: ['https://example.com/certification.pdf'],
+    status: 'approved',
+    notes: 'Great candidate with excellent references',
+    createdAt: '2024-06-10T14:20:00Z',
+    updatedAt: '2024-06-12T09:15:00Z',
+  },
+  {
+    id: '3',
+    jobId: '1',
+    firstName: 'Michael',
+    lastName: 'Brown',
+    email: 'michael.brown@email.com',
+    phone: '(555) 456-7890',
+    appliedPosition: 'Registered Nurse',
+    earliestStartDate: '2024-09-01',
+    cityState: 'Chicago, IL',
+    coverLetter: 'I have been working in healthcare for over 10 years...',
+    resumeUrl: 'https://example.com/resume3.pdf',
+    additionalDocsUrls: [],
+    status: 'declined',
+    notes: 'Not a good fit for the current position',
+    createdAt: '2024-06-08T16:45:00Z',
+    updatedAt: '2024-06-09T11:30:00Z',
+  },
+];
 
 const Submissions: React.FC = () => {
-  const { applications, setApplications, jobs, positions, locations } = useAppContext();
-  const [activeTab, setActiveTab] = useState('waiting');
+  const [submissions, setSubmissions] = useState<JobApplication[]>(mockSubmissions);
   const [searchTerm, setSearchTerm] = useState('');
-  const [filterJob, setFilterJob] = useState('all');
-  const [filterLocation, setFilterLocation] = useState('all');
-  const [viewingApplication, setViewingApplication] = useState<JobApplication | null>(null);
-  const [notes, setNotes] = useState('');
+  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [positionFilter, setPositionFilter] = useState<string>('all');
+  const [selectedApplication, setSelectedApplication] = useState<JobApplication | null>(null);
+  const [viewingFile, setViewingFile] = useState<{ url: string; name: string } | null>(null);
 
-  // Check if any filters are active
-  const hasActiveFilters = searchTerm !== '' || filterJob !== 'all' || filterLocation !== 'all';
+  const filteredSubmissions = submissions.filter(submission => {
+    const matchesSearch = searchTerm === '' || 
+      submission.firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      submission.lastName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      submission.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      submission.appliedPosition.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    const matchesStatus = statusFilter === 'all' || submission.status === statusFilter;
+    const matchesPosition = positionFilter === 'all' || submission.appliedPosition === positionFilter;
+    
+    return matchesSearch && matchesStatus && matchesPosition;
+  });
 
-  // Clear all filters
+  const hasActiveFilters = searchTerm !== '' || statusFilter !== 'all' || positionFilter !== 'all';
+
   const clearAllFilters = () => {
     setSearchTerm('');
-    setFilterJob('all');
-    setFilterLocation('all');
-  };
-
-  // Filter applications by status
-  const getFilteredApplications = (status: 'waiting' | 'approved' | 'declined') => {
-    return applications.filter(app => {
-      const matchesStatus = app.status === status;
-      const matchesSearch = app.firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                           app.lastName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                           app.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                           app.appliedPosition.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchesJob = filterJob === 'all' || app.appliedPosition === filterJob;
-      const matchesLocation = filterLocation === 'all' || app.cityState.includes(filterLocation);
-      
-      return matchesStatus && matchesSearch && matchesJob && matchesLocation;
-    });
-  };
-
-  const updateApplicationStatus = (applicationId: string, newStatus: 'waiting' | 'approved' | 'declined') => {
-    setApplications(prev => prev.map(app => 
-      app.id === applicationId 
-        ? { ...app, status: newStatus, updatedAt: new Date().toISOString() }
-        : app
-    ));
-
-    const application = applications.find(app => app.id === applicationId);
-    const statusText = newStatus === 'waiting' ? 'moved to waiting' : newStatus;
-    
-    toast({
-      title: "Application Status Updated",
-      description: `${application?.firstName} ${application?.lastName}'s application has been ${statusText}`,
-    });
-
-    if (newStatus === 'approved') {
-      toast({
-        title: "Calendly Link Sent",
-        description: "A congratulatory email with scheduling link has been sent to the candidate",
-      });
-    }
-  };
-
-  const openApplicationModal = (application: JobApplication) => {
-    setViewingApplication(application);
-    setNotes(application.notes || '');
-  };
-
-  const saveNotes = () => {
-    if (!viewingApplication) return;
-
-    setApplications(prev => prev.map(app => 
-      app.id === viewingApplication.id 
-        ? { ...app, notes, updatedAt: new Date().toISOString() }
-        : app
-    ));
-
-    toast({
-      title: "Notes Saved",
-      description: "Application notes have been updated",
-    });
-  };
-
-  const downloadAllDocuments = (application: JobApplication) => {
-    // Simulate download
-    toast({
-      title: "Download Started",
-      description: `Downloading all documents for ${application.firstName} ${application.lastName}`,
-    });
-  };
-
-  const viewDocument = (docUrl: string, docName: string) => {
-    // Simulate opening document in new tab for viewing
-    toast({
-      title: "Opening Document",
-      description: `Opening ${docName} for viewing`,
-    });
-    // In a real application, this would open the document in a new tab or embedded viewer
-    window.open(docUrl, '_blank');
+    setStatusFilter('all');
+    setPositionFilter('all');
   };
 
   const getStatusBadgeVariant = (status: string) => {
@@ -134,392 +107,350 @@ const Submissions: React.FC = () => {
     }
   };
 
-  const getStatusIcon = (status: string) => {
+  const getStatusText = (status: string) => {
     switch (status) {
+      case 'waiting':
+        return 'Pending';
       case 'approved':
-        return <CheckCircle className="w-4 h-4" />;
+        return 'Approved';
       case 'declined':
-        return <XCircle className="w-4 h-4" />;
+        return 'Declined';
       default:
-        return <Clock className="w-4 h-4" />;
+        return status;
     }
   };
 
-  const waitingApplications = getFilteredApplications('waiting');
-  const approvedApplications = getFilteredApplications('approved');
-  const declinedApplications = getFilteredApplications('declined');
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    });
+  };
 
-  const renderApplicationCard = (application: JobApplication) => {
-    const job = jobs.find(j => j.id === application.jobId);
-    
-    return (
-      <Card key={application.id} className="p-6 hover:shadow-md transition-shadow">
-        <div className="flex items-center justify-between">
-          <div className="flex-1 space-y-3">
-            {/* Candidate Name and Status */}
-            <div className="flex items-center justify-between">
-              <h3 className="text-lg font-semibold text-gray-900">
-                {application.firstName} {application.lastName}
-              </h3>
-              <Badge 
-                variant={getStatusBadgeVariant(application.status)}
-                className="flex items-center space-x-1"
-              >
-                {getStatusIcon(application.status)}
-                <span className="capitalize">{application.status}</span>
-              </Badge>
-            </div>
+  const updateApplicationStatus = (id: string, newStatus: 'waiting' | 'approved' | 'declined') => {
+    setSubmissions(prev => prev.map(app => 
+      app.id === id 
+        ? { ...app, status: newStatus, updatedAt: new Date().toISOString() }
+        : app
+    ));
+    if (selectedApplication && selectedApplication.id === id) {
+      setSelectedApplication(prev => prev ? { ...prev, status: newStatus } : null);
+    }
+  };
 
-            {/* Job Position */}
-            <div className="text-primary font-medium">
-              {application.appliedPosition}
-            </div>
+  const getUniquePositions = () => {
+    const positions = [...new Set(submissions.map(s => s.appliedPosition))];
+    return positions;
+  };
 
-            {/* Applied Date, Location */}
-            <div className="flex items-center space-x-6 text-sm text-gray-600">
-              <div className="flex items-center space-x-2">
-                <Calendar className="w-4 h-4" />
-                <span>Applied {new Date(application.createdAt).toLocaleDateString()}</span>
-              </div>
-              <div className="flex items-center space-x-2">
-                <MapPin className="w-4 h-4" />
-                <span>{application.cityState}</span>
-              </div>
-              {application.notes && (
-                <div className="flex items-center space-x-1 text-primary">
-                  <StickyNote className="w-4 h-4" />
-                  <span>Has notes</span>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* View Button */}
-          <div className="ml-6">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => openApplicationModal(application)}
-              className="text-blue-600 hover:text-blue-700"
-            >
-              <Eye className="w-4 h-4 mr-2" />
-              View
-            </Button>
-          </div>
-        </div>
-      </Card>
-    );
+  const openFileViewer = (url: string, name: string) => {
+    setViewingFile({ url, name });
   };
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center space-x-3 animate-fade-in-up">
-        <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
-          <FileText className="w-6 h-6 text-white" />
-        </div>
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Application Submissions</h1>
-          <p className="text-gray-600">Review and manage job applications</p>
-        </div>
+      <div className="flex justify-between items-center">
+        <h1 className="text-3xl font-bold text-gray-900">Job Applications</h1>
       </div>
 
       {/* Filters */}
-      <Card className="p-6 animate-fade-in">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-            <Input
-              placeholder="Search by name, email, or position..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-9"
-            />
+      <div className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm">
+        <div className="flex flex-col lg:flex-row gap-4">
+          <div className="flex-1">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+              <Input
+                placeholder="Search by name, email, or position..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10"
+              />
+            </div>
           </div>
           
-          <Select value={filterJob} onValueChange={setFilterJob}>
-            <SelectTrigger>
-              <SelectValue placeholder="All Positions" />
+          <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <SelectTrigger className="w-full lg:w-48">
+              <SelectValue placeholder="Filter by status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Statuses</SelectItem>
+              <SelectItem value="waiting">Pending</SelectItem>
+              <SelectItem value="approved">Approved</SelectItem>
+              <SelectItem value="declined">Declined</SelectItem>
+            </SelectContent>
+          </Select>
+
+          <Select value={positionFilter} onValueChange={setPositionFilter}>
+            <SelectTrigger className="w-full lg:w-48">
+              <SelectValue placeholder="Filter by position" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Positions</SelectItem>
-              {positions.map((position) => (
-                <SelectItem key={position.id} value={position.name}>
-                  {position.name}
-                </SelectItem>
+              {getUniquePositions().map(position => (
+                <SelectItem key={position} value={position}>{position}</SelectItem>
               ))}
             </SelectContent>
           </Select>
 
-          <Select value={filterLocation} onValueChange={setFilterLocation}>
-            <SelectTrigger>
-              <SelectValue placeholder="All Locations" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Locations</SelectItem>
-              {locations.map((location) => (
-                <SelectItem key={location.id} value={location.name}>
-                  {location.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-
-        {/* Clear Filters Button */}
-        {hasActiveFilters && (
-          <div className="mt-4 flex justify-start">
+          {hasActiveFilters && (
             <Button
               variant="outline"
-              size="sm"
               onClick={clearAllFilters}
-              className="flex items-center gap-2 text-gray-600 hover:text-gray-900"
+              className="whitespace-nowrap"
             >
-              <FilterX className="w-4 h-4" />
+              <X className="w-4 h-4 mr-2" />
               Clear All Filters
             </Button>
-          </div>
-        )}
-      </Card>
-
-      {/* Submissions Tabs */}
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="animate-fade-in">
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="waiting" className="flex items-center space-x-2">
-            <Clock className="w-4 h-4" />
-            <span>Waiting ({waitingApplications.length})</span>
-          </TabsTrigger>
-          <TabsTrigger value="approved" className="flex items-center space-x-2">
-            <CheckCircle className="w-4 h-4" />
-            <span>Approved ({approvedApplications.length})</span>
-          </TabsTrigger>
-          <TabsTrigger value="declined" className="flex items-center space-x-2">
-            <XCircle className="w-4 h-4" />
-            <span>Declined ({declinedApplications.length})</span>
-          </TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="waiting" className="space-y-4 mt-6">
-          {waitingApplications.length === 0 ? (
-            <Card className="p-8 text-center">
-              <Clock className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">No waiting applications</h3>
-              <p className="text-gray-600">All applications have been reviewed</p>
-            </Card>
-          ) : (
-            waitingApplications.map(renderApplicationCard)
           )}
-        </TabsContent>
+        </div>
+      </div>
 
-        <TabsContent value="approved" className="space-y-4 mt-6">
-          {approvedApplications.length === 0 ? (
-            <Card className="p-8 text-center">
-              <CheckCircle className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">No approved applications</h3>
-              <p className="text-gray-600">No applications have been approved yet</p>
-            </Card>
-          ) : (
-            approvedApplications.map(renderApplicationCard)
-          )}
-        </TabsContent>
+      {/* Applications Table */}
+      <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
+        <Table>
+          <TableHeader>
+            <TableRow className="bg-gray-50">
+              <TableHead className="font-semibold">Candidate</TableHead>
+              <TableHead className="font-semibold">Position</TableHead>
+              <TableHead className="font-semibold">Applied Date</TableHead>
+              <TableHead className="font-semibold">Location</TableHead>
+              <TableHead className="font-semibold">Status</TableHead>
+              <TableHead className="font-semibold text-right">Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {filteredSubmissions.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={6} className="text-center py-8 text-gray-500">
+                  No applications found matching your criteria.
+                </TableCell>
+              </TableRow>
+            ) : (
+              filteredSubmissions.map((application) => (
+                <TableRow key={application.id} className="hover:bg-gray-50 transition-colors">
+                  <TableCell>
+                    <div>
+                      <div className="font-medium text-gray-900">
+                        {application.firstName} {application.lastName}
+                      </div>
+                      <div className="text-sm text-gray-500">{application.email}</div>
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <span className="font-medium text-gray-900">{application.appliedPosition}</span>
+                  </TableCell>
+                  <TableCell>
+                    <span className="text-gray-600">{formatDate(application.createdAt)}</span>
+                  </TableCell>
+                  <TableCell>
+                    <span className="text-gray-600">{application.cityState}</span>
+                  </TableCell>
+                  <TableCell>
+                    <Badge variant={getStatusBadgeVariant(application.status)}>
+                      {getStatusText(application.status)}
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setSelectedApplication(application)}
+                      className="inline-flex items-center gap-2"
+                    >
+                      <Eye className="w-4 h-4" />
+                      View Details
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
+          </TableBody>
+        </Table>
+      </div>
 
-        <TabsContent value="declined" className="space-y-4 mt-6">
-          {declinedApplications.length === 0 ? (
-            <Card className="p-8 text-center">
-              <XCircle className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">No declined applications</h3>
-              <p className="text-gray-600">No applications have been declined</p>
-            </Card>
-          ) : (
-            declinedApplications.map(renderApplicationCard)
-          )}
-        </TabsContent>
-      </Tabs>
-
-      {/* Application Detail Modal */}
-      <Dialog open={!!viewingApplication} onOpenChange={() => setViewingApplication(null)}>
+      {/* Application Details Modal */}
+      <Dialog open={!!selectedApplication} onOpenChange={(open) => !open && setSelectedApplication(null)}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="text-2xl font-bold text-gray-900">
-              Application Details: {viewingApplication?.firstName} {viewingApplication?.lastName}
-            </DialogTitle>
+            <DialogTitle>Application Details</DialogTitle>
           </DialogHeader>
-
-          {viewingApplication && (
-            <div className="space-y-6 mt-6">
-              {/* Personal Information */}
-              <Card className="p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-                  <User className="w-5 h-5 mr-2 text-primary" />
-                  Personal Information
-                </h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                  <div>
-                    <Label className="text-gray-600">Full Name</Label>
-                    <p className="font-medium">{viewingApplication.firstName} {viewingApplication.lastName}</p>
-                  </div>
-                  <div>
-                    <Label className="text-gray-600">Email</Label>
-                    <p className="font-medium">{viewingApplication.email}</p>
-                  </div>
-                  <div>
-                    <Label className="text-gray-600">Phone</Label>
-                    <p className="font-medium">{viewingApplication.phone}</p>
-                  </div>
-                  <div>
-                    <Label className="text-gray-600">Location</Label>
-                    <p className="font-medium">{viewingApplication.cityState}</p>
-                  </div>
-                  <div>
-                    <Label className="text-gray-600">Applied Position</Label>
-                    <p className="font-medium">{viewingApplication.appliedPosition}</p>
-                  </div>
-                  <div>
-                    <Label className="text-gray-600">Earliest Start Date</Label>
-                    <p className="font-medium">{new Date(viewingApplication.earliestStartDate).toLocaleDateString()}</p>
+          
+          {selectedApplication && (
+            <div className="space-y-6">
+              {/* Candidate Information */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-4">
+                  <h3 className="text-lg font-semibold text-gray-900">Candidate Information</h3>
+                  <div className="space-y-2">
+                    <div>
+                      <span className="font-medium text-gray-700">Name:</span>
+                      <span className="ml-2">{selectedApplication.firstName} {selectedApplication.lastName}</span>
+                    </div>
+                    <div>
+                      <span className="font-medium text-gray-700">Email:</span>
+                      <span className="ml-2">{selectedApplication.email}</span>
+                    </div>
+                    <div>
+                      <span className="font-medium text-gray-700">Phone:</span>
+                      <span className="ml-2">{selectedApplication.phone}</span>
+                    </div>
+                    <div>
+                      <span className="font-medium text-gray-700">Location:</span>
+                      <span className="ml-2">{selectedApplication.cityState}</span>
+                    </div>
+                    <div>
+                      <span className="font-medium text-gray-700">Earliest Start Date:</span>
+                      <span className="ml-2">{formatDate(selectedApplication.earliestStartDate)}</span>
+                    </div>
                   </div>
                 </div>
-              </Card>
+
+                <div className="space-y-4">
+                  <h3 className="text-lg font-semibold text-gray-900">Application Details</h3>
+                  <div className="space-y-2">
+                    <div>
+                      <span className="font-medium text-gray-700">Applied Position:</span>
+                      <span className="ml-2">{selectedApplication.appliedPosition}</span>
+                    </div>
+                    <div>
+                      <span className="font-medium text-gray-700">Applied Date:</span>
+                      <span className="ml-2">{formatDate(selectedApplication.createdAt)}</span>
+                    </div>
+                    <div>
+                      <span className="font-medium text-gray-700">Current Status:</span>
+                      <Badge 
+                        variant={getStatusBadgeVariant(selectedApplication.status)}
+                        className="ml-2"
+                      >
+                        {getStatusText(selectedApplication.status)}
+                      </Badge>
+                    </div>
+                  </div>
+                </div>
+              </div>
 
               {/* Cover Letter */}
-              <Card className="p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Cover Letter</h3>
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-3">Cover Letter</h3>
                 <div className="bg-gray-50 p-4 rounded-lg">
-                  <p className="text-gray-700 whitespace-pre-wrap leading-relaxed">
-                    {viewingApplication.coverLetter}
-                  </p>
+                  <p className="text-gray-700 whitespace-pre-wrap">{selectedApplication.coverLetter}</p>
                 </div>
-              </Card>
+              </div>
 
-              {/* Documents */}
-              <Card className="p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center justify-between">
-                  <span className="flex items-center">
-                    <FileText className="w-5 h-5 mr-2 text-primary" />
-                    Documents & Attachments
-                  </span>
-                  <Button
-                    onClick={() => downloadAllDocuments(viewingApplication)}
-                    variant="outline"
-                    size="sm"
-                    className="text-green-600 hover:text-green-700"
-                  >
-                    <Download className="w-4 h-4 mr-2" />
-                    Download All
-                  </Button>
-                </h3>
-                <div className="space-y-3">
-                  {viewingApplication.resumeUrl && (
+              {/* Attachments */}
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-3">Attachments</h3>
+                <div className="space-y-2">
+                  {selectedApplication.resumeUrl && (
                     <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                      <div className="flex items-center space-x-2">
-                        <FileText className="w-5 h-5 text-gray-500" />
+                      <div className="flex items-center gap-3">
+                        <FileText className="w-5 h-5 text-blue-600" />
                         <span className="font-medium">Resume</span>
-                        <span className="text-sm text-gray-600">({viewingApplication.resumeUrl})</span>
                       </div>
-                      <div className="flex space-x-2">
-                        <Button 
-                          variant="ghost" 
-                          size="sm" 
-                          className="text-blue-600 hover:text-blue-700"
-                          onClick={() => viewDocument(viewingApplication.resumeUrl!, 'Resume')}
+                      <div className="flex gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => openFileViewer(selectedApplication.resumeUrl!, 'Resume')}
                         >
-                          <ExternalLink className="w-4 h-4 mr-1" />
-                          View
+                          <ExternalLink className="w-4 h-4 mr-2" />
+                          View Online
                         </Button>
-                        <Button variant="ghost" size="sm" className="text-green-600 hover:text-green-700">
-                          <Download className="w-4 h-4" />
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => window.open(selectedApplication.resumeUrl, '_blank')}
+                        >
+                          <Download className="w-4 h-4 mr-2" />
+                          Download
                         </Button>
                       </div>
                     </div>
                   )}
-                  {viewingApplication.additionalDocsUrls.map((doc, index) => (
+                  
+                  {selectedApplication.additionalDocsUrls.map((docUrl, index) => (
                     <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                      <div className="flex items-center space-x-2">
-                        <FileText className="w-5 h-5 text-gray-500" />
+                      <div className="flex items-center gap-3">
+                        <FileText className="w-5 h-5 text-blue-600" />
                         <span className="font-medium">Additional Document {index + 1}</span>
-                        <span className="text-sm text-gray-600">({doc})</span>
                       </div>
-                      <div className="flex space-x-2">
-                        <Button 
-                          variant="ghost"
-                          size="sm" 
-                          className="text-blue-600 hover:text-blue-700"
-                          onClick={() => viewDocument(doc, `Additional Document ${index + 1}`)}
+                      <div className="flex gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => openFileViewer(docUrl, `Additional Document ${index + 1}`)}
                         >
-                          <ExternalLink className="w-4 h-4 mr-1" />
-                          View
+                          <ExternalLink className="w-4 h-4 mr-2" />
+                          View Online
                         </Button>
-                        <Button variant="ghost" size="sm" className="text-green-600 hover:text-green-700">
-                          <Download className="w-4 h-4" />
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => window.open(docUrl, '_blank')}
+                        >
+                          <Download className="w-4 h-4 mr-2" />
+                          Download
                         </Button>
                       </div>
                     </div>
                   ))}
                 </div>
-              </Card>
+              </div>
 
               {/* Notes */}
-              <Card className="p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-                  <StickyNote className="w-5 h-5 mr-2 text-primary" />
-                  Private Notes
-                </h3>
-                <Textarea
-                  value={notes}
-                  onChange={(e) => setNotes(e.target.value)}
-                  placeholder="Add private notes about this application..."
-                  className="min-h-[100px] mb-4"
-                />
-                <Button
-                  onClick={saveNotes}
-                  variant="outline"
-                  size="sm"
-                  className="text-blue-600 hover:text-blue-700"
-                >
-                  Save Notes
-                </Button>
-              </Card>
+              {selectedApplication.notes && (
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-3">Notes</h3>
+                  <div className="bg-yellow-50 p-4 rounded-lg border border-yellow-200">
+                    <p className="text-gray-700">{selectedApplication.notes}</p>
+                  </div>
+                </div>
+              )}
 
               {/* Action Buttons */}
-              <div className="flex justify-between items-center pt-6 border-t">
-                <div className="flex items-center space-x-2">
-                  <span className="text-sm text-gray-600">Current Status:</span>
-                  <Badge variant={getStatusBadgeVariant(viewingApplication.status)}>
-                    {viewingApplication.status.charAt(0).toUpperCase() + viewingApplication.status.slice(1)}
-                  </Badge>
-                </div>
-                
-                <div className="flex space-x-3">
-                  {viewingApplication.status !== 'declined' && (
-                    <Button
-                      onClick={() => updateApplicationStatus(viewingApplication.id, 'declined')}
-                      variant="outline"
-                      className="text-red-600 hover:text-red-700 border-red-200 hover:border-red-300"
-                    >
-                      <XCircle className="w-4 h-4 mr-2" />
-                      Decline
-                    </Button>
-                  )}
-                  {viewingApplication.status !== 'waiting' && (
-                    <Button
-                      onClick={() => updateApplicationStatus(viewingApplication.id, 'waiting')}
-                      variant="outline"
-                      className="text-yellow-600 hover:text-yellow-700 border-yellow-200 hover:border-yellow-300"
-                    >
-                      <Clock className="w-4 h-4 mr-2" />
-                      Move to Waiting
-                    </Button>
-                  )}
-                  {viewingApplication.status !== 'approved' && (
-                    <Button
-                      onClick={() => updateApplicationStatus(viewingApplication.id, 'approved')}
-                      className="bg-green-600 hover:bg-green-700 text-white"
-                    >
-                      <CheckCircle className="w-4 h-4 mr-2" />
-                      Approve & Send Calendly
-                    </Button>
-                  )}
-                </div>
+              <div className="flex gap-3 pt-4 border-t">
+                <Button
+                  onClick={() => updateApplicationStatus(selectedApplication.id, 'approved')}
+                  disabled={selectedApplication.status === 'approved'}
+                  className="bg-green-600 hover:bg-green-700"
+                >
+                  Approve
+                </Button>
+                <Button
+                  variant="destructive"
+                  onClick={() => updateApplicationStatus(selectedApplication.id, 'declined')}
+                  disabled={selectedApplication.status === 'declined'}
+                >
+                  Decline
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => updateApplicationStatus(selectedApplication.id, 'waiting')}
+                  disabled={selectedApplication.status === 'waiting'}
+                >
+                  Mark as Pending
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* File Viewer Modal */}
+      <Dialog open={!!viewingFile} onOpenChange={(open) => !open && setViewingFile(null)}>
+        <DialogContent className="max-w-6xl max-h-[90vh] p-0">
+          <DialogHeader className="p-6 pb-0">
+            <DialogTitle>{viewingFile?.name}</DialogTitle>
+          </DialogHeader>
+          {viewingFile && (
+            <div className="p-6 pt-4">
+              <div className="w-full h-[70vh] border rounded-lg overflow-hidden">
+                <iframe
+                  src={viewingFile.url}
+                  className="w-full h-full"
+                  title={viewingFile.name}
+                />
               </div>
             </div>
           )}
