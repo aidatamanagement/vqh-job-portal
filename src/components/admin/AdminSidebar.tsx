@@ -36,27 +36,23 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({ currentView, onViewChange }
       id: 'post-job' as AdminView,
       label: 'Post Job',
       icon: Plus,
-      description: 'Create new job postings',
     },
     {
       id: 'manage-jobs' as AdminView,
       label: 'Manage Jobs',
       icon: Briefcase,
-      description: 'Edit and manage existing jobs',
       badge: `${activeJobs}/${totalJobs}`,
     },
     {
       id: 'submissions' as AdminView,
       label: 'Submissions',
       icon: FileText,
-      description: 'Review job applications',
       badge: waitingApplications > 0 ? waitingApplications.toString() : undefined,
     },
     {
       id: 'settings' as AdminView,
       label: 'Settings',
       icon: SettingsIcon,
-      description: 'System and profile settings',
     },
   ];
 
@@ -123,15 +119,10 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({ currentView, onViewChange }
                 }`}
               >
                 <div className="flex items-center justify-between w-full">
-                  <div className="flex items-start space-x-2 lg:space-x-3">
-                    <Icon className={`w-4 h-4 lg:w-5 lg:h-5 mt-0.5 ${isActive ? 'text-white' : 'text-gray-500'}`} />
-                    <div className="text-left">
-                      <div className={`font-medium text-sm lg:text-base ${isActive ? 'text-white' : 'text-gray-900'}`}>
-                        {item.label}
-                      </div>
-                      <div className={`text-xs ${isActive ? 'text-gray-200' : 'text-gray-500'} hidden lg:block`}>
-                        {item.description}
-                      </div>
+                  <div className="flex items-center space-x-2 lg:space-x-3">
+                    <Icon className={`w-4 h-4 lg:w-5 lg:h-5 ${isActive ? 'text-white' : 'text-gray-500'}`} />
+                    <div className={`font-medium text-sm lg:text-base ${isActive ? 'text-white' : 'text-gray-900'}`}>
+                      {item.label}
                     </div>
                   </div>
                   {item.badge && (
