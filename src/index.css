@@ -5,7 +5,7 @@
 @tailwind utilities;
 
 :root {
-  --primary: 222.2 84% 4.9%;
+  --primary: 202 100% 26.3%; /* #005288 */
   --primary-foreground: 210 40% 98%;
   --secondary: 210 40% 96%;
   --secondary-foreground: 222.2 84% 4.9%;
@@ -17,7 +17,7 @@
   --destructive-foreground: 210 40% 98%;
   --border: 214.3 31.8% 91.4%;
   --input: 214.3 31.8% 91.4%;
-  --ring: 222.2 84% 4.9%;
+  --ring: 202 100% 26.3%; /* #005288 */
   --radius: 0.75rem;
   --chart-1: 12 76% 61%;
   --chart-2: 173 58% 39%;
@@ -28,7 +28,7 @@
 
 .dark {
   --primary: 210 40% 98%;
-  --primary-foreground: 222.2 84% 4.9%;
+  --primary-foreground: 202 100% 26.3%; /* #005288 */
   --secondary: 222.2 84% 4.9%;
   --secondary-foreground: 210 40% 98%;
   --muted: 222.2 84% 4.9%;
@@ -55,6 +55,24 @@ body {
   font-family: 'Inter', sans-serif;
   color: hsl(var(--foreground));
   background: hsl(var(--background));
+}
+
+/* Cursor glow effect */
+.cursor-glow {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  pointer-events: none;
+  z-index: -1;
+  background: radial-gradient(
+    600px circle at var(--mouse-x, 50%) var(--mouse-y, 50%),
+    rgba(173, 216, 230, 0.08) 0%,
+    rgba(173, 216, 230, 0.04) 30%,
+    transparent 70%
+  );
+  transition: opacity 0.3s ease;
 }
 
 @layer utilities {
