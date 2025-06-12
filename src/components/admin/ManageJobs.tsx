@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -259,15 +258,15 @@ const ManageJobs: React.FC = () => {
                       <p className="text-primary font-medium text-sm sm:text-base">{job.position}</p>
                     </div>
                     
-                    {/* Status toggle - Mobile friendly */}
-                    <div className="flex items-center justify-between sm:justify-end space-x-2 bg-gray-50 p-2 rounded-lg sm:bg-transparent sm:p-0">
-                      <span className="text-sm text-gray-600 sm:order-2">
+                    {/* Status toggle - Desktop only */}
+                    <div className="hidden sm:flex items-center justify-end space-x-2">
+                      <span className="text-sm text-gray-600">
                         {job.isActive ? 'Active' : 'Inactive'}
                       </span>
                       <Switch
                         checked={job.isActive}
                         onCheckedChange={() => toggleJobStatus(job.id)}
-                        className="data-[state=checked]:bg-primary sm:order-1"
+                        className="data-[state=checked]:bg-primary"
                       />
                     </div>
                   </div>
@@ -289,14 +288,18 @@ const ManageJobs: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Action buttons - Mobile with status and dropdown, desktop inline */}
+                {/* Action buttons - Mobile with switch and dropdown */}
                 <div className="flex sm:hidden items-center justify-between">
-                  <Badge 
-                    variant={job.isActive ? "default" : "secondary"}
-                    className={job.isActive ? "bg-green-100 text-green-800 border-green-200" : "bg-gray-100 text-gray-600 border-gray-200"}
-                  >
-                    {job.isActive ? 'Active' : 'Inactive'}
-                  </Badge>
+                  <div className="flex items-center space-x-2">
+                    <span className="text-sm text-gray-600">
+                      {job.isActive ? 'Active' : 'Inactive'}
+                    </span>
+                    <Switch
+                      checked={job.isActive}
+                      onCheckedChange={() => toggleJobStatus(job.id)}
+                      className="data-[state=checked]:bg-primary"
+                    />
+                  </div>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <Button variant="outline" size="sm">
