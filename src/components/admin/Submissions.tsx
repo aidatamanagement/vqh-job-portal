@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -6,6 +5,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Search, Filter, Eye, X, FileText, Download, ExternalLink } from 'lucide-react';
 import { JobApplication } from '@/types';
 
@@ -88,11 +88,20 @@ const Submissions: React.FC = () => {
     return matchesSearch && matchesStatus && matchesPosition;
   });
 
-  const hasActiveFilters = searchTerm !== '' || statusFilter !== 'all' || positionFilter !== 'all';
+  const getSubmissionsByStatus = (status: string) => {
+    if (status === 'all') return filteredSubmissions;
+    return filteredSubmissions.filter(submission => submission.status === status);
+  };
+
+  const getStatusCount = (status: string) => {
+    if (status === 'all') return submissions.length;
+    return submissions.filter(submission => submission.status === status).length;
+  };
+
+  const hasActiveFilters = searchTerm !== '' || positionFilter !== 'all';
 
   const clearAllFilters = () => {
     setSearchTerm('');
-    setStatusFilter('all');
     setPositionFilter('all');
   };
 
@@ -148,6 +157,70 @@ const Submissions: React.FC = () => {
     setViewingFile({ url, name });
   };
 
+  const renderSubmissionsTable = (submissions: JobApplication[]) => (
+    <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
+      <Table>
+        <TableHeader>
+          <TableRow className="bg-gray-50">
+            <TableHead className="font-semibold">Candidate</TableHead>
+            <TableHead className="font-semibold">Position</TableHead>
+            <TableHead className="font-semibold">Applied Date</TableHead>
+            <TableHead className="font-semibold">Location</TableHead>
+            <TableHead className="font-semibold">Status</TableHead>
+            <TableHead className="font-semibold text-right">Actions</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {submissions.length === 0 ? (
+            <TableRow>
+              <TableCell colSpan={6} className="text-center py-8 text-gray-500">
+                No applications found matching your criteria.
+              </TableCell>
+            </TableRow>
+          ) : (
+            submissions.map((application) => (
+              <TableRow key={application.id} className="hover:bg-gray-50 transition-colors">
+                <TableCell>
+                  <div>
+                    <div className="font-medium text-gray-900">
+                      {application.firstName} {application.lastName}
+                    </div>
+                    <div className="text-sm text-gray-500">{application.email}</div>
+                  </div>
+                </TableCell>
+                <TableCell>
+                  <span className="font-medium text-gray-900">{application.appliedPosition}</span>
+                </TableCell>
+                <TableCell>
+                  <span className="text-gray-600">{formatDate(application.createdAt)}</span>
+                </TableCell>
+                <TableCell>
+                  <span className="text-gray-600">{application.cityState}</span>
+                </TableCell>
+                <TableCell>
+                  <Badge variant={getStatusBadgeVariant(application.status)}>
+                    {getStatusText(application.status)}
+                  </Badge>
+                </TableCell>
+                <TableCell className="text-right">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setSelectedApplication(application)}
+                    className="inline-flex items-center gap-2"
+                  >
+                    <Eye className="w-4 h-4" />
+                    View Details
+                  </Button>
+                </TableCell>
+              </TableRow>
+            ))
+          )}
+        </TableBody>
+      </Table>
+    </div>
+  );
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -168,18 +241,6 @@ const Submissions: React.FC = () => {
               />
             </div>
           </div>
-          
-          <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className="w-full lg:w-48">
-              <SelectValue placeholder="Filter by status" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Statuses</SelectItem>
-              <SelectItem value="waiting">Pending</SelectItem>
-              <SelectItem value="approved">Approved</SelectItem>
-              <SelectItem value="declined">Declined</SelectItem>
-            </SelectContent>
-          </Select>
 
           <Select value={positionFilter} onValueChange={setPositionFilter}>
             <SelectTrigger className="w-full lg:w-48">
@@ -200,74 +261,61 @@ const Submissions: React.FC = () => {
               className="whitespace-nowrap"
             >
               <X className="w-4 h-4 mr-2" />
-              Clear All Filters
+              Clear Filters
             </Button>
           )}
         </div>
       </div>
 
-      {/* Applications Table */}
-      <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
-        <Table>
-          <TableHeader>
-            <TableRow className="bg-gray-50">
-              <TableHead className="font-semibold">Candidate</TableHead>
-              <TableHead className="font-semibold">Position</TableHead>
-              <TableHead className="font-semibold">Applied Date</TableHead>
-              <TableHead className="font-semibold">Location</TableHead>
-              <TableHead className="font-semibold">Status</TableHead>
-              <TableHead className="font-semibold text-right">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {filteredSubmissions.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={6} className="text-center py-8 text-gray-500">
-                  No applications found matching your criteria.
-                </TableCell>
-              </TableRow>
-            ) : (
-              filteredSubmissions.map((application) => (
-                <TableRow key={application.id} className="hover:bg-gray-50 transition-colors">
-                  <TableCell>
-                    <div>
-                      <div className="font-medium text-gray-900">
-                        {application.firstName} {application.lastName}
-                      </div>
-                      <div className="text-sm text-gray-500">{application.email}</div>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <span className="font-medium text-gray-900">{application.appliedPosition}</span>
-                  </TableCell>
-                  <TableCell>
-                    <span className="text-gray-600">{formatDate(application.createdAt)}</span>
-                  </TableCell>
-                  <TableCell>
-                    <span className="text-gray-600">{application.cityState}</span>
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant={getStatusBadgeVariant(application.status)}>
-                      {getStatusText(application.status)}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setSelectedApplication(application)}
-                      className="inline-flex items-center gap-2"
-                    >
-                      <Eye className="w-4 h-4" />
-                      View Details
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
-      </div>
+      {/* Status Tabs with Counts */}
+      <Tabs 
+        value={statusFilter} 
+        onValueChange={setStatusFilter}
+        className="w-full"
+      >
+        <TabsList className="grid w-full grid-cols-4">
+          <TabsTrigger value="all" className="flex items-center gap-2">
+            All
+            <Badge variant="secondary" className="text-xs">
+              {getStatusCount('all')}
+            </Badge>
+          </TabsTrigger>
+          <TabsTrigger value="waiting" className="flex items-center gap-2">
+            Pending
+            <Badge variant="secondary" className="text-xs">
+              {getStatusCount('waiting')}
+            </Badge>
+          </TabsTrigger>
+          <TabsTrigger value="approved" className="flex items-center gap-2">
+            Approved
+            <Badge variant="secondary" className="text-xs">
+              {getStatusCount('approved')}
+            </Badge>
+          </TabsTrigger>
+          <TabsTrigger value="declined" className="flex items-center gap-2">
+            Declined
+            <Badge variant="secondary" className="text-xs">
+              {getStatusCount('declined')}
+            </Badge>
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="all" className="mt-6">
+          {renderSubmissionsTable(getSubmissionsByStatus('all'))}
+        </TabsContent>
+
+        <TabsContent value="waiting" className="mt-6">
+          {renderSubmissionsTable(getSubmissionsByStatus('waiting'))}
+        </TabsContent>
+
+        <TabsContent value="approved" className="mt-6">
+          {renderSubmissionsTable(getSubmissionsByStatus('approved'))}
+        </TabsContent>
+
+        <TabsContent value="declined" className="mt-6">
+          {renderSubmissionsTable(getSubmissionsByStatus('declined'))}
+        </TabsContent>
+      </Tabs>
 
       {/* Application Details Modal */}
       <Dialog open={!!selectedApplication} onOpenChange={(open) => !open && setSelectedApplication(null)}>
