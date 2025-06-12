@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -19,7 +18,7 @@ import { useAppContext } from '@/contexts/AppContext';
 import { toast } from '@/hooks/use-toast';
 
 const Settings: React.FC = () => {
-  const { user } = useAppContext();
+  const { user, updateUserDisplayName } = useAppContext();
   const [activeTab, setActiveTab] = useState('profile');
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
@@ -27,6 +26,7 @@ const Settings: React.FC = () => {
   
   // Profile form state
   const [profileForm, setProfileForm] = useState({
+    displayName: user?.displayName || '',
     email: user?.email || '',
     currentPassword: '',
     newPassword: '',
@@ -64,6 +64,11 @@ const Settings: React.FC = () => {
         variant: "destructive",
       });
       return;
+    }
+
+    // Update display name if changed
+    if (profileForm.displayName !== user?.displayName) {
+      updateUserDisplayName(profileForm.displayName);
     }
 
     toast({
@@ -210,6 +215,21 @@ const Settings: React.FC = () => {
               </h3>
               
               <form onSubmit={updateProfile} className="space-y-4">
+                <div>
+                  <Label htmlFor="displayName">Display Name</Label>
+                  <Input
+                    id="displayName"
+                    type="text"
+                    value={profileForm.displayName}
+                    onChange={(e) => handleProfileInputChange('displayName', e.target.value)}
+                    className="mt-1"
+                    placeholder="Enter your display name"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    This name will be shown in the admin header
+                  </p>
+                </div>
+
                 <div>
                   <Label htmlFor="email">Email Address</Label>
                   <Input

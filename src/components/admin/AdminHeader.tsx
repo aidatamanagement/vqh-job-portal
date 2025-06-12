@@ -43,7 +43,9 @@ const AdminHeader: React.FC = () => {
               <User className="w-4 h-4 text-white" />
             </div>
             <div className="text-sm">
-              <p className="font-medium text-gray-900">Administrator</p>
+              <p className="font-medium text-gray-900">
+                {user?.displayName || 'Administrator'}
+              </p>
               <p className="text-gray-600">{user?.email || 'admin@hospicecare.com'}</p>
             </div>
           </div>

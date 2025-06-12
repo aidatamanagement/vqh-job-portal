@@ -1,4 +1,3 @@
-
 export interface Job {
   id: string;
   title: string;
@@ -52,6 +51,7 @@ export interface User {
   id: string;
   email: string;
   role: 'admin';
+  displayName?: string;
   createdAt: string;
 }
 

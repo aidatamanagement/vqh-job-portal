@@ -7,6 +7,7 @@ interface AppContextType {
   isAuthenticated: boolean;
   login: (email: string, password: string) => Promise<boolean>;
   logout: () => void;
+  updateUserDisplayName: (displayName: string) => void;
   
   // Jobs state
   jobs: Job[];
@@ -197,6 +198,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         id: '1',
         email: 'admin@hospicecare.com',
         role: 'admin',
+        displayName: 'System Administrator',
         createdAt: new Date().toISOString(),
       };
       setUser(adminUser);
@@ -214,6 +216,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     localStorage.removeItem('user');
   };
 
+  const updateUserDisplayName = (displayName: string) => {
+    if (user) {
+      const updatedUser = { ...user, displayName };
+      setUser(updatedUser);
+      localStorage.setItem('user', JSON.stringify(updatedUser));
+    }
+  };
+
   // Check for existing session on mount
   useEffect(() => {
     const savedUser = localStorage.getItem('user');
@@ -227,6 +237,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     isAuthenticated,
     login,
     logout,
+    updateUserDisplayName,
     jobs,
     setJobs,
     applications,
