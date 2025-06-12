@@ -23,6 +23,12 @@ export interface JobLocation {
   createdAt: string;
 }
 
+export interface JobFacility {
+  id: string;
+  name: string;
+  createdAt: string;
+}
+
 export interface JobApplication {
   id: string;
   jobId: string;

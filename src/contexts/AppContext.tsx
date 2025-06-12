@@ -1,6 +1,5 @@
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { Job, JobApplication, JobPosition, JobLocation, User, FilterState } from '@/types';
+import { Job, JobApplication, JobPosition, JobLocation, JobFacility, User, FilterState } from '@/types';
 
 interface AppContextType {
   // Auth state
@@ -22,6 +21,8 @@ interface AppContextType {
   setPositions: React.Dispatch<React.SetStateAction<JobPosition[]>>;
   locations: JobLocation[];
   setLocations: React.Dispatch<React.SetStateAction<JobLocation[]>>;
+  facilities: JobFacility[];
+  setFacilities: React.Dispatch<React.SetStateAction<JobFacility[]>>;
   
   // UI state
   isLoading: boolean;
@@ -44,6 +45,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [applications, setApplications] = useState<JobApplication[]>([]);
   const [positions, setPositions] = useState<JobPosition[]>([]);
   const [locations, setLocations] = useState<JobLocation[]>([]);
+  const [facilities, setFacilities] = useState<JobFacility[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
   const isAuthenticated = !!user;
@@ -67,6 +69,20 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       { id: '3', name: 'San Diego, CA', createdAt: new Date().toISOString() },
       { id: '4', name: 'Sacramento, CA', createdAt: new Date().toISOString() },
       { id: '5', name: 'Orange County, CA', createdAt: new Date().toISOString() },
+    ]);
+
+    // Sample facilities
+    setFacilities([
+      { id: '1', name: 'Full-time', createdAt: new Date().toISOString() },
+      { id: '2', name: 'Part-time', createdAt: new Date().toISOString() },
+      { id: '3', name: 'Benefits', createdAt: new Date().toISOString() },
+      { id: '4', name: 'Flexible Schedule', createdAt: new Date().toISOString() },
+      { id: '5', name: 'Remote Options', createdAt: new Date().toISOString() },
+      { id: '6', name: 'Training Provided', createdAt: new Date().toISOString() },
+      { id: '7', name: 'Professional Development', createdAt: new Date().toISOString() },
+      { id: '8', name: 'Evening Shift', createdAt: new Date().toISOString() },
+      { id: '9', name: 'Contract', createdAt: new Date().toISOString() },
+      { id: '10', name: 'Continuing Education', createdAt: new Date().toISOString() },
     ]);
 
     // Sample jobs
@@ -219,6 +235,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setPositions,
     locations,
     setLocations,
+    facilities,
+    setFacilities,
     isLoading,
     setIsLoading,
   };
