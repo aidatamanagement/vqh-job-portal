@@ -154,8 +154,7 @@ const ManageJobs: React.FC = () => {
           <Briefcase className="w-4 h-4 lg:w-6 lg:h-6 text-white" />
         </div>
         <div>
-          <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900">Manage Jobs</h1>
-          <p className="text-sm sm:text-base text-gray-600">Edit, activate, and manage your job postings</p>
+          <h1 className="font-bold text-gray-900" style={{ fontSize: '1.3rem' }}>Manage Jobs</h1>
         </div>
       </div>
 

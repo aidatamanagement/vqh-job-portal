@@ -178,8 +178,7 @@ const PostJob: React.FC = () => {
           <Plus className="w-6 h-6 text-white" />
         </div>
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Post New Job</h1>
-          <p className="text-gray-600">Create and manage job postings</p>
+          <h1 className="font-bold text-gray-900" style={{ fontSize: '1.3rem' }}>Post New Job</h1>
         </div>
       </div>
 
