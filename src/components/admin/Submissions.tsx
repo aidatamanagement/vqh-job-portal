@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -14,15 +15,14 @@ import {
   Download,
   FileText,
   Calendar,
-  Mail,
-  Phone,
   MapPin,
   User,
   Clock,
   CheckCircle,
   XCircle,
-  Archive,
-  StickyNote
+  StickyNote,
+  ExternalLink,
+  FilterX
 } from 'lucide-react';
 import { useAppContext } from '@/contexts/AppContext';
 import { JobApplication } from '@/types';
@@ -36,6 +36,16 @@ const Submissions: React.FC = () => {
   const [filterLocation, setFilterLocation] = useState('all');
   const [viewingApplication, setViewingApplication] = useState<JobApplication | null>(null);
   const [notes, setNotes] = useState('');
+
+  // Check if any filters are active
+  const hasActiveFilters = searchTerm !== '' || filterJob !== 'all' || filterLocation !== 'all';
+
+  // Clear all filters
+  const clearAllFilters = () => {
+    setSearchTerm('');
+    setFilterJob('all');
+    setFilterLocation('all');
+  };
 
   // Filter applications by status
   const getFilteredApplications = (status: 'waiting' | 'approved' | 'declined') => {
@@ -103,6 +113,16 @@ const Submissions: React.FC = () => {
     });
   };
 
+  const viewDocument = (docUrl: string, docName: string) => {
+    // Simulate opening document in new tab for viewing
+    toast({
+      title: "Opening Document",
+      description: `Opening ${docName} for viewing`,
+    });
+    // In a real application, this would open the document in a new tab or embedded viewer
+    window.open(docUrl, '_blank');
+  };
+
   const getStatusBadgeVariant = (status: string) => {
     switch (status) {
       case 'approved':
@@ -134,16 +154,13 @@ const Submissions: React.FC = () => {
     
     return (
       <Card key={application.id} className="p-6 hover:shadow-md transition-shadow">
-        <div className="flex items-start justify-between">
+        <div className="flex items-center justify-between">
           <div className="flex-1 space-y-3">
-            <div className="flex items-start justify-between">
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900">
-                  {application.firstName} {application.lastName}
-                </h3>
-                <p className="text-primary font-medium">{application.appliedPosition}</p>
-                <p className="text-sm text-gray-600">{job?.title}</p>
-              </div>
+            {/* Candidate Name and Status */}
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-semibold text-gray-900">
+                {application.firstName} {application.lastName}
+              </h3>
               <Badge 
                 variant={getStatusBadgeVariant(application.status)}
                 className="flex items-center space-x-1"
@@ -153,57 +170,40 @@ const Submissions: React.FC = () => {
               </Badge>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-gray-600">
+            {/* Job Position */}
+            <div className="text-primary font-medium">
+              {application.appliedPosition}
+            </div>
+
+            {/* Applied Date, Location */}
+            <div className="flex items-center space-x-6 text-sm text-gray-600">
               <div className="flex items-center space-x-2">
-                <Mail className="w-4 h-4" />
-                <span>{application.email}</span>
-              </div>
-              <div className="flex items-center space-x-2">
-                <Phone className="w-4 h-4" />
-                <span>{application.phone}</span>
+                <Calendar className="w-4 h-4" />
+                <span>Applied {new Date(application.createdAt).toLocaleDateString()}</span>
               </div>
               <div className="flex items-center space-x-2">
                 <MapPin className="w-4 h-4" />
                 <span>{application.cityState}</span>
               </div>
-            </div>
-
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-4 text-sm text-gray-600">
-                <div className="flex items-center space-x-1">
-                  <Calendar className="w-4 h-4" />
-                  <span>Applied {new Date(application.createdAt).toLocaleDateString()}</span>
+              {application.notes && (
+                <div className="flex items-center space-x-1 text-primary">
+                  <StickyNote className="w-4 h-4" />
+                  <span>Has notes</span>
                 </div>
-                <div className="flex items-center space-x-1">
-                  <Calendar className="w-4 h-4" />
-                  <span>Start: {new Date(application.earliestStartDate).toLocaleDateString()}</span>
-                </div>
-                {application.notes && (
-                  <div className="flex items-center space-x-1 text-primary">
-                    <StickyNote className="w-4 h-4" />
-                    <span>Has notes</span>
-                  </div>
-                )}
-              </div>
+              )}
             </div>
           </div>
 
-          <div className="flex items-center space-x-2 ml-6">
+          {/* View Button */}
+          <div className="ml-6">
             <Button
               variant="outline"
               size="sm"
               onClick={() => openApplicationModal(application)}
               className="text-blue-600 hover:text-blue-700"
             >
-              <Eye className="w-4 h-4" />
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => downloadAllDocuments(application)}
-              className="text-green-600 hover:text-green-700"
-            >
-              <Download className="w-4 h-4" />
+              <Eye className="w-4 h-4 mr-2" />
+              View
             </Button>
           </div>
         </div>
@@ -265,6 +265,21 @@ const Submissions: React.FC = () => {
             </SelectContent>
           </Select>
         </div>
+
+        {/* Clear Filters Button */}
+        {hasActiveFilters && (
+          <div className="mt-4 flex justify-start">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={clearAllFilters}
+              className="flex items-center gap-2 text-gray-600 hover:text-gray-900"
+            >
+              <FilterX className="w-4 h-4" />
+              Clear All Filters
+            </Button>
+          </div>
+        )}
       </Card>
 
       {/* Submissions Tabs */}
@@ -381,7 +396,7 @@ const Submissions: React.FC = () => {
                 <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center justify-between">
                   <span className="flex items-center">
                     <FileText className="w-5 h-5 mr-2 text-primary" />
-                    Documents
+                    Documents & Attachments
                   </span>
                   <Button
                     onClick={() => downloadAllDocuments(viewingApplication)}
@@ -401,9 +416,20 @@ const Submissions: React.FC = () => {
                         <span className="font-medium">Resume</span>
                         <span className="text-sm text-gray-600">({viewingApplication.resumeUrl})</span>
                       </div>
-                      <Button variant="ghost" size="sm" className="text-blue-600 hover:text-blue-700">
-                        <Download className="w-4 h-4" />
-                      </Button>
+                      <div className="flex space-x-2">
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          className="text-blue-600 hover:text-blue-700"
+                          onClick={() => viewDocument(viewingApplication.resumeUrl!, 'Resume')}
+                        >
+                          <ExternalLink className="w-4 h-4 mr-1" />
+                          View
+                        </Button>
+                        <Button variant="ghost" size="sm" className="text-green-600 hover:text-green-700">
+                          <Download className="w-4 h-4" />
+                        </Button>
+                      </div>
                     </div>
                   )}
                   {viewingApplication.additionalDocsUrls.map((doc, index) => (
@@ -413,9 +439,20 @@ const Submissions: React.FC = () => {
                         <span className="font-medium">Additional Document {index + 1}</span>
                         <span className="text-sm text-gray-600">({doc})</span>
                       </div>
-                      <Button variant="ghost" size="sm" className="text-blue-600 hover:text-blue-700">
-                        <Download className="w-4 h-4" />
-                      </Button>
+                      <div className="flex space-x-2">
+                        <Button 
+                          variant="ghost"
+                          size="sm" 
+                          className="text-blue-600 hover:text-blue-700"
+                          onClick={() => viewDocument(doc, `Additional Document ${index + 1}`)}
+                        >
+                          <ExternalLink className="w-4 h-4 mr-1" />
+                          View
+                        </Button>
+                        <Button variant="ghost" size="sm" className="text-green-600 hover:text-green-700">
+                          <Download className="w-4 h-4" />
+                        </Button>
+                      </div>
                     </div>
                   ))}
                 </div>
