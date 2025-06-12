@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAppContext } from '@/contexts/AppContext';
+import AdminHeader from '@/components/admin/AdminHeader';
 import AdminSidebar from '@/components/admin/AdminSidebar';
 import PostJob from '@/components/admin/PostJob';
 import ManageJobs from '@/components/admin/ManageJobs';
@@ -35,6 +36,7 @@ const AdminDashboard: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      <AdminHeader />
       <div className="flex">
         <AdminSidebar currentView={currentView} onViewChange={setCurrentView} />
         <main className="flex-1 p-8">
