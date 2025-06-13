@@ -13,13 +13,13 @@ import {
   AlertTriangle,
   Clock
 } from 'lucide-react';
-import { Job, Position, Location } from '@/types';
+import { Job, JobPosition, JobLocation } from '@/types';
 
 interface EditJobModalProps {
   editingJob: Job | null;
   jobForm: Partial<Job>;
-  positions: Position[];
-  locations: Location[];
+  positions: JobPosition[];
+  locations: JobLocation[];
   onClose: () => void;
   onInputChange: (field: string, value: string | string[] | boolean) => void;
   onFacilityToggle: (facility: string) => void;

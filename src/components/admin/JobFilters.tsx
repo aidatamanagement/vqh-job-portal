@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Search, FilterX } from 'lucide-react';
-import { Position, Location } from '@/types';
+import { JobPosition, JobLocation } from '@/types';
 
 interface JobFiltersProps {
   searchTerm: string;
@@ -16,8 +16,8 @@ interface JobFiltersProps {
   setFilterLocation: (location: string) => void;
   filterStatus: string;
   setFilterStatus: (status: string) => void;
-  positions: Position[];
-  locations: Location[];
+  positions: JobPosition[];
+  locations: JobLocation[];
   hasActiveFilters: boolean;
   onClearFilters: () => void;
 }
