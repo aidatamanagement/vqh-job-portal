@@ -63,7 +63,6 @@ const AdminHeader: React.FC<AdminHeaderProps> = ({ onMenuClick }) => {
               <p className="font-medium text-gray-900">
                 {user?.displayName || 'Administrator'}
               </p>
-              <p className="text-gray-600 text-xs">{user?.email || 'admin@hospicecare.com'}</p>
             </div>
           </div>
 
