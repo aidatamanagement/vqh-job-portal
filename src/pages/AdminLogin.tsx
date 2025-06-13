@@ -52,9 +52,9 @@ const AdminLogin: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center py-12 px-4">
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center py-12 px-4 animate-slide-up">
       <div className="max-w-md w-full space-y-8">
-        <div className="text-center animate-fade-in-up">
+        <div className="text-center animate-slide-up">
           <div className="w-16 h-16 bg-primary rounded-full flex items-center justify-center mx-auto mb-4">
             <Lock className="w-8 h-8 text-white" />
           </div>
@@ -62,7 +62,7 @@ const AdminLogin: React.FC = () => {
           <p className="text-gray-600 mt-2">Sign in to access the dashboard</p>
         </div>
 
-        <Card className="p-8 animate-fade-in" style={{ animationDelay: '0.2s' }}>
+        <Card className="p-8 animate-slide-up-delayed">
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
               <Label htmlFor="email" className="text-gray-900">Email Address</Label>
@@ -130,7 +130,7 @@ const AdminLogin: React.FC = () => {
           </div>
         </Card>
 
-        <div className="text-center">
+        <div className="text-center animate-slide-up-delayed-2">
           <Button
             variant="ghost"
             onClick={() => navigate('/')}

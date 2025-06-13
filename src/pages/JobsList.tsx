@@ -61,11 +61,11 @@ const JobsList: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 animate-slide-up">
       <div className="container mx-auto px-4 py-8">
         <div className="space-y-8">
           {/* Page Header */}
-          <div className="text-center space-y-4 animate-fade-in-up">
+          <div className="text-center space-y-4 animate-slide-up">
             <h1 className="text-4xl font-bold text-gray-900">
               Join Our Mission of Compassionate Care
             </h1>
@@ -75,18 +75,20 @@ const JobsList: React.FC = () => {
           </div>
 
           {/* Filters */}
-          <JobFilters
-            filters={filters}
-            onFiltersChange={setFilters}
-            totalJobs={filteredJobs.length}
-          />
+          <div className="animate-slide-up-delayed">
+            <JobFilters
+              filters={filters}
+              onFiltersChange={setFilters}
+              totalJobs={filteredJobs.length}
+            />
+          </div>
 
           {/* Jobs Grid */}
           {displayedJobs.length > 0 ? (
             <>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-slide-up-delayed-2">
                 {displayedJobs.map((job, index) => (
-                  <div key={job.id} style={{ animationDelay: `${index * 0.1}s` }}>
+                  <div key={job.id} style={{ animationDelay: `${0.8 + index * 0.1}s` }} className="animate-slide-up opacity-0" style={{ animationFillMode: 'forwards' }}>
                     <JobCard job={job} />
                   </div>
                 ))}
@@ -94,7 +96,7 @@ const JobsList: React.FC = () => {
 
               {/* Load More Button */}
               {hasMore && (
-                <div className="flex justify-center pt-8">
+                <div className="flex justify-center pt-8 animate-slide-up-delayed-3">
                   <Button
                     onClick={handleLoadMore}
                     variant="outline"
@@ -107,7 +109,7 @@ const JobsList: React.FC = () => {
               )}
             </>
           ) : (
-            <div className="text-center py-12 animate-fade-in">
+            <div className="text-center py-12 animate-slide-up-delayed-2">
               <div className="max-w-md mx-auto">
                 <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
                   <Search className="w-8 h-8 text-gray-400" />

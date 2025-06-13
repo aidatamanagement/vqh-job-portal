@@ -6,7 +6,7 @@ import CursorGlow from '@/components/CursorGlow';
 
 const Index: React.FC = () => {
   return (
-    <div className="min-h-screen bg-white relative">
+    <div className="min-h-screen bg-white relative animate-slide-up">
       <CursorGlow />
       <Header />
       <JobsList />

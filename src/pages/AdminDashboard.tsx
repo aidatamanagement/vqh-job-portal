@@ -36,7 +36,7 @@ const AdminDashboard: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 animate-slide-up">
       <AdminHeader onMenuClick={() => setSidebarOpen(!sidebarOpen)} />
       <div className="flex relative">
         {/* Mobile Sidebar Overlay */}
@@ -49,7 +49,7 @@ const AdminDashboard: React.FC = () => {
         
         {/* Sidebar */}
         <div className={`
-          fixed lg:relative lg:translate-x-0 transition-transform duration-300 ease-in-out z-50
+          fixed lg:relative lg:translate-x-0 transition-transform duration-300 ease-in-out z-50 animate-slide-in-right
           ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
         `}>
           <AdminSidebar 
@@ -62,7 +62,7 @@ const AdminDashboard: React.FC = () => {
         </div>
         
         {/* Main Content */}
-        <main className="flex-1 p-4 lg:p-8 w-full lg:w-auto">
+        <main className="flex-1 p-4 lg:p-8 w-full lg:w-auto animate-slide-up-delayed">
           <div className="max-w-7xl mx-auto">
             {renderContent()}
           </div>
