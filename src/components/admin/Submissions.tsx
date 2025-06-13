@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Search, Filter, Eye, X, FileText, Download, ExternalLink } from 'lucide-react';
+import { Search, Filter, Eye, X, FileText, Download, ExternalLink, Inbox } from 'lucide-react';
 import { JobApplication } from '@/types';
 
 // Mock data for submissions
@@ -224,7 +224,10 @@ const Submissions: React.FC = () => {
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold text-gray-900">Job Applications</h1>
+        <div className="flex items-center gap-3">
+          <Inbox className="w-6 h-6 text-gray-700" />
+          <h1 className="text-3xl font-bold text-gray-900">Submissions</h1>
+        </div>
       </div>
 
       {/* Filters */}
