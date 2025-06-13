@@ -1,4 +1,5 @@
 
+
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -226,8 +227,8 @@ const Submissions: React.FC = () => {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div className="flex items-center gap-3">
-          <div className="p-2 bg-blue-100 rounded-lg">
-            <Inbox className="w-6 h-6 text-blue-600" />
+          <div className="p-2 rounded-lg" style={{ backgroundColor: '#005586' }}>
+            <Inbox className="w-6 h-6 text-white" />
           </div>
           <h1 className="font-bold text-gray-900" style={{ fontSize: '1.3rem' }}>Submissions</h1>
         </div>
@@ -515,3 +516,4 @@ const Submissions: React.FC = () => {
 };
 
 export default Submissions;
+
