@@ -9,16 +9,208 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      job_applications: {
+        Row: {
+          additional_docs_urls: string[] | null
+          applied_position: string
+          city_state: string
+          cover_letter: string
+          created_at: string | null
+          earliest_start_date: string
+          email: string
+          first_name: string
+          id: string
+          job_id: string | null
+          last_name: string
+          notes: string | null
+          phone: string
+          resume_url: string | null
+          status: Database["public"]["Enums"]["application_status"] | null
+          updated_at: string | null
+        }
+        Insert: {
+          additional_docs_urls?: string[] | null
+          applied_position: string
+          city_state: string
+          cover_letter: string
+          created_at?: string | null
+          earliest_start_date: string
+          email: string
+          first_name: string
+          id?: string
+          job_id?: string | null
+          last_name: string
+          notes?: string | null
+          phone: string
+          resume_url?: string | null
+          status?: Database["public"]["Enums"]["application_status"] | null
+          updated_at?: string | null
+        }
+        Update: {
+          additional_docs_urls?: string[] | null
+          applied_position?: string
+          city_state?: string
+          cover_letter?: string
+          created_at?: string | null
+          earliest_start_date?: string
+          email?: string
+          first_name?: string
+          id?: string
+          job_id?: string | null
+          last_name?: string
+          notes?: string | null
+          phone?: string
+          resume_url?: string | null
+          status?: Database["public"]["Enums"]["application_status"] | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "job_applications_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "jobs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      job_facilities: {
+        Row: {
+          created_at: string | null
+          id: string
+          name: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          name: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
+      job_locations: {
+        Row: {
+          created_at: string | null
+          id: string
+          name: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          name: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
+      job_positions: {
+        Row: {
+          created_at: string | null
+          id: string
+          name: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          name: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
+      jobs: {
+        Row: {
+          application_deadline: string | null
+          created_at: string | null
+          description: string
+          facilities: string[] | null
+          id: string
+          is_active: boolean | null
+          is_urgent: boolean | null
+          location: string
+          position: string
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          application_deadline?: string | null
+          created_at?: string | null
+          description: string
+          facilities?: string[] | null
+          id?: string
+          is_active?: boolean | null
+          is_urgent?: boolean | null
+          location: string
+          position: string
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          application_deadline?: string | null
+          created_at?: string | null
+          description?: string
+          facilities?: string[] | null
+          id?: string
+          is_active?: boolean | null
+          is_urgent?: boolean | null
+          location?: string
+          position?: string
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          created_at: string | null
+          display_name: string | null
+          email: string
+          id: string
+          role: Database["public"]["Enums"]["user_role"]
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          display_name?: string | null
+          email: string
+          id: string
+          role?: Database["public"]["Enums"]["user_role"]
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          display_name?: string | null
+          email?: string
+          id?: string
+          role?: Database["public"]["Enums"]["user_role"]
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      is_admin: {
+        Args: { user_id?: string }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      application_status: "waiting" | "approved" | "declined"
+      job_status: "active" | "inactive"
+      user_role: "admin"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -133,6 +325,10 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      application_status: ["waiting", "approved", "declined"],
+      job_status: ["active", "inactive"],
+      user_role: ["admin"],
+    },
   },
 } as const

@@ -1,5 +1,9 @@
+
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { Job, JobApplication, JobPosition, JobLocation, JobFacility, User, FilterState } from '@/types';
+import { supabase } from '@/integrations/supabase/client';
+import { Session } from '@supabase/supabase-js';
+import { toast } from '@/hooks/use-toast';
 
 interface AppContextType {
   // Auth state
@@ -42,6 +46,7 @@ export const useAppContext = () => {
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
+  const [session, setSession] = useState<Session | null>(null);
   const [jobs, setJobs] = useState<Job[]>([]);
   const [applications, setApplications] = useState<JobApplication[]>([]);
   const [positions, setPositions] = useState<JobPosition[]>([]);
@@ -49,188 +54,218 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [facilities, setFacilities] = useState<JobFacility[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
-  const isAuthenticated = !!user;
+  const isAuthenticated = !!session && !!user;
 
-  // Initialize with sample data
+  // Initialize auth state and set up listener
   useEffect(() => {
-    // Sample positions
-    setPositions([
-      { id: '1', name: 'Registered Nurse', createdAt: new Date().toISOString() },
-      { id: '2', name: 'Certified Nursing Assistant', createdAt: new Date().toISOString() },
-      { id: '3', name: 'Social Worker', createdAt: new Date().toISOString() },
-      { id: '4', name: 'Chaplain', createdAt: new Date().toISOString() },
-      { id: '5', name: 'Physical Therapist', createdAt: new Date().toISOString() },
-      { id: '6', name: 'Home Health Aide', createdAt: new Date().toISOString() },
-    ]);
+    // Set up auth state listener
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        console.log('Auth state changed:', event, session);
+        setSession(session);
+        
+        if (session?.user) {
+          // Fetch user profile from database
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', session.user.id)
+            .single();
+          
+          if (profile) {
+            setUser({
+              id: profile.id,
+              email: profile.email,
+              role: profile.role,
+              displayName: profile.display_name,
+              createdAt: profile.created_at,
+            });
+          }
+        } else {
+          setUser(null);
+        }
+      }
+    );
 
-    // Sample locations
-    setLocations([
-      { id: '1', name: 'Los Angeles, CA', createdAt: new Date().toISOString() },
-      { id: '2', name: 'San Francisco, CA', createdAt: new Date().toISOString() },
-      { id: '3', name: 'San Diego, CA', createdAt: new Date().toISOString() },
-      { id: '4', name: 'Sacramento, CA', createdAt: new Date().toISOString() },
-      { id: '5', name: 'Orange County, CA', createdAt: new Date().toISOString() },
-    ]);
+    // Check for existing session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+    });
 
-    // Sample facilities
-    setFacilities([
-      { id: '1', name: 'Full-time', createdAt: new Date().toISOString() },
-      { id: '2', name: 'Part-time', createdAt: new Date().toISOString() },
-      { id: '3', name: 'Benefits', createdAt: new Date().toISOString() },
-      { id: '4', name: 'Flexible Schedule', createdAt: new Date().toISOString() },
-      { id: '5', name: 'Remote Options', createdAt: new Date().toISOString() },
-      { id: '6', name: 'Training Provided', createdAt: new Date().toISOString() },
-      { id: '7', name: 'Professional Development', createdAt: new Date().toISOString() },
-      { id: '8', name: 'Evening Shift', createdAt: new Date().toISOString() },
-      { id: '9', name: 'Contract', createdAt: new Date().toISOString() },
-      { id: '10', name: 'Continuing Education', createdAt: new Date().toISOString() },
-    ]);
-
-    // Sample jobs
-    const sampleJobs: Job[] = [
-      {
-        id: '1',
-        title: 'Compassionate Registered Nurse - Home Care',
-        description: 'Join our dedicated team of healthcare professionals providing compassionate end-of-life care in patients\' homes. We are seeking an experienced Registered Nurse who is passionate about hospice care and committed to improving the quality of life for patients and their families during challenging times. This role involves comprehensive patient assessment, medication management, pain control, and providing emotional support to both patients and families. You will work closely with an interdisciplinary team including physicians, social workers, chaplains, and home health aides to develop and implement individualized care plans. The ideal candidate will have excellent clinical skills, strong communication abilities, and a deep understanding of palliative care principles. We offer competitive compensation, comprehensive benefits, flexible scheduling, and opportunities for professional development in a supportive work environment.',
-        position: 'Registered Nurse',
-        location: 'Los Angeles, CA',
-        facilities: ['Full-time', 'Benefits', 'Flexible Schedule'],
-        isActive: true,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      },
-      {
-        id: '2',
-        title: 'Certified Nursing Assistant - Evening Shift',
-        description: 'We are looking for a compassionate Certified Nursing Assistant to join our hospice care team for evening shifts. This position is perfect for someone who wants to make a meaningful difference in the lives of patients and families during their most vulnerable moments. As a CNA, you will provide direct patient care including personal hygiene assistance, mobility support, vital signs monitoring, and companionship. You will work under the supervision of registered nurses and contribute to maintaining detailed patient records. The role requires excellent interpersonal skills, attention to detail, and the ability to work independently while being part of a collaborative healthcare team.',
-        position: 'Certified Nursing Assistant',
-        location: 'San Francisco, CA',
-        facilities: ['Part-time', 'Evening Shift', 'Training Provided'],
-        isActive: true,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      },
-      {
-        id: '3',
-        title: 'Licensed Social Worker - Hospice Care',
-        description: 'Join our mission-driven organization as a Licensed Social Worker specializing in hospice and palliative care. This role involves providing psychosocial support to patients and families, conducting assessments, developing care plans, and facilitating difficult conversations about end-of-life care. You will collaborate with medical staff, chaplains, and other team members to ensure comprehensive care that addresses not only physical needs but also emotional, social, and spiritual concerns.',
-        position: 'Social Worker',
-        location: 'San Diego, CA',
-        facilities: ['Full-time', 'Remote Options', 'Continuing Education'],
-        isActive: true,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      },
-      {
-        id: '4',
-        title: 'Spiritual Care Coordinator - Chaplain',
-        description: 'We are seeking a dedicated Chaplain to provide spiritual care and support to hospice patients and their families. This role involves conducting spiritual assessments, providing pastoral care, facilitating memorial services, and offering guidance during times of grief and loss. The ideal candidate will have experience in healthcare chaplaincy, strong listening skills, and the ability to work with people of diverse faith backgrounds.',
-        position: 'Chaplain',
-        location: 'Orange County, CA',
-        facilities: ['Full-time', 'Flexible Schedule', 'Interfaith'],
-        isActive: true,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      },
-      {
-        id: '5',
-        title: 'Physical Therapist - Hospice Specialist',
-        description: 'Join our team as a Physical Therapist specializing in hospice care. Help patients maintain comfort, mobility, and independence during their end-of-life journey. This position involves conducting assessments, developing treatment plans focused on comfort and quality of life, and providing education to families and caregivers.',
-        position: 'Physical Therapist',
-        location: 'Sacramento, CA',
-        facilities: ['Part-time', 'Contract', 'Professional Development'],
-        isActive: true,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      },
-    ];
-
-    setJobs(sampleJobs);
-
-    // Sample applications
-    const sampleApplications: JobApplication[] = [
-      {
-        id: '1',
-        jobId: '1',
-        firstName: 'Sarah',
-        lastName: 'Johnson',
-        email: 'sarah.johnson@email.com',
-        phone: '(555) 123-4567',
-        appliedPosition: 'Registered Nurse',
-        earliestStartDate: '2024-01-15',
-        cityState: 'Los Angeles, CA',
-        coverLetter: 'I am passionate about providing compassionate care to hospice patients...',
-        status: 'waiting',
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        additionalDocsUrls: [],
-      },
-      {
-        id: '2',
-        jobId: '2',
-        firstName: 'Michael',
-        lastName: 'Chen',
-        email: 'michael.chen@email.com',
-        phone: '(555) 987-6543',
-        appliedPosition: 'Certified Nursing Assistant',
-        earliestStartDate: '2024-02-01',
-        cityState: 'San Francisco, CA',
-        coverLetter: 'With 3 years of experience in healthcare, I am excited to bring my skills...',
-        status: 'approved',
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        additionalDocsUrls: [],
-      },
-    ];
-
-    setApplications(sampleApplications);
+    return () => subscription.unsubscribe();
   }, []);
+
+  // Load master data on mount
+  useEffect(() => {
+    loadMasterData();
+  }, []);
+
+  // Load jobs and applications when user is authenticated
+  useEffect(() => {
+    if (isAuthenticated) {
+      loadJobs();
+      loadApplications();
+    }
+  }, [isAuthenticated]);
+
+  const loadMasterData = async () => {
+    try {
+      // Load positions
+      const { data: positionsData } = await supabase
+        .from('job_positions')
+        .select('*')
+        .order('name');
+      
+      if (positionsData) {
+        setPositions(positionsData.map(p => ({
+          id: p.id,
+          name: p.name,
+          createdAt: p.created_at,
+        })));
+      }
+
+      // Load locations
+      const { data: locationsData } = await supabase
+        .from('job_locations')
+        .select('*')
+        .order('name');
+      
+      if (locationsData) {
+        setLocations(locationsData.map(l => ({
+          id: l.id,
+          name: l.name,
+          createdAt: l.created_at,
+        })));
+      }
+
+      // Load facilities
+      const { data: facilitiesData } = await supabase
+        .from('job_facilities')
+        .select('*')
+        .order('name');
+      
+      if (facilitiesData) {
+        setFacilities(facilitiesData.map(f => ({
+          id: f.id,
+          name: f.name,
+          createdAt: f.created_at,
+        })));
+      }
+    } catch (error) {
+      console.error('Error loading master data:', error);
+    }
+  };
+
+  const loadJobs = async () => {
+    try {
+      const { data: jobsData } = await supabase
+        .from('jobs')
+        .select('*')
+        .order('created_at', { ascending: false });
+      
+      if (jobsData) {
+        setJobs(jobsData.map(j => ({
+          id: j.id,
+          title: j.title,
+          description: j.description,
+          position: j.position,
+          location: j.location,
+          facilities: j.facilities || [],
+          isActive: j.is_active,
+          isUrgent: j.is_urgent,
+          applicationDeadline: j.application_deadline,
+          createdAt: j.created_at,
+          updatedAt: j.updated_at,
+        })));
+      }
+    } catch (error) {
+      console.error('Error loading jobs:', error);
+    }
+  };
+
+  const loadApplications = async () => {
+    try {
+      const { data: applicationsData } = await supabase
+        .from('job_applications')
+        .select('*')
+        .order('created_at', { ascending: false });
+      
+      if (applicationsData) {
+        setApplications(applicationsData.map(a => ({
+          id: a.id,
+          jobId: a.job_id,
+          firstName: a.first_name,
+          lastName: a.last_name,
+          email: a.email,
+          phone: a.phone,
+          appliedPosition: a.applied_position,
+          earliestStartDate: a.earliest_start_date,
+          cityState: a.city_state,
+          coverLetter: a.cover_letter,
+          resumeUrl: a.resume_url,
+          additionalDocsUrls: a.additional_docs_urls || [],
+          status: a.status,
+          notes: a.notes,
+          createdAt: a.created_at,
+          updatedAt: a.updated_at,
+        })));
+      }
+    } catch (error) {
+      console.error('Error loading applications:', error);
+    }
+  };
 
   const login = async (email: string, password: string): Promise<boolean> => {
     setIsLoading(true);
     
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    // Simple authentication check
-    if (email === 'admin@hospicecare.com' && password === 'admin123') {
-      const adminUser: User = {
-        id: '1',
-        email: 'admin@hospicecare.com',
-        role: 'admin',
-        displayName: 'System Administrator',
-        createdAt: new Date().toISOString(),
-      };
-      setUser(adminUser);
-      localStorage.setItem('user', JSON.stringify(adminUser));
+    try {
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (error) {
+        console.error('Login error:', error);
+        toast({
+          title: "Login Failed",
+          description: error.message,
+          variant: "destructive",
+        });
+        setIsLoading(false);
+        return false;
+      }
+
       setIsLoading(false);
       return true;
+    } catch (error) {
+      console.error('Unexpected login error:', error);
+      setIsLoading(false);
+      return false;
     }
-    
-    setIsLoading(false);
-    return false;
   };
 
-  const logout = () => {
+  const logout = async () => {
+    await supabase.auth.signOut();
     setUser(null);
-    localStorage.removeItem('user');
+    setSession(null);
   };
 
-  const updateUserDisplayName = (displayName: string) => {
+  const updateUserDisplayName = async (displayName: string) => {
     if (user) {
-      const updatedUser = { ...user, displayName };
-      setUser(updatedUser);
-      localStorage.setItem('user', JSON.stringify(updatedUser));
+      try {
+        const { error } = await supabase
+          .from('profiles')
+          .update({ display_name: displayName })
+          .eq('id', user.id);
+
+        if (!error) {
+          setUser({ ...user, displayName });
+        }
+      } catch (error) {
+        console.error('Error updating display name:', error);
+      }
     }
   };
-
-  // Check for existing session on mount
-  useEffect(() => {
-    const savedUser = localStorage.getItem('user');
-    if (savedUser) {
-      setUser(JSON.parse(savedUser));
-    }
-  }, []);
 
   const value = {
     user,

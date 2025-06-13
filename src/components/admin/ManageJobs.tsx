@@ -1,22 +1,70 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Briefcase } from 'lucide-react';
 import { useAppContext } from '@/contexts/AppContext';
 import { Job } from '@/types';
 import { toast } from '@/hooks/use-toast';
+import { jobService } from '@/services/jobService';
+import { supabase } from '@/integrations/supabase/client';
 import JobFilters from './JobFilters';
 import ManageJobCard from './ManageJobCard';
 import EditJobModal from './EditJobModal';
 
 const ManageJobs: React.FC = () => {
-  const { jobs, setJobs, applications, positions, locations } = useAppContext();
+  const { jobs, setJobs, applications, positions, locations, isAuthenticated } = useAppContext();
   const [searchTerm, setSearchTerm] = useState('');
   const [filterPosition, setFilterPosition] = useState('all');
   const [filterLocation, setFilterLocation] = useState('all');
   const [filterStatus, setFilterStatus] = useState('all');
   const [editingJob, setEditingJob] = useState<Job | null>(null);
   const [jobForm, setJobForm] = useState<Partial<Job>>({});
+  const [isLoading, setIsLoading] = useState(false);
+
+  // Reload jobs when authentication state changes
+  useEffect(() => {
+    if (isAuthenticated) {
+      loadJobs();
+    }
+  }, [isAuthenticated]);
+
+  const loadJobs = async () => {
+    if (!isAuthenticated) return;
+    
+    setIsLoading(true);
+    try {
+      const { data } = await supabase
+        .from('jobs')
+        .select('*')
+        .order('created_at', { ascending: false });
+      
+      if (data) {
+        const mappedJobs = data.map(j => ({
+          id: j.id,
+          title: j.title,
+          description: j.description,
+          position: j.position,
+          location: j.location,
+          facilities: j.facilities || [],
+          isActive: j.is_active,
+          isUrgent: j.is_urgent,
+          applicationDeadline: j.application_deadline,
+          createdAt: j.created_at,
+          updatedAt: j.updated_at,
+        }));
+        setJobs(mappedJobs);
+      }
+    } catch (error) {
+      console.error('Error loading jobs:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load jobs",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   // Check if any filters are active
   const hasActiveFilters = searchTerm !== '' || filterPosition !== 'all' || filterLocation !== 'all' || filterStatus !== 'all';
@@ -47,28 +95,55 @@ const ManageJobs: React.FC = () => {
     return matchesSearch && matchesPosition && matchesLocation && matchesStatus;
   });
 
-  const toggleJobStatus = (jobId: string) => {
-    setJobs(prev => prev.map(job => 
-      job.id === jobId 
-        ? { ...job, isActive: !job.isActive, updatedAt: new Date().toISOString() }
-        : job
-    ));
-    
-    const job = jobs.find(j => j.id === jobId);
-    toast({
-      title: "Job Status Updated",
-      description: `Job "${job?.title}" is now ${job?.isActive ? 'inactive' : 'active'}`,
-    });
+  const toggleJobStatus = async (jobId: string) => {
+    if (!isAuthenticated) return;
+
+    try {
+      const job = jobs.find(j => j.id === jobId);
+      if (!job) return;
+
+      await jobService.updateJob(jobId, { isActive: !job.isActive });
+      
+      setJobs(prev => prev.map(j => 
+        j.id === jobId 
+          ? { ...j, isActive: !j.isActive, updatedAt: new Date().toISOString() }
+          : j
+      ));
+      
+      toast({
+        title: "Job Status Updated",
+        description: `Job "${job.title}" is now ${job.isActive ? 'inactive' : 'active'}`,
+      });
+    } catch (error) {
+      console.error('Error updating job status:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update job status",
+        variant: "destructive",
+      });
+    }
   };
 
-  const deleteJob = (jobId: string) => {
+  const deleteJob = async (jobId: string) => {
+    if (!isAuthenticated) return;
+
     const job = jobs.find(j => j.id === jobId);
     if (job && window.confirm(`Are you sure you want to delete "${job.title}"?`)) {
-      setJobs(prev => prev.filter(j => j.id !== jobId));
-      toast({
-        title: "Job Deleted",
-        description: `"${job.title}" has been permanently deleted`,
-      });
+      try {
+        await jobService.deleteJob(jobId);
+        setJobs(prev => prev.filter(j => j.id !== jobId));
+        toast({
+          title: "Job Deleted",
+          description: `"${job.title}" has been permanently deleted`,
+        });
+      } catch (error) {
+        console.error('Error deleting job:', error);
+        toast({
+          title: "Error",
+          description: "Failed to delete job",
+          variant: "destructive",
+        });
+      }
     }
   };
 
@@ -98,8 +173,8 @@ const ManageJobs: React.FC = () => {
     setJobForm(prev => ({ ...prev, facilities: newFacilities }));
   };
 
-  const saveJobChanges = () => {
-    if (!editingJob || !jobForm.title || !jobForm.description || !jobForm.position || !jobForm.location) {
+  const saveJobChanges = async () => {
+    if (!editingJob || !jobForm.title || !jobForm.description || !jobForm.position || !jobForm.location || !isAuthenticated) {
       toast({
         title: "Missing Required Fields",
         description: "Please fill in all required fields",
@@ -122,24 +197,43 @@ const ManageJobs: React.FC = () => {
       }
     }
 
-    setJobs(prev => prev.map(job => 
-      job.id === editingJob.id 
-        ? {
-            ...job,
-            ...jobForm,
-            updatedAt: new Date().toISOString(),
-          }
-        : job
-    ));
+    try {
+      await jobService.updateJob(editingJob.id, jobForm);
 
-    setEditingJob(null);
-    setJobForm({});
-    
-    toast({
-      title: "Job Updated",
-      description: `"${jobForm.title}" has been successfully updated`,
-    });
+      setJobs(prev => prev.map(job => 
+        job.id === editingJob.id 
+          ? {
+              ...job,
+              ...jobForm,
+              updatedAt: new Date().toISOString(),
+            }
+          : job
+      ));
+
+      setEditingJob(null);
+      setJobForm({});
+      
+      toast({
+        title: "Job Updated",
+        description: `"${jobForm.title}" has been successfully updated`,
+      });
+    } catch (error) {
+      console.error('Error updating job:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update job",
+        variant: "destructive",
+      });
+    }
   };
+
+  if (!isAuthenticated) {
+    return (
+      <Card className="p-6 text-center">
+        <p className="text-gray-600">Please log in to manage jobs.</p>
+      </Card>
+    );
+  }
 
   return (
     <div className="space-y-4 lg:space-y-6 p-2 sm:p-0">
@@ -171,7 +265,11 @@ const ManageJobs: React.FC = () => {
 
       {/* Jobs List */}
       <div className="space-y-3 sm:space-y-4">
-        {filteredJobs.length === 0 ? (
+        {isLoading ? (
+          <Card className="p-6 sm:p-8 text-center animate-fade-in">
+            <p className="text-gray-600">Loading jobs...</p>
+          </Card>
+        ) : filteredJobs.length === 0 ? (
           <Card className="p-6 sm:p-8 text-center animate-fade-in">
             <div className="w-12 h-12 sm:w-16 sm:h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
               <Briefcase className="w-6 h-6 sm:w-8 sm:h-8 text-gray-400" />
