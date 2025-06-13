@@ -88,7 +88,14 @@ const JobsList: React.FC = () => {
             <>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-slide-up-delayed-2">
                 {displayedJobs.map((job, index) => (
-                  <div key={job.id} style={{ animationDelay: `${0.8 + index * 0.1}s` }} className="animate-slide-up opacity-0" style={{ animationFillMode: 'forwards' }}>
+                  <div 
+                    key={job.id} 
+                    className="animate-slide-up opacity-0" 
+                    style={{ 
+                      animationDelay: `${0.8 + index * 0.1}s`,
+                      animationFillMode: 'forwards'
+                    }}
+                  >
                     <JobCard job={job} />
                   </div>
                 ))}
