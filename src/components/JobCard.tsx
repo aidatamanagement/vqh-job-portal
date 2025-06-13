@@ -56,27 +56,19 @@ const JobCard: React.FC<JobCardProps> = ({ job }) => {
   return (
     <Card className="job-card p-4 bg-white border border-gray-200 hover:border-primary/30 animate-fade-in-up">
       <div className="space-y-3">
-        {/* Urgent and deadline badges */}
-        {(job.isUrgent || job.applicationDeadline) && (
+        {/* Deadline badge only */}
+        {job.applicationDeadline && (
           <div className="flex flex-wrap gap-2">
-            {job.isUrgent && (
-              <Badge variant="destructive" className="flex items-center gap-1">
-                <AlertTriangle className="w-3 h-3" />
-                Urgent
-              </Badge>
-            )}
-            {job.applicationDeadline && (
-              <Badge 
-                variant={isDeadlinePassed(job.applicationDeadline) ? "destructive" : 
-                        isDeadlineApproaching(job.applicationDeadline) ? "outline" : "secondary"}
-                className={`flex items-center gap-1 ${
-                  isDeadlineApproaching(job.applicationDeadline) ? 'border-orange-400 text-orange-700' : ''
-                }`}
-              >
-                <Clock className="w-3 h-3" />
-                {formatDeadline(job.applicationDeadline)}
-              </Badge>
-            )}
+            <Badge 
+              variant={isDeadlinePassed(job.applicationDeadline) ? "destructive" : 
+                      isDeadlineApproaching(job.applicationDeadline) ? "outline" : "secondary"}
+              className={`flex items-center gap-1 ${
+                isDeadlineApproaching(job.applicationDeadline) ? 'border-orange-400 text-orange-700' : ''
+              }`}
+            >
+              <Clock className="w-3 h-3" />
+              {formatDeadline(job.applicationDeadline)}
+            </Badge>
           </div>
         )}
 
@@ -103,8 +95,14 @@ const JobCard: React.FC<JobCardProps> = ({ job }) => {
           {truncateDescription(job.description)}
         </p>
 
-        {/* Facilities/Tags */}
+        {/* Urgent badge and Facilities/Tags */}
         <div className="flex flex-wrap gap-2">
+          {job.isUrgent && (
+            <Badge variant="destructive" className="flex items-center gap-1">
+              <AlertTriangle className="w-3 h-3" />
+              Urgent
+            </Badge>
+          )}
           {job.facilities.map((facility, index) => (
             <Badge 
               key={index} 
