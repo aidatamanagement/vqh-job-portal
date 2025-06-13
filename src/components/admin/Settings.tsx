@@ -217,27 +217,34 @@ const Settings: React.FC = () => {
     setIsCreatingAdmin(true);
 
     try {
-      // Create the user account
-      const { data: authData, error: authError } = await supabase.auth.admin.createUser({
-        email: newAdminForm.email,
-        password: newAdminForm.password,
-        email_confirm: true,
-        user_metadata: {
-          display_name: newAdminForm.displayName || 'Administrator'
-        }
-      });
-
-      if (authError) {
-        toast({
-          title: "Failed to Create Admin",
-          description: authError.message,
-          variant: "destructive",
-        });
-        return;
+      // Get the current session token
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) {
+        throw new Error('No active session');
       }
 
-      // The profile should be automatically created by the trigger
-      // But let's reload the admin list to show the new admin
+      // Call the edge function to create admin
+      const response = await fetch('/functions/v1/create-admin', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({
+          email: newAdminForm.email,
+          password: newAdminForm.password,
+          displayName: newAdminForm.displayName || 'Administrator'
+        }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Failed to create admin');
+      }
+
+      // Reload the admin list to show the new admin
       await loadAdmins();
 
       setNewAdminForm({
@@ -255,7 +262,7 @@ const Settings: React.FC = () => {
       console.error('Error creating admin:', error);
       toast({
         title: "Error",
-        description: "Failed to create admin account",
+        description: error instanceof Error ? error.message : "Failed to create admin account",
         variant: "destructive",
       });
     } finally {
@@ -276,16 +283,29 @@ const Settings: React.FC = () => {
 
     if (window.confirm(`Are you sure you want to remove admin ${adminEmail}?`)) {
       try {
-        // Delete the user from auth (this will cascade to profiles due to foreign key)
-        const { error } = await supabase.auth.admin.deleteUser(adminId);
+        // Get the current session token
+        const { data: { session } } = await supabase.auth.getSession();
+        
+        if (!session) {
+          throw new Error('No active session');
+        }
 
-        if (error) {
-          toast({
-            title: "Error",
-            description: "Failed to remove admin",
-            variant: "destructive",
-          });
-          return;
+        // Call the edge function to delete admin
+        const response = await fetch('/functions/v1/delete-admin', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${session.access_token}`,
+          },
+          body: JSON.stringify({
+            adminId: adminId
+          }),
+        });
+
+        const result = await response.json();
+
+        if (!response.ok) {
+          throw new Error(result.error || 'Failed to remove admin');
         }
 
         // Reload the admin list
@@ -299,7 +319,7 @@ const Settings: React.FC = () => {
         console.error('Error removing admin:', error);
         toast({
           title: "Error",
-          description: "Failed to remove admin",
+          description: error instanceof Error ? error.message : "Failed to remove admin",
           variant: "destructive",
         });
       }
