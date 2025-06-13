@@ -3,7 +3,7 @@ import React from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { MapPin, Clock, AlertTriangle } from 'lucide-react';
+import { MapPin, AlertTriangle } from 'lucide-react';
 import { Job } from '@/types';
 import { useNavigate } from 'react-router-dom';
 
@@ -24,33 +24,8 @@ const JobCard: React.FC<JobCardProps> = ({ job }) => {
     navigate(`/job/${job.id}`);
   };
 
-  const isDeadlineApproaching = (deadline: string) => {
-    const deadlineDate = new Date(deadline);
-    const now = new Date();
-    const daysUntilDeadline = Math.ceil((deadlineDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
-    return daysUntilDeadline <= 7 && daysUntilDeadline > 0;
-  };
-
   const isDeadlinePassed = (deadline: string) => {
     return new Date(deadline) < new Date();
-  };
-
-  const formatDeadline = (deadline: string) => {
-    const deadlineDate = new Date(deadline);
-    const now = new Date();
-    const daysUntilDeadline = Math.ceil((deadlineDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
-    
-    if (daysUntilDeadline < 0) {
-      return 'Deadline passed';
-    } else if (daysUntilDeadline === 0) {
-      return 'Deadline today';
-    } else if (daysUntilDeadline === 1) {
-      return 'Deadline tomorrow';
-    } else if (daysUntilDeadline <= 7) {
-      return `${daysUntilDeadline} days left`;
-    } else {
-      return `Deadline: ${deadlineDate.toLocaleDateString()}`;
-    }
   };
 
   return (
@@ -79,24 +54,12 @@ const JobCard: React.FC<JobCardProps> = ({ job }) => {
           {truncateDescription(job.description)}
         </p>
 
-        {/* Urgent badge, deadline badge, and Facilities/Tags */}
+        {/* Urgent badge and Facilities/Tags */}
         <div className="flex flex-wrap gap-2">
           {job.isUrgent && (
             <Badge variant="destructive" className="flex items-center gap-1">
               <AlertTriangle className="w-3 h-3" />
               Urgent
-            </Badge>
-          )}
-          {job.applicationDeadline && (
-            <Badge 
-              variant={isDeadlinePassed(job.applicationDeadline) ? "destructive" : 
-                      isDeadlineApproaching(job.applicationDeadline) ? "outline" : "secondary"}
-              className={`flex items-center gap-1 ${
-                isDeadlineApproaching(job.applicationDeadline) ? 'border-orange-400 text-orange-700' : ''
-              }`}
-            >
-              <Clock className="w-3 h-3" />
-              {formatDeadline(job.applicationDeadline)}
             </Badge>
           )}
           {job.facilities.map((facility, index) => (
