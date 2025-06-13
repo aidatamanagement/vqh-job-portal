@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -10,6 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
+import RichTextEditor from '@/components/ui/rich-text-editor';
 import { 
   Search, 
   Edit, 
@@ -504,12 +504,14 @@ const ManageJobs: React.FC = () => {
 
               <div>
                 <Label htmlFor="edit-description" className="text-sm font-medium">Job Description *</Label>
-                <Textarea
-                  id="edit-description"
-                  value={jobForm.description || ''}
-                  onChange={(e) => handleJobInputChange('description', e.target.value)}
-                  className="mt-1 min-h-[150px] sm:min-h-[200px] rich-editor"
-                />
+                <div className="mt-1">
+                  <RichTextEditor
+                    value={jobForm.description || ''}
+                    onChange={(value) => handleJobInputChange('description', value)}
+                    placeholder="Enter the job description..."
+                    className="min-h-[200px]"
+                  />
+                </div>
               </div>
 
               <div>
