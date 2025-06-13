@@ -226,7 +226,7 @@ const Submissions: React.FC = () => {
       <div className="flex justify-between items-center">
         <div className="flex items-center gap-3">
           <Inbox className="w-6 h-6 text-gray-700" />
-          <h1 className="text-3xl font-bold text-gray-900">Submissions</h1>
+          <h1 className="font-bold text-gray-900" style={{ fontSize: '1.3rem' }}>Submissions</h1>
         </div>
       </div>
 
