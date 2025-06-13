@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -21,7 +22,9 @@ import {
   X,
   Plus,
   FilterX,
-  MoreVertical
+  MoreVertical,
+  AlertTriangle,
+  Clock
 } from 'lucide-react';
 import { useAppContext } from '@/contexts/AppContext';
 import { Job } from '@/types';
@@ -99,10 +102,12 @@ const ManageJobs: React.FC = () => {
       position: job.position,
       location: job.location,
       facilities: [...job.facilities],
+      isUrgent: job.isUrgent || false,
+      applicationDeadline: job.applicationDeadline || '',
     });
   };
 
-  const handleJobInputChange = (field: string, value: string | string[]) => {
+  const handleJobInputChange = (field: string, value: string | string[] | boolean) => {
     setJobForm(prev => ({ ...prev, [field]: value }));
   };
 
@@ -125,6 +130,20 @@ const ManageJobs: React.FC = () => {
       return;
     }
 
+    // Validate deadline if provided
+    if (jobForm.applicationDeadline) {
+      const deadlineDate = new Date(jobForm.applicationDeadline);
+      const now = new Date();
+      if (deadlineDate <= now) {
+        toast({
+          title: "Invalid Deadline",
+          description: "Application deadline must be in the future",
+          variant: "destructive",
+        });
+        return;
+      }
+    }
+
     setJobs(prev => prev.map(job => 
       job.id === editingJob.id 
         ? {
@@ -142,6 +161,17 @@ const ManageJobs: React.FC = () => {
       title: "Job Updated",
       description: `"${jobForm.title}" has been successfully updated`,
     });
+  };
+
+  const isDeadlineApproaching = (deadline: string) => {
+    const deadlineDate = new Date(deadline);
+    const now = new Date();
+    const daysUntilDeadline = Math.ceil((deadlineDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+    return daysUntilDeadline <= 7 && daysUntilDeadline > 0;
+  };
+
+  const isDeadlinePassed = (deadline: string) => {
+    return new Date(deadline) < new Date();
   };
 
   const defaultFacilities = ['Full-time', 'Part-time', 'Remote', 'Flexible Schedule', 'Benefits', 'Training Provided'];
@@ -253,8 +283,25 @@ const ManageJobs: React.FC = () => {
                 <div className="flex-1 space-y-2 sm:space-y-3">
                   <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2">
                     <div className="flex-1">
-                      <h3 className="text-lg sm:text-xl font-semibold text-gray-900 break-words">{job.title}</h3>
+                      <div className="flex items-center gap-2 mb-1">
+                        <h3 className="text-lg sm:text-xl font-semibold text-gray-900 break-words">{job.title}</h3>
+                        {job.isUrgent && (
+                          <Badge variant="destructive" className="flex items-center gap-1 text-xs">
+                            <AlertTriangle className="w-3 h-3" />
+                            Urgent
+                          </Badge>
+                        )}
+                      </div>
                       <p className="text-primary font-medium text-sm sm:text-base">{job.position}</p>
+                      {job.applicationDeadline && (
+                        <p className={`text-xs flex items-center gap-1 mt-1 ${
+                          isDeadlinePassed(job.applicationDeadline) ? 'text-red-600' : 
+                          isDeadlineApproaching(job.applicationDeadline) ? 'text-orange-600' : 'text-gray-600'
+                        }`}>
+                          <Clock className="w-3 h-3" />
+                          Deadline: {new Date(job.applicationDeadline).toLocaleDateString()}
+                        </p>
+                      )}
                     </div>
                     
                     {/* Status toggle - Desktop only */}
@@ -416,6 +463,42 @@ const ManageJobs: React.FC = () => {
                       ))}
                     </SelectContent>
                   </Select>
+                </div>
+              </div>
+
+              {/* Priority and Deadline Settings */}
+              <div className="space-y-4">
+                <Label className="text-sm font-medium">Priority & Timing</Label>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="flex items-center space-x-3 p-3 border rounded-lg">
+                    <Checkbox
+                      id="edit-urgent"
+                      checked={jobForm.isUrgent || false}
+                      onCheckedChange={(checked) => handleJobInputChange('isUrgent', checked as boolean)}
+                    />
+                    <div className="flex items-center space-x-2">
+                      <AlertTriangle className="w-4 h-4 text-red-500" />
+                      <Label htmlFor="edit-urgent" className="text-sm font-medium">
+                        Mark as Urgent
+                      </Label>
+                    </div>
+                  </div>
+
+                  <div>
+                    <Label htmlFor="edit-deadline" className="flex items-center space-x-2 text-sm font-medium">
+                      <Clock className="w-4 h-4" />
+                      <span>Application Deadline</span>
+                    </Label>
+                    <Input
+                      id="edit-deadline"
+                      type="datetime-local"
+                      value={jobForm.applicationDeadline || ''}
+                      onChange={(e) => handleJobInputChange('applicationDeadline', e.target.value)}
+                      className="mt-1"
+                      min={new Date().toISOString().slice(0, 16)}
+                    />
+                  </div>
                 </div>
               </div>
 

@@ -6,6 +6,8 @@ export interface Job {
   location: string;
   facilities: string[];
   isActive: boolean;
+  isUrgent?: boolean;
+  applicationDeadline?: string;
   createdAt: string;
   updatedAt: string;
 }

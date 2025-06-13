@@ -4,7 +4,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, MapPin, Calendar, Clock, Users } from 'lucide-react';
+import { ArrowLeft, MapPin, Calendar, Clock, Users, AlertTriangle } from 'lucide-react';
 import { useAppContext } from '@/contexts/AppContext';
 import ApplicationModal from '@/components/ApplicationModal';
 
@@ -37,6 +37,37 @@ const JobDetails: React.FC = () => {
     setShowApplicationModal(true);
   };
 
+  const isDeadlineApproaching = (deadline: string) => {
+    const deadlineDate = new Date(deadline);
+    const now = new Date();
+    const daysUntilDeadline = Math.ceil((deadlineDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+    return daysUntilDeadline <= 7 && daysUntilDeadline > 0;
+  };
+
+  const isDeadlinePassed = (deadline: string) => {
+    return new Date(deadline) < new Date();
+  };
+
+  const formatDeadline = (deadline: string) => {
+    const deadlineDate = new Date(deadline);
+    const now = new Date();
+    const daysUntilDeadline = Math.ceil((deadlineDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+    
+    if (daysUntilDeadline < 0) {
+      return 'Applications have closed';
+    } else if (daysUntilDeadline === 0) {
+      return 'Applications close today';
+    } else if (daysUntilDeadline === 1) {
+      return 'Applications close tomorrow';
+    } else if (daysUntilDeadline <= 7) {
+      return `Applications close in ${daysUntilDeadline} days`;
+    } else {
+      return `Applications close on ${deadlineDate.toLocaleDateString()}`;
+    }
+  };
+
+  const isApplicationDisabled = job.applicationDeadline && isDeadlinePassed(job.applicationDeadline);
+
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="container mx-auto px-4 py-8">
@@ -54,6 +85,30 @@ const JobDetails: React.FC = () => {
           {/* Job Header */}
           <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8 mb-8 animate-fade-in-up">
             <div className="space-y-4">
+              {/* Urgent and deadline badges */}
+              {(job.isUrgent || job.applicationDeadline) && (
+                <div className="flex flex-wrap gap-2">
+                  {job.isUrgent && (
+                    <Badge variant="destructive" className="flex items-center gap-1 text-sm">
+                      <AlertTriangle className="w-4 h-4" />
+                      Urgent Position
+                    </Badge>
+                  )}
+                  {job.applicationDeadline && (
+                    <Badge 
+                      variant={isDeadlinePassed(job.applicationDeadline) ? "destructive" : 
+                              isDeadlineApproaching(job.applicationDeadline) ? "outline" : "secondary"}
+                      className={`flex items-center gap-1 text-sm ${
+                        isDeadlineApproaching(job.applicationDeadline) ? 'border-orange-400 text-orange-700' : ''
+                      }`}
+                    >
+                      <Clock className="w-4 h-4" />
+                      {formatDeadline(job.applicationDeadline)}
+                    </Badge>
+                  )}
+                </div>
+              )}
+
               <div>
                 <h1 className="text-3xl font-bold text-gray-900 mb-2">
                   {job.title}
@@ -155,6 +210,19 @@ const JobDetails: React.FC = () => {
                       </p>
                     </div>
                   </div>
+
+                  {job.applicationDeadline && (
+                    <div className="flex items-start space-x-3">
+                      <Clock className="w-5 h-5 text-primary mt-0.5" />
+                      <div>
+                        <p className="text-sm font-medium text-gray-900">Application Deadline</p>
+                        <p className={`text-sm ${isDeadlinePassed(job.applicationDeadline) ? 'text-red-600' : 
+                                                  isDeadlineApproaching(job.applicationDeadline) ? 'text-orange-600' : 'text-gray-600'}`}>
+                          {new Date(job.applicationDeadline).toLocaleDateString()} at {new Date(job.applicationDeadline).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                        </p>
+                      </div>
+                    </div>
+                  )}
                   
                   <div className="flex items-start space-x-3">
                     <Clock className="w-5 h-5 text-primary mt-0.5" />
@@ -177,14 +245,22 @@ const JobDetails: React.FC = () => {
 
                 <Button 
                   onClick={handleApplyNow}
-                  className="w-full bg-primary hover:bg-primary/90 text-white font-semibold py-3"
+                  disabled={isApplicationDisabled}
+                  className={`w-full font-semibold py-3 ${
+                    isApplicationDisabled 
+                      ? 'bg-gray-400 cursor-not-allowed' 
+                      : 'bg-primary hover:bg-primary/90 text-white'
+                  }`}
                   size="lg"
                 >
-                  Apply Now
+                  {isApplicationDisabled ? 'Applications Closed' : 'Apply Now'}
                 </Button>
                 
                 <p className="text-xs text-gray-500 text-center mt-3">
-                  By applying, you agree to our terms and conditions
+                  {isApplicationDisabled 
+                    ? 'The application deadline has passed' 
+                    : 'By applying, you agree to our terms and conditions'
+                  }
                 </p>
               </Card>
             </div>

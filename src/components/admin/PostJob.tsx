@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Plus, X, Briefcase, MapPin, Settings as SettingsIcon, Award } from 'lucide-react';
+import { Plus, X, Briefcase, MapPin, Settings as SettingsIcon, Award, AlertTriangle, Calendar } from 'lucide-react';
 import { useAppContext } from '@/contexts/AppContext';
 import { toast } from '@/hooks/use-toast';
 import RichTextEditor from '@/components/ui/rich-text-editor';
@@ -24,6 +24,8 @@ const PostJob: React.FC = () => {
     location: '',
     facilities: [] as string[],
     customFacility: '',
+    isUrgent: false,
+    applicationDeadline: '',
   });
 
   // Position/Location/Facility management state
@@ -31,7 +33,7 @@ const PostJob: React.FC = () => {
   const [newLocation, setNewLocation] = useState('');
   const [newFacility, setNewFacility] = useState('');
 
-  const handleJobInputChange = (field: string, value: string) => {
+  const handleJobInputChange = (field: string, value: string | boolean) => {
     setJobForm(prev => ({ ...prev, [field]: value }));
   };
 
@@ -73,6 +75,20 @@ const PostJob: React.FC = () => {
       return;
     }
 
+    // Validate deadline if provided
+    if (jobForm.applicationDeadline) {
+      const deadlineDate = new Date(jobForm.applicationDeadline);
+      const now = new Date();
+      if (deadlineDate <= now) {
+        toast({
+          title: "Invalid Deadline",
+          description: "Application deadline must be in the future",
+          variant: "destructive",
+        });
+        return;
+      }
+    }
+
     const newJob = {
       id: Date.now().toString(),
       ...jobForm,
@@ -91,6 +107,8 @@ const PostJob: React.FC = () => {
       location: '',
       facilities: [],
       customFacility: '',
+      isUrgent: false,
+      applicationDeadline: '',
     });
 
     toast({
@@ -243,6 +261,45 @@ const PostJob: React.FC = () => {
                         ))}
                       </SelectContent>
                     </Select>
+                  </div>
+                </div>
+              </div>
+
+              {/* Priority and Deadline Settings */}
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold text-gray-900">Priority & Timing</h3>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="flex items-center space-x-3 p-3 border rounded-lg">
+                    <Checkbox
+                      id="urgent"
+                      checked={jobForm.isUrgent}
+                      onCheckedChange={(checked) => handleJobInputChange('isUrgent', checked as boolean)}
+                    />
+                    <div className="flex items-center space-x-2">
+                      <AlertTriangle className="w-4 h-4 text-red-500" />
+                      <Label htmlFor="urgent" className="text-sm font-medium">
+                        Mark as Urgent
+                      </Label>
+                    </div>
+                  </div>
+
+                  <div>
+                    <Label htmlFor="deadline" className="flex items-center space-x-2">
+                      <Calendar className="w-4 h-4" />
+                      <span>Application Deadline</span>
+                    </Label>
+                    <Input
+                      id="deadline"
+                      type="datetime-local"
+                      value={jobForm.applicationDeadline}
+                      onChange={(e) => handleJobInputChange('applicationDeadline', e.target.value)}
+                      className="mt-1"
+                      min={new Date().toISOString().slice(0, 16)}
+                    />
+                    <p className="text-xs text-gray-500 mt-1">
+                      Optional: Set a deadline for applications
+                    </p>
                   </div>
                 </div>
               </div>
