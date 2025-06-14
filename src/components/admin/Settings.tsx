@@ -217,31 +217,21 @@ const Settings: React.FC = () => {
     setIsCreatingAdmin(true);
 
     try {
-      // Get the current session token
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      if (!session) {
-        throw new Error('No active session');
-      }
-
-      // Call the edge function to create admin
-      const response = await fetch('/functions/v1/create-admin', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session.access_token}`,
-        },
-        body: JSON.stringify({
+      // Call the edge function to create admin using supabase.functions.invoke
+      const { data, error } = await supabase.functions.invoke('create-admin', {
+        body: {
           email: newAdminForm.email,
           password: newAdminForm.password,
           displayName: newAdminForm.displayName || 'Administrator'
-        }),
+        }
       });
 
-      const result = await response.json();
+      if (error) {
+        throw new Error(error.message || 'Failed to create admin');
+      }
 
-      if (!response.ok) {
-        throw new Error(result.error || 'Failed to create admin');
+      if (!data.success) {
+        throw new Error(data.error || 'Failed to create admin');
       }
 
       // Reload the admin list to show the new admin
@@ -283,29 +273,19 @@ const Settings: React.FC = () => {
 
     if (window.confirm(`Are you sure you want to remove admin ${adminEmail}?`)) {
       try {
-        // Get the current session token
-        const { data: { session } } = await supabase.auth.getSession();
-        
-        if (!session) {
-          throw new Error('No active session');
-        }
-
-        // Call the edge function to delete admin
-        const response = await fetch('/functions/v1/delete-admin', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${session.access_token}`,
-          },
-          body: JSON.stringify({
+        // Call the edge function to delete admin using supabase.functions.invoke
+        const { data, error } = await supabase.functions.invoke('delete-admin', {
+          body: {
             adminId: adminId
-          }),
+          }
         });
 
-        const result = await response.json();
+        if (error) {
+          throw new Error(error.message || 'Failed to remove admin');
+        }
 
-        if (!response.ok) {
-          throw new Error(result.error || 'Failed to remove admin');
+        if (!data.success) {
+          throw new Error(data.error || 'Failed to remove admin');
         }
 
         // Reload the admin list
