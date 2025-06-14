@@ -18,7 +18,7 @@ const AdminLogin: React.FC = () => {
     password: '',
   });
 
-  // Redirect if already authenticated
+  // Redirect if already authenticated (only after auth loading is done)
   useEffect(() => {
     if (isAuthenticated && !authLoading) {
       console.log('User already authenticated, redirecting to admin dashboard');
@@ -54,13 +54,13 @@ const AdminLogin: React.FC = () => {
     }
   };
 
-  // Show loading spinner while checking authentication
+  // Show loading spinner only while checking initial authentication
   if (authLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center py-12 px-4">
         <Card className="p-8 text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-gray-600">Checking authentication...</p>
+          <p className="text-gray-600">Loading...</p>
         </Card>
       </div>
     );

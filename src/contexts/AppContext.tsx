@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { Job, JobApplication, JobPosition, JobLocation, JobFacility, User, FilterState } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
@@ -69,7 +68,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         console.log('Auth state changed:', event, session?.user?.email);
         
         setSession(session);
-        setAuthLoading(true);
         
         if (session?.user) {
           try {
@@ -100,30 +98,35 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           setUser(null);
         }
         
+        // Always set loading to false after processing auth state change
         setAuthLoading(false);
       }
     );
 
-    // Check for existing session
-    const initializeAuth = async () => {
+    // Check for existing session immediately
+    const checkSession = async () => {
       try {
         const { data: { session }, error } = await supabase.auth.getSession();
         if (error) {
           console.error('Error getting session:', error);
+          setAuthLoading(false);
+          return;
         }
-        console.log('Initial session check:', session?.user?.email);
         
-        // The onAuthStateChange will handle setting the session and user
+        console.log('Initial session check:', session?.user?.email || 'No session');
+        
+        // If there's no session, we're done loading
         if (!session) {
           setAuthLoading(false);
         }
+        // If there is a session, the onAuthStateChange will handle it and set loading to false
       } catch (error) {
-        console.error('Error initializing auth:', error);
+        console.error('Error checking session:', error);
         setAuthLoading(false);
       }
     };
 
-    initializeAuth();
+    checkSession();
 
     return () => {
       console.log('Cleaning up auth subscription');
