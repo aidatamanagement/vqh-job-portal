@@ -21,11 +21,11 @@ const AdminLogin: React.FC = () => {
 
   // Redirect if already authenticated
   useEffect(() => {
-    if (isAuthenticated) {
+    if (isAuthenticated && !isLoading) {
       console.log('User already authenticated, redirecting to admin dashboard');
       navigate('/admin', { replace: true });
     }
-  }, [isAuthenticated, navigate]);
+  }, [isAuthenticated, isLoading, navigate]);
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -78,13 +78,25 @@ const AdminLogin: React.FC = () => {
     }
   };
 
-  // Show loading state while checking authentication
-  if (isLoading && !isSubmitting) {
+  // Show loading state only while checking authentication (not during form submission)
+  if (isLoading && !isSubmitting && !isAuthenticated) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center py-12 px-4">
         <div className="max-w-md w-full space-y-8 text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-          <p className="text-gray-600">Loading...</p>
+          <p className="text-gray-600">Checking authentication...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Don't render the form if user is authenticated (prevent flash)
+  if (isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center py-12 px-4">
+        <div className="max-w-md w-full space-y-8 text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+          <p className="text-gray-600">Redirecting to dashboard...</p>
         </div>
       </div>
     );
