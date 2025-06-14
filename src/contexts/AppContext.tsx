@@ -10,7 +10,7 @@ interface AppContextType {
   user: User | null;
   isAuthenticated: boolean;
   login: (email: string, password: string) => Promise<boolean>;
-  logout: () => Promise<void>;
+  logout: () => void;
   updateUserDisplayName: (displayName: string) => void;
   
   // Jobs state
@@ -52,88 +52,48 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [positions, setPositions] = useState<JobPosition[]>([]);
   const [locations, setLocations] = useState<JobLocation[]>([]);
   const [facilities, setFacilities] = useState<JobFacility[]>([]);
-  const [isLoading, setIsLoading] = useState(true); // Start with true for initial auth check
-  const [authInitialized, setAuthInitialized] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
-  const isAuthenticated = !!session && !!user && authInitialized;
+  const isAuthenticated = !!session && !!user;
 
   // Initialize auth state and set up listener
   useEffect(() => {
-    let mounted = true;
-
-    // Set up auth state listener first
+    // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        console.log('Auth state changed:', event, session?.user?.email);
+        console.log('Auth state changed:', event, session);
+        setSession(session);
         
-        if (!mounted) return;
-
         if (session?.user) {
-          try {
-            // Fetch user profile from database
-            const { data: profile } = await supabase
-              .from('profiles')
-              .select('*')
-              .eq('id', session.user.id)
-              .single();
-            
-            if (profile && mounted) {
-              setUser({
-                id: profile.id,
-                email: profile.email,
-                role: profile.role,
-                displayName: profile.display_name,
-                createdAt: profile.created_at,
-              });
-            }
-          } catch (error) {
-            console.error('Error fetching user profile:', error);
+          // Fetch user profile from database
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', session.user.id)
+            .single();
+          
+          if (profile) {
+            setUser({
+              id: profile.id,
+              email: profile.email,
+              role: profile.role,
+              displayName: profile.display_name,
+              createdAt: profile.created_at,
+            });
           }
         } else {
           setUser(null);
-        }
-        
-        setSession(session);
-        
-        // Mark auth as initialized after first state change
-        if (!authInitialized) {
-          setAuthInitialized(true);
-          setIsLoading(false);
         }
       }
     );
 
     // Check for existing session
-    const initializeAuth = async () => {
-      try {
-        const { data: { session }, error } = await supabase.auth.getSession();
-        if (error) {
-          console.error('Error getting session:', error);
-        }
-        
-        if (!mounted) return;
-        
-        // The onAuthStateChange will handle the session
-        if (!session) {
-          setAuthInitialized(true);
-          setIsLoading(false);
-        }
-      } catch (error) {
-        console.error('Error initializing auth:', error);
-        if (mounted) {
-          setAuthInitialized(true);
-          setIsLoading(false);
-        }
-      }
-    };
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+    });
 
-    initializeAuth();
-
-    return () => {
-      mounted = false;
-      subscription.unsubscribe();
-    };
-  }, [authInitialized]);
+    return () => subscription.unsubscribe();
+  }, []);
 
   // Load master data on mount
   useEffect(() => {
@@ -259,13 +219,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setIsLoading(true);
     
     try {
-      // Clear any existing session first
-      await supabase.auth.signOut();
-      
-      // Wait a bit to ensure signout is processed
-      await new Promise(resolve => setTimeout(resolve, 100));
-      
-      const { data, error } = await supabase.auth.signInWithPassword({
+      const { error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
@@ -281,14 +235,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         return false;
       }
 
-      if (!data.user) {
-        console.error('No user returned from login');
-        setIsLoading(false);
-        return false;
-      }
-
-      console.log('Login successful:', data.user.email);
-      // Don't set loading to false here - let the auth state change handle it
+      setIsLoading(false);
       return true;
     } catch (error) {
       console.error('Unexpected login error:', error);
@@ -298,20 +245,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const logout = async () => {
-    try {
-      console.log('Logging out...');
-      await supabase.auth.signOut();
-      
-      // Clear local state immediately
-      setUser(null);
-      setSession(null);
-      setJobs([]);
-      setApplications([]);
-      
-      console.log('Logout completed');
-    } catch (error) {
-      console.error('Error during logout:', error);
-    }
+    await supabase.auth.signOut();
+    setUser(null);
+    setSession(null);
   };
 
   const updateUserDisplayName = async (displayName: string) => {

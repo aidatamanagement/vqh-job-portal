@@ -1,5 +1,4 @@
-
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -16,7 +15,6 @@ import {
   EyeOff
 } from 'lucide-react';
 import { useAppContext } from '@/contexts/AppContext';
-import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 
 const Settings: React.FC = () => {
@@ -25,9 +23,6 @@ const Settings: React.FC = () => {
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [isCreatingAdmin, setIsCreatingAdmin] = useState(false);
-  const [adminList, setAdminList] = useState<any[]>([]);
-  const [loadingAdmins, setLoadingAdmins] = useState(true);
   
   // Profile form state
   const [profileForm, setProfileForm] = useState({
@@ -43,40 +38,13 @@ const Settings: React.FC = () => {
     email: '',
     password: '',
     confirmPassword: '',
-    displayName: '',
   });
 
-  // Load existing admins from database
-  useEffect(() => {
-    loadAdmins();
-  }, []);
-
-  const loadAdmins = async () => {
-    try {
-      setLoadingAdmins(true);
-      const { data: profiles, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('role', 'admin')
-        .order('created_at', { ascending: false });
-
-      if (error) {
-        console.error('Error loading admins:', error);
-        toast({
-          title: "Error",
-          description: "Failed to load admin list",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      setAdminList(profiles || []);
-    } catch (error) {
-      console.error('Unexpected error loading admins:', error);
-    } finally {
-      setLoadingAdmins(false);
-    }
-  };
+  // Mock admin list
+  const [adminList] = useState([
+    { id: '1', email: 'admin@hospicecare.com', role: 'Super Admin', createdAt: '2024-01-01' },
+    { id: '2', email: 'manager@hospicecare.com', role: 'Admin', createdAt: '2024-01-15' },
+  ]);
 
   const handleProfileInputChange = (field: string, value: string) => {
     setProfileForm(prev => ({ ...prev, [field]: value }));
@@ -109,7 +77,7 @@ const Settings: React.FC = () => {
     });
   };
 
-  const changePassword = async (e: React.FormEvent) => {
+  const changePassword = (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!profileForm.currentPassword || !profileForm.newPassword || !profileForm.confirmPassword) {
@@ -139,42 +107,20 @@ const Settings: React.FC = () => {
       return;
     }
 
-    try {
-      const { error } = await supabase.auth.updateUser({
-        password: profileForm.newPassword
-      });
+    setProfileForm(prev => ({
+      ...prev,
+      currentPassword: '',
+      newPassword: '',
+      confirmPassword: '',
+    }));
 
-      if (error) {
-        toast({
-          title: "Password Change Failed",
-          description: error.message,
-          variant: "destructive",
-        });
-        return;
-      }
-
-      setProfileForm(prev => ({
-        ...prev,
-        currentPassword: '',
-        newPassword: '',
-        confirmPassword: '',
-      }));
-
-      toast({
-        title: "Password Changed",
-        description: "Your password has been successfully updated",
-      });
-    } catch (error) {
-      console.error('Error changing password:', error);
-      toast({
-        title: "Error",
-        description: "An unexpected error occurred",
-        variant: "destructive",
-      });
-    }
+    toast({
+      title: "Password Changed",
+      description: "Your password has been successfully updated",
+    });
   };
 
-  const addNewAdmin = async (e: React.FormEvent) => {
+  const addNewAdmin = (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!newAdminForm.email || !newAdminForm.password || !newAdminForm.confirmPassword) {
@@ -195,16 +141,6 @@ const Settings: React.FC = () => {
       return;
     }
 
-    if (newAdminForm.password.length < 8) {
-      toast({
-        title: "Password Too Short",
-        description: "Password must be at least 8 characters long",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    // Check if admin with this email already exists
     if (adminList.find(admin => admin.email === newAdminForm.email)) {
       toast({
         title: "Email Already Exists",
@@ -214,95 +150,33 @@ const Settings: React.FC = () => {
       return;
     }
 
-    setIsCreatingAdmin(true);
+    setNewAdminForm({
+      email: '',
+      password: '',
+      confirmPassword: '',
+    });
 
-    try {
-      // Call the edge function to create admin using supabase.functions.invoke
-      const { data, error } = await supabase.functions.invoke('create-admin', {
-        body: {
-          email: newAdminForm.email,
-          password: newAdminForm.password,
-          displayName: newAdminForm.displayName || 'Administrator'
-        }
-      });
-
-      if (error) {
-        throw new Error(error.message || 'Failed to create admin');
-      }
-
-      if (!data.success) {
-        throw new Error(data.error || 'Failed to create admin');
-      }
-
-      // Reload the admin list to show the new admin
-      await loadAdmins();
-
-      setNewAdminForm({
-        email: '',
-        password: '',
-        confirmPassword: '',
-        displayName: '',
-      });
-
-      toast({
-        title: "Admin Added",
-        description: `New admin ${newAdminForm.email} has been added successfully`,
-      });
-    } catch (error) {
-      console.error('Error creating admin:', error);
-      toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "Failed to create admin account",
-        variant: "destructive",
-      });
-    } finally {
-      setIsCreatingAdmin(false);
-    }
+    toast({
+      title: "Admin Added",
+      description: `New admin ${newAdminForm.email} has been added successfully`,
+    });
   };
 
-  const removeAdmin = async (adminId: string, adminEmail: string) => {
-    // Prevent removing the current user
-    if (adminId === user?.id) {
+  const removeAdmin = (adminId: string, adminEmail: string) => {
+    if (adminId === '1') {
       toast({
         title: "Cannot Remove",
-        description: "You cannot remove your own admin account",
+        description: "Cannot remove the super admin account",
         variant: "destructive",
       });
       return;
     }
 
     if (window.confirm(`Are you sure you want to remove admin ${adminEmail}?`)) {
-      try {
-        // Call the edge function to delete admin using supabase.functions.invoke
-        const { data, error } = await supabase.functions.invoke('delete-admin', {
-          body: {
-            adminId: adminId
-          }
-        });
-
-        if (error) {
-          throw new Error(error.message || 'Failed to remove admin');
-        }
-
-        if (!data.success) {
-          throw new Error(data.error || 'Failed to remove admin');
-        }
-
-        // Reload the admin list
-        await loadAdmins();
-
-        toast({
-          title: "Admin Removed",
-          description: `Admin ${adminEmail} has been removed`,
-        });
-      } catch (error) {
-        console.error('Error removing admin:', error);
-        toast({
-          title: "Error",
-          description: error instanceof Error ? error.message : "Failed to remove admin",
-          variant: "destructive",
-        });
-      }
+      toast({
+        title: "Admin Removed",
+        description: `Admin ${adminEmail} has been removed`,
+      });
     }
   };
 
@@ -363,16 +237,12 @@ const Settings: React.FC = () => {
                     value={profileForm.email}
                     onChange={(e) => handleProfileInputChange('email', e.target.value)}
                     className="mt-1"
-                    disabled
                   />
-                  <p className="text-xs text-gray-500 mt-1">
-                    Email cannot be changed
-                  </p>
                 </div>
                 
                 <div>
                   <Label className="text-gray-600">Role</Label>
-                  <p className="text-sm text-gray-900 font-medium mt-1">Administrator</p>
+                  <p className="text-sm text-gray-900 font-medium mt-1">Super Admin</p>
                 </div>
                 
                 <div>
@@ -396,6 +266,26 @@ const Settings: React.FC = () => {
               </h3>
               
               <form onSubmit={changePassword} className="space-y-4">
+                <div>
+                  <Label htmlFor="currentPassword">Current Password</Label>
+                  <div className="relative mt-1">
+                    <Input
+                      id="currentPassword"
+                      type={showCurrentPassword ? 'text' : 'password'}
+                      value={profileForm.currentPassword}
+                      onChange={(e) => handleProfileInputChange('currentPassword', e.target.value)}
+                      className="pr-10"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowCurrentPassword(!showCurrentPassword)}
+                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                    >
+                      {showCurrentPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  </div>
+                </div>
+
                 <div>
                   <Label htmlFor="newPassword">New Password</Label>
                   <div className="relative mt-1">
@@ -466,20 +356,6 @@ const Settings: React.FC = () => {
                     onChange={(e) => handleNewAdminInputChange('email', e.target.value)}
                     className="mt-1"
                     placeholder="new.admin@hospicecare.com"
-                    disabled={isCreatingAdmin}
-                  />
-                </div>
-
-                <div>
-                  <Label htmlFor="newAdminDisplayName">Display Name (Optional)</Label>
-                  <Input
-                    id="newAdminDisplayName"
-                    type="text"
-                    value={newAdminForm.displayName}
-                    onChange={(e) => handleNewAdminInputChange('displayName', e.target.value)}
-                    className="mt-1"
-                    placeholder="Administrator Name"
-                    disabled={isCreatingAdmin}
                   />
                 </div>
 
@@ -492,7 +368,6 @@ const Settings: React.FC = () => {
                     onChange={(e) => handleNewAdminInputChange('password', e.target.value)}
                     className="mt-1"
                     placeholder="Minimum 8 characters"
-                    disabled={isCreatingAdmin}
                   />
                 </div>
 
@@ -504,26 +379,12 @@ const Settings: React.FC = () => {
                     value={newAdminForm.confirmPassword}
                     onChange={(e) => handleNewAdminInputChange('confirmPassword', e.target.value)}
                     className="mt-1"
-                    disabled={isCreatingAdmin}
                   />
                 </div>
 
-                <Button 
-                  type="submit" 
-                  className="w-full bg-primary hover:bg-primary/90"
-                  disabled={isCreatingAdmin}
-                >
-                  {isCreatingAdmin ? (
-                    <>
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                      Creating...
-                    </>
-                  ) : (
-                    <>
-                      <Plus className="w-4 h-4 mr-2" />
-                      Add Admin
-                    </>
-                  )}
+                <Button type="submit" className="w-full bg-primary hover:bg-primary/90">
+                  <Plus className="w-4 h-4 mr-2" />
+                  Add Admin
                 </Button>
               </form>
             </Card>
@@ -535,39 +396,30 @@ const Settings: React.FC = () => {
                 Current Admins
               </h3>
               
-              {loadingAdmins ? (
-                <div className="flex items-center justify-center py-8">
-                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
-                  <span className="ml-2 text-gray-600">Loading admins...</span>
-                </div>
-              ) : (
-                <div className="space-y-3 max-h-96 overflow-y-auto">
-                  {adminList.map((admin) => (
-                    <div key={admin.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                      <div>
-                        <p className="font-medium text-gray-900">{admin.email}</p>
-                        <p className="text-sm text-gray-600">
-                          {admin.display_name || 'Administrator'}
-                        </p>
-                        <p className="text-xs text-gray-500">
-                          Added {new Date(admin.created_at).toLocaleDateString()}
-                        </p>
-                      </div>
-                      
-                      {admin.id !== user?.id && (
-                        <Button
-                          onClick={() => removeAdmin(admin.id, admin.email)}
-                          variant="ghost"
-                          size="sm"
-                          className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      )}
+              <div className="space-y-3">
+                {adminList.map((admin) => (
+                  <div key={admin.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <div>
+                      <p className="font-medium text-gray-900">{admin.email}</p>
+                      <p className="text-sm text-gray-600">{admin.role}</p>
+                      <p className="text-xs text-gray-500">
+                        Added {new Date(admin.createdAt).toLocaleDateString()}
+                      </p>
                     </div>
-                  ))}
-                </div>
-              )}
+                    
+                    {admin.id !== '1' && (
+                      <Button
+                        onClick={() => removeAdmin(admin.id, admin.email)}
+                        variant="ghost"
+                        size="sm"
+                        className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    )}
+                  </div>
+                ))}
+              </div>
             </Card>
           </div>
 

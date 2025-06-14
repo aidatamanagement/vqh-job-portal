@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -10,22 +10,13 @@ import { toast } from '@/hooks/use-toast';
 import { Lock, Mail, Eye, EyeOff } from 'lucide-react';
 
 const AdminLogin: React.FC = () => {
-  const { login, isLoading, isAuthenticated } = useAppContext();
+  const { login, isLoading } = useAppContext();
   const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     email: '',
     password: '',
   });
-
-  // Redirect if already authenticated
-  useEffect(() => {
-    if (isAuthenticated && !isLoading) {
-      console.log('User already authenticated, redirecting to admin dashboard');
-      navigate('/admin', { replace: true });
-    }
-  }, [isAuthenticated, isLoading, navigate]);
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -43,64 +34,22 @@ const AdminLogin: React.FC = () => {
       return;
     }
 
-    if (isSubmitting) {
-      return; // Prevent double submission
-    }
-
-    setIsSubmitting(true);
-    console.log('Attempting login with:', formData.email);
+    const success = await login(formData.email, formData.password);
     
-    try {
-      const success = await login(formData.email, formData.password);
-      
-      if (success) {
-        toast({
-          title: "Login Successful",
-          description: "Welcome to the admin dashboard",
-        });
-        // Navigation will be handled by the useEffect above
-      } else {
-        toast({
-          title: "Login Failed",
-          description: "Invalid email or password. Please try again.",
-          variant: "destructive",
-        });
-      }
-    } catch (error) {
-      console.error('Login submission error:', error);
+    if (success) {
       toast({
-        title: "Login Error",
-        description: "An unexpected error occurred. Please try again.",
+        title: "Login Successful",
+        description: "Welcome to the admin dashboard",
+      });
+      navigate('/admin');
+    } else {
+      toast({
+        title: "Login Failed",
+        description: "Invalid email or password. Please try again.",
         variant: "destructive",
       });
-    } finally {
-      setIsSubmitting(false);
     }
   };
-
-  // Show loading state only while checking authentication (not during form submission)
-  if (isLoading && !isSubmitting && !isAuthenticated) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center py-12 px-4">
-        <div className="max-w-md w-full space-y-8 text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-          <p className="text-gray-600">Checking authentication...</p>
-        </div>
-      </div>
-    );
-  }
-
-  // Don't render the form if user is authenticated (prevent flash)
-  if (isAuthenticated) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center py-12 px-4">
-        <div className="max-w-md w-full space-y-8 text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-          <p className="text-gray-600">Redirecting to dashboard...</p>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center py-12 px-4 animate-slide-up">
@@ -126,8 +75,7 @@ const AdminLogin: React.FC = () => {
                   onChange={(e) => handleInputChange('email', e.target.value)}
                   className="pl-10"
                   placeholder="admin@hospicecare.com"
-                  disabled={isSubmitting}
-                  autoComplete="email"
+                  disabled={isLoading}
                 />
               </div>
             </div>
@@ -143,14 +91,13 @@ const AdminLogin: React.FC = () => {
                   onChange={(e) => handleInputChange('password', e.target.value)}
                   className="pl-10 pr-10"
                   placeholder="Enter your password"
-                  disabled={isSubmitting}
-                  autoComplete="current-password"
+                  disabled={isLoading}
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
                   className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                  disabled={isSubmitting}
+                  disabled={isLoading}
                 >
                   {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                 </button>
@@ -160,11 +107,11 @@ const AdminLogin: React.FC = () => {
             <Button
               type="submit"
               className="w-full bg-primary hover:bg-primary/90 py-3"
-              disabled={isSubmitting}
+              disabled={isLoading}
             >
-              {isSubmitting ? (
+              {isLoading ? (
                 <div className="flex items-center space-x-2">
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                  <div className="spinner" />
                   <span>Signing in...</span>
                 </div>
               ) : (
