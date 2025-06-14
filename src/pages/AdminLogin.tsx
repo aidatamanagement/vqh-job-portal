@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -10,21 +10,13 @@ import { toast } from '@/hooks/use-toast';
 import { Lock, Mail, Eye, EyeOff } from 'lucide-react';
 
 const AdminLogin: React.FC = () => {
-  const { login, isLoading, authLoading, isAuthenticated } = useAppContext();
+  const { login, isLoading } = useAppContext();
   const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
     email: '',
     password: '',
   });
-
-  // Redirect if already authenticated (only after auth loading is done)
-  useEffect(() => {
-    if (isAuthenticated && !authLoading) {
-      console.log('User already authenticated, redirecting to admin dashboard');
-      navigate('/admin');
-    }
-  }, [isAuthenticated, authLoading, navigate]);
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -42,7 +34,6 @@ const AdminLogin: React.FC = () => {
       return;
     }
 
-    console.log('Submitting login form');
     const success = await login(formData.email, formData.password);
     
     if (success) {
@@ -51,20 +42,14 @@ const AdminLogin: React.FC = () => {
         description: "Welcome to the admin dashboard",
       });
       navigate('/admin');
+    } else {
+      toast({
+        title: "Login Failed",
+        description: "Invalid email or password. Please try again.",
+        variant: "destructive",
+      });
     }
   };
-
-  // Show loading spinner only while checking initial authentication
-  if (authLoading) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center py-12 px-4">
-        <Card className="p-8 text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading...</p>
-        </Card>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center py-12 px-4 animate-slide-up">
@@ -126,7 +111,7 @@ const AdminLogin: React.FC = () => {
             >
               {isLoading ? (
                 <div className="flex items-center space-x-2">
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                  <div className="spinner" />
                   <span>Signing in...</span>
                 </div>
               ) : (
