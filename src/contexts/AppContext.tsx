@@ -8,9 +8,11 @@ import { toast } from '@/hooks/use-toast';
 interface AppContextType {
   // Auth state
   user: User | null;
+  session: Session | null;
   isAuthenticated: boolean;
+  isLoading: boolean;
   login: (email: string, password: string) => Promise<boolean>;
-  logout: () => void;
+  logout: () => Promise<void>;
   updateUserDisplayName: (displayName: string) => void;
   
   // Jobs state
@@ -30,7 +32,6 @@ interface AppContextType {
   setFacilities: React.Dispatch<React.SetStateAction<JobFacility[]>>;
   
   // UI state
-  isLoading: boolean;
   setIsLoading: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
@@ -52,48 +53,83 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [positions, setPositions] = useState<JobPosition[]>([]);
   const [locations, setLocations] = useState<JobLocation[]>([]);
   const [facilities, setFacilities] = useState<JobFacility[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
   const isAuthenticated = !!session && !!user;
 
   // Initialize auth state and set up listener
   useEffect(() => {
+    let mounted = true;
+
+    const initializeAuth = async () => {
+      try {
+        // Get initial session
+        const { data: { session: initialSession } } = await supabase.auth.getSession();
+        
+        if (mounted) {
+          await updateAuthState(initialSession);
+        }
+      } catch (error) {
+        console.error('Error getting initial session:', error);
+        if (mounted) {
+          setIsLoading(false);
+        }
+      }
+    };
+
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        console.log('Auth state changed:', event, session);
-        setSession(session);
-        
-        if (session?.user) {
-          // Fetch user profile from database
-          const { data: profile } = await supabase
-            .from('profiles')
-            .select('*')
-            .eq('id', session.user.id)
-            .single();
-          
-          if (profile) {
-            setUser({
-              id: profile.id,
-              email: profile.email,
-              role: profile.role,
-              displayName: profile.display_name,
-              createdAt: profile.created_at,
-            });
-          }
-        } else {
-          setUser(null);
+        console.log('Auth state changed:', event, session?.user?.email);
+        if (mounted) {
+          await updateAuthState(session);
         }
       }
     );
 
-    // Check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-    });
+    initializeAuth();
 
-    return () => subscription.unsubscribe();
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
   }, []);
+
+  const updateAuthState = async (session: Session | null) => {
+    try {
+      setSession(session);
+      
+      if (session?.user) {
+        // Fetch user profile from database
+        const { data: profile, error } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', session.user.id)
+          .single();
+        
+        if (profile && !error) {
+          setUser({
+            id: profile.id,
+            email: profile.email,
+            role: profile.role,
+            displayName: profile.display_name,
+            createdAt: profile.created_at,
+          });
+        } else {
+          console.error('Error fetching profile:', error);
+          setUser(null);
+        }
+      } else {
+        setUser(null);
+      }
+    } catch (error) {
+      console.error('Error updating auth state:', error);
+      setUser(null);
+      setSession(null);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   // Load master data on mount
   useEffect(() => {
@@ -216,8 +252,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const login = async (email: string, password: string): Promise<boolean> => {
-    setIsLoading(true);
-    
     try {
       const { error } = await supabase.auth.signInWithPassword({
         email,
@@ -231,23 +265,45 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           description: error.message,
           variant: "destructive",
         });
-        setIsLoading(false);
         return false;
       }
 
-      setIsLoading(false);
       return true;
     } catch (error) {
       console.error('Unexpected login error:', error);
-      setIsLoading(false);
+      toast({
+        title: "Login Failed",
+        description: "An unexpected error occurred. Please try again.",
+        variant: "destructive",
+      });
       return false;
     }
   };
 
   const logout = async () => {
-    await supabase.auth.signOut();
-    setUser(null);
-    setSession(null);
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) {
+        console.error('Logout error:', error);
+        toast({
+          title: "Logout Failed",
+          description: error.message,
+          variant: "destructive",
+        });
+      } else {
+        // Clear all state
+        setUser(null);
+        setSession(null);
+        setJobs([]);
+        setApplications([]);
+        toast({
+          title: "Logged Out",
+          description: "You have been successfully logged out",
+        });
+      }
+    } catch (error) {
+      console.error('Unexpected logout error:', error);
+    }
   };
 
   const updateUserDisplayName = async (displayName: string) => {
@@ -260,16 +316,34 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
         if (!error) {
           setUser({ ...user, displayName });
+          toast({
+            title: "Profile Updated",
+            description: "Display name updated successfully",
+          });
+        } else {
+          console.error('Error updating display name:', error);
+          toast({
+            title: "Update Failed",
+            description: "Failed to update display name",
+            variant: "destructive",
+          });
         }
       } catch (error) {
         console.error('Error updating display name:', error);
+        toast({
+          title: "Update Failed",
+          description: "An unexpected error occurred",
+          variant: "destructive",
+        });
       }
     }
   };
 
   const value = {
     user,
+    session,
     isAuthenticated,
+    isLoading,
     login,
     logout,
     updateUserDisplayName,
@@ -283,7 +357,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setLocations,
     facilities,
     setFacilities,
-    isLoading,
     setIsLoading,
   };
 
