@@ -13,9 +13,10 @@ const AdminHeader: React.FC<AdminHeaderProps> = ({ onMenuClick }) => {
   const { logout, user } = useAppContext();
   const navigate = useNavigate();
 
-  const handleLogout = () => {
-    logout();
-    navigate('/');
+  const handleLogout = async () => {
+    console.log('Logout button clicked');
+    await logout();
+    navigate('/admin/login');
   };
 
   const handleLogoClick = () => {
@@ -61,7 +62,7 @@ const AdminHeader: React.FC<AdminHeaderProps> = ({ onMenuClick }) => {
             </div>
             <div className="text-sm">
               <p className="font-medium text-gray-900">
-                {user?.displayName || 'Administrator'}
+                {user?.displayName || user?.email || 'Administrator'}
               </p>
             </div>
           </div>

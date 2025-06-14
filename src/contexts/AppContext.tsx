@@ -8,9 +8,11 @@ import { toast } from '@/hooks/use-toast';
 interface AppContextType {
   // Auth state
   user: User | null;
+  session: Session | null;
   isAuthenticated: boolean;
+  authLoading: boolean;
   login: (email: string, password: string) => Promise<boolean>;
-  logout: () => void;
+  logout: () => Promise<void>;
   updateUserDisplayName: (displayName: string) => void;
   
   // Jobs state
@@ -47,6 +49,7 @@ export const useAppContext = () => {
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
+  const [authLoading, setAuthLoading] = useState(true);
   const [jobs, setJobs] = useState<Job[]>([]);
   const [applications, setApplications] = useState<JobApplication[]>([]);
   const [positions, setPositions] = useState<JobPosition[]>([]);
@@ -58,41 +61,74 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   // Initialize auth state and set up listener
   useEffect(() => {
+    console.log('Setting up auth state listener');
+    
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        console.log('Auth state changed:', event, session);
+        console.log('Auth state changed:', event, session?.user?.email);
+        
         setSession(session);
+        setAuthLoading(true);
         
         if (session?.user) {
-          // Fetch user profile from database
-          const { data: profile } = await supabase
-            .from('profiles')
-            .select('*')
-            .eq('id', session.user.id)
-            .single();
-          
-          if (profile) {
-            setUser({
-              id: profile.id,
-              email: profile.email,
-              role: profile.role,
-              displayName: profile.display_name,
-              createdAt: profile.created_at,
-            });
+          try {
+            // Fetch user profile from database
+            const { data: profile, error } = await supabase
+              .from('profiles')
+              .select('*')
+              .eq('id', session.user.id)
+              .single();
+            
+            if (error) {
+              console.error('Error fetching profile:', error);
+              setUser(null);
+            } else if (profile) {
+              setUser({
+                id: profile.id,
+                email: profile.email,
+                role: profile.role,
+                displayName: profile.display_name,
+                createdAt: profile.created_at,
+              });
+            }
+          } catch (error) {
+            console.error('Error in auth state change:', error);
+            setUser(null);
           }
         } else {
           setUser(null);
         }
+        
+        setAuthLoading(false);
       }
     );
 
     // Check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-    });
+    const initializeAuth = async () => {
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession();
+        if (error) {
+          console.error('Error getting session:', error);
+        }
+        console.log('Initial session check:', session?.user?.email);
+        
+        // The onAuthStateChange will handle setting the session and user
+        if (!session) {
+          setAuthLoading(false);
+        }
+      } catch (error) {
+        console.error('Error initializing auth:', error);
+        setAuthLoading(false);
+      }
+    };
 
-    return () => subscription.unsubscribe();
+    initializeAuth();
+
+    return () => {
+      console.log('Cleaning up auth subscription');
+      subscription.unsubscribe();
+    };
   }, []);
 
   // Load master data on mount
@@ -216,16 +252,17 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const login = async (email: string, password: string): Promise<boolean> => {
+    console.log('Attempting login for:', email);
     setIsLoading(true);
     
     try {
-      const { error } = await supabase.auth.signInWithPassword({
+      const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
 
       if (error) {
-        console.error('Login error:', error);
+        console.error('Login error:', error.message);
         toast({
           title: "Login Failed",
           description: error.message,
@@ -235,19 +272,47 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         return false;
       }
 
+      console.log('Login successful for:', data.user?.email);
       setIsLoading(false);
       return true;
     } catch (error) {
       console.error('Unexpected login error:', error);
+      toast({
+        title: "Login Failed",
+        description: "An unexpected error occurred. Please try again.",
+        variant: "destructive",
+      });
       setIsLoading(false);
       return false;
     }
   };
 
   const logout = async () => {
-    await supabase.auth.signOut();
-    setUser(null);
-    setSession(null);
+    console.log('Logging out user');
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) {
+        console.error('Logout error:', error);
+        toast({
+          title: "Logout Error",
+          description: error.message,
+          variant: "destructive",
+        });
+      } else {
+        console.log('Logout successful');
+        // Clear all state
+        setUser(null);
+        setSession(null);
+        setJobs([]);
+        setApplications([]);
+        toast({
+          title: "Logged Out",
+          description: "You have been successfully logged out.",
+        });
+      }
+    } catch (error) {
+      console.error('Unexpected logout error:', error);
+    }
   };
 
   const updateUserDisplayName = async (displayName: string) => {
@@ -260,16 +325,33 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
         if (!error) {
           setUser({ ...user, displayName });
+          toast({
+            title: "Profile Updated",
+            description: "Display name updated successfully.",
+          });
+        } else {
+          toast({
+            title: "Update Failed",
+            description: "Failed to update display name.",
+            variant: "destructive",
+          });
         }
       } catch (error) {
         console.error('Error updating display name:', error);
+        toast({
+          title: "Update Failed",
+          description: "Failed to update display name.",
+          variant: "destructive",
+        });
       }
     }
   };
 
   const value = {
     user,
+    session,
     isAuthenticated,
+    authLoading,
     login,
     logout,
     updateUserDisplayName,
