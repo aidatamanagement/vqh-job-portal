@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -61,7 +60,7 @@ const mockSubmissions: JobApplication[] = [
     coverLetter: 'I have been working in healthcare for over 10 years...',
     resumeUrl: 'https://example.com/resume3.pdf',
     additionalDocsUrls: [],
-    status: 'declined',
+    status: 'rejected',
     notes: 'Not a good fit for the current position',
     createdAt: '2024-06-08T16:45:00Z',
     updatedAt: '2024-06-09T11:30:00Z',
@@ -110,7 +109,7 @@ const Submissions: React.FC = () => {
     switch (status) {
       case 'approved':
         return 'default';
-      case 'declined':
+      case 'rejected':
         return 'destructive';
       default:
         return 'secondary';
@@ -123,8 +122,8 @@ const Submissions: React.FC = () => {
         return 'Pending';
       case 'approved':
         return 'Approved';
-      case 'declined':
-        return 'Declined';
+      case 'rejected':
+        return 'Rejected';
       default:
         return status;
     }
@@ -138,7 +137,7 @@ const Submissions: React.FC = () => {
     });
   };
 
-  const updateApplicationStatus = (id: string, newStatus: 'waiting' | 'approved' | 'declined') => {
+  const updateApplicationStatus = (id: string, newStatus: 'waiting' | 'approved' | 'rejected') => {
     setSubmissions(prev => prev.map(app => 
       app.id === id 
         ? { ...app, status: newStatus, updatedAt: new Date().toISOString() }
@@ -301,10 +300,10 @@ const Submissions: React.FC = () => {
               {getStatusCount('approved')}
             </Badge>
           </TabsTrigger>
-          <TabsTrigger value="declined" className="flex flex-col sm:flex-row items-center gap-1 sm:gap-2 p-2 text-xs sm:text-sm">
-            <span>Declined</span>
+          <TabsTrigger value="rejected" className="flex flex-col sm:flex-row items-center gap-1 sm:gap-2 p-2 text-xs sm:text-sm">
+            <span>Rejected</span>
             <Badge variant="secondary" className="text-xs">
-              {getStatusCount('declined')}
+              {getStatusCount('rejected')}
             </Badge>
           </TabsTrigger>
         </TabsList>
@@ -321,8 +320,8 @@ const Submissions: React.FC = () => {
           {renderSubmissionsTable(getSubmissionsByStatus('approved'))}
         </TabsContent>
 
-        <TabsContent value="declined" className="mt-6">
-          {renderSubmissionsTable(getSubmissionsByStatus('declined'))}
+        <TabsContent value="rejected" className="mt-6">
+          {renderSubmissionsTable(getSubmissionsByStatus('rejected'))}
         </TabsContent>
       </Tabs>
 
@@ -482,11 +481,11 @@ const Submissions: React.FC = () => {
                 </Button>
                 <Button
                   variant="destructive"
-                  onClick={() => updateApplicationStatus(selectedApplication.id, 'declined')}
-                  disabled={selectedApplication.status === 'declined'}
+                  onClick={() => updateApplicationStatus(selectedApplication.id, 'rejected')}
+                  disabled={selectedApplication.status === 'rejected'}
                   className="text-sm px-4 py-2"
                 >
-                  Decline
+                  Reject
                 </Button>
                 <Button
                   variant="outline"
