@@ -1,18 +1,30 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { useNavigate } from 'react-router-dom';
-import { Lock } from 'lucide-react';
+import { useAppContext } from '@/contexts/AppContext';
+import { User, LogOut, Settings, Lock } from 'lucide-react';
 
 const Header: React.FC = () => {
   const navigate = useNavigate();
+  const { isAuthenticated, user, userProfile, logout } = useAppContext();
 
   const handleLogoClick = () => {
     navigate('/');
   };
 
-  const handleAdminLoginClick = () => {
-    navigate('/admin/login');
+  const handleAuthClick = () => {
+    navigate('/auth');
+  };
+
+  const handleAdminClick = () => {
+    navigate('/admin');
+  };
+
+  const handleLogout = async () => {
+    await logout();
+    navigate('/');
   };
 
   return (
@@ -28,19 +40,83 @@ const Header: React.FC = () => {
           </div>
           <div>
             <h1 className="text-2xl font-bold text-gray-900">HospiceCare</h1>
-            <p className="text-sm text-gray-600">Administrative Portal</p>
+            <p className="text-sm text-gray-600">Compassionate Career Opportunities</p>
           </div>
         </div>
 
-        {/* Admin Login Button */}
-        <div className="flex items-center">
-          <Button
-            onClick={handleAdminLoginClick}
-            className="bg-primary hover:bg-primary/90 flex items-center space-x-2"
+        {/* Navigation */}
+        <nav className="hidden md:flex items-center space-x-6">
+          <button 
+            onClick={() => navigate('/')}
+            className="text-gray-700 hover:text-primary transition-colors"
           >
-            <Lock className="w-4 h-4" />
-            <span>Admin Login</span>
-          </Button>
+            Jobs
+          </button>
+          <button className="text-gray-700 hover:text-primary transition-colors">
+            About
+          </button>
+          <button className="text-gray-700 hover:text-primary transition-colors">
+            Contact
+          </button>
+        </nav>
+
+        {/* Authentication Controls */}
+        <div className="flex items-center space-x-4">
+          {isAuthenticated ? (
+            <>
+              {/* User Info */}
+              <div className="hidden sm:flex items-center space-x-3 px-3 py-2 bg-gray-50 rounded-lg">
+                <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center">
+                  <User className="w-4 h-4 text-white" />
+                </div>
+                <div className="text-sm">
+                  <p className="font-medium text-gray-900">
+                    {userProfile?.display_name || user?.email?.split('@')[0] || 'User'}
+                  </p>
+                  {userProfile?.role && (
+                    <Badge 
+                      variant={userProfile.role === 'admin' ? 'default' : 'secondary'}
+                      className="text-xs"
+                    >
+                      {userProfile.role}
+                    </Badge>
+                  )}
+                </div>
+              </div>
+
+              {/* Admin Access */}
+              {userProfile?.role === 'admin' && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleAdminClick}
+                  className="flex items-center space-x-2"
+                >
+                  <Settings className="w-4 h-4" />
+                  <span className="hidden sm:inline">Admin</span>
+                </Button>
+              )}
+
+              {/* Logout Button */}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleLogout}
+                className="flex items-center space-x-2 hover:bg-red-50 hover:border-red-200 hover:text-red-700"
+              >
+                <LogOut className="w-4 h-4" />
+                <span className="hidden sm:inline">Logout</span>
+              </Button>
+            </>
+          ) : (
+            <Button
+              onClick={handleAuthClick}
+              className="bg-primary hover:bg-primary/90 flex items-center space-x-2"
+            >
+              <Lock className="w-4 h-4" />
+              <span>Sign In</span>
+            </Button>
+          )}
         </div>
       </div>
     </header>
