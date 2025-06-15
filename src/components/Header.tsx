@@ -14,8 +14,8 @@ const Header: React.FC = () => {
     navigate('/');
   };
 
-  const handleAuthClick = () => {
-    navigate('/auth');
+  const handleAdminLoginClick = () => {
+    navigate('/admin/login');
   };
 
   const handleAdminClick = () => {
@@ -55,7 +55,7 @@ const Header: React.FC = () => {
                 </div>
                 <div className="text-sm">
                   <p className="font-medium text-gray-900">
-                    {userProfile?.display_name || user?.email?.split('@')[0] || 'User'}
+                    {userProfile?.display_name || user?.email?.split('@')[0] || 'Admin'}
                   </p>
                   {userProfile?.role && (
                     <Badge 
@@ -94,11 +94,11 @@ const Header: React.FC = () => {
             </>
           ) : (
             <Button
-              onClick={handleAuthClick}
+              onClick={handleAdminLoginClick}
               className="bg-primary hover:bg-primary/90 flex items-center space-x-2"
             >
               <Lock className="w-4 h-4" />
-              <span>Sign In</span>
+              <span>Admin Login</span>
             </Button>
           )}
         </div>
