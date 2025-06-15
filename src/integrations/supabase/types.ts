@@ -181,6 +181,7 @@ export type Database = {
       }
       profiles: {
         Row: {
+          admin_name: string | null
           created_at: string | null
           display_name: string | null
           email: string | null
@@ -191,6 +192,7 @@ export type Database = {
           updated_at: string | null
         }
         Insert: {
+          admin_name?: string | null
           created_at?: string | null
           display_name?: string | null
           email?: string | null
@@ -201,6 +203,7 @@ export type Database = {
           updated_at?: string | null
         }
         Update: {
+          admin_name?: string | null
           created_at?: string | null
           display_name?: string | null
           email?: string | null
@@ -217,7 +220,24 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      create_admin_user: {
+        Args: {
+          admin_email: string
+          admin_password: string
+          admin_name?: string
+        }
+        Returns: Json
+      }
+      get_admin_users: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          id: string
+          email: string
+          admin_name: string
+          role: string
+          created_at: string
+        }[]
+      }
     }
     Enums: {
       [_ in never]: never

@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+
+import React, { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -15,7 +16,16 @@ import {
   EyeOff
 } from 'lucide-react';
 import { useAppContext } from '@/contexts/AppContext';
+import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
+
+interface AdminUser {
+  id: string;
+  email: string;
+  admin_name: string | null;
+  role: string;
+  created_at: string;
+}
 
 const Settings: React.FC = () => {
   const { user, userProfile, updateUserDisplayName } = useAppContext();
@@ -23,6 +33,10 @@ const Settings: React.FC = () => {
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [showAdminPassword, setShowAdminPassword] = useState(false);
+  const [showAdminConfirmPassword, setShowAdminConfirmPassword] = useState(false);
+  const [adminList, setAdminList] = useState<AdminUser[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
   
   // Profile form state
   const [profileForm, setProfileForm] = useState({
@@ -38,13 +52,33 @@ const Settings: React.FC = () => {
     email: '',
     password: '',
     confirmPassword: '',
+    adminName: '',
   });
 
-  // Mock admin list
-  const [adminList] = useState([
-    { id: '1', email: 'admin@hospicecare.com', role: 'Super Admin', createdAt: '2024-01-01' },
-    { id: '2', email: 'manager@hospicecare.com', role: 'Admin', createdAt: '2024-01-15' },
-  ]);
+  // Fetch admin users on component mount
+  useEffect(() => {
+    fetchAdminUsers();
+  }, []);
+
+  const fetchAdminUsers = async () => {
+    try {
+      const { data, error } = await supabase.rpc('get_admin_users');
+      
+      if (error) {
+        console.error('Error fetching admin users:', error);
+        toast({
+          title: "Error",
+          description: "Failed to fetch admin users",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      setAdminList(data || []);
+    } catch (error) {
+      console.error('Error fetching admin users:', error);
+    }
+  };
 
   const handleProfileInputChange = (field: string, value: string) => {
     setProfileForm(prev => ({ ...prev, [field]: value }));
@@ -54,7 +88,7 @@ const Settings: React.FC = () => {
     setNewAdminForm(prev => ({ ...prev, [field]: value }));
   };
 
-  const updateProfile = (e: React.FormEvent) => {
+  const updateProfile = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!profileForm.email) {
@@ -66,18 +100,30 @@ const Settings: React.FC = () => {
       return;
     }
 
-    // Update display name if changed
-    if (profileForm.displayName !== userProfile?.display_name) {
-      updateUserDisplayName(profileForm.displayName);
-    }
+    setIsLoading(true);
 
-    toast({
-      title: "Profile Updated",
-      description: "Your profile information has been successfully updated",
-    });
+    try {
+      // Update display name if changed
+      if (profileForm.displayName !== userProfile?.display_name) {
+        updateUserDisplayName(profileForm.displayName);
+      }
+
+      toast({
+        title: "Profile Updated",
+        description: "Your profile information has been successfully updated",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to update profile",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const changePassword = (e: React.FormEvent) => {
+  const changePassword = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!profileForm.currentPassword || !profileForm.newPassword || !profileForm.confirmPassword) {
@@ -107,26 +153,51 @@ const Settings: React.FC = () => {
       return;
     }
 
-    setProfileForm(prev => ({
-      ...prev,
-      currentPassword: '',
-      newPassword: '',
-      confirmPassword: '',
-    }));
+    setIsLoading(true);
 
-    toast({
-      title: "Password Changed",
-      description: "Your password has been successfully updated",
-    });
+    try {
+      const { error } = await supabase.auth.updateUser({
+        password: profileForm.newPassword
+      });
+
+      if (error) {
+        toast({
+          title: "Error",
+          description: error.message,
+          variant: "destructive",
+        });
+        return;
+      }
+
+      setProfileForm(prev => ({
+        ...prev,
+        currentPassword: '',
+        newPassword: '',
+        confirmPassword: '',
+      }));
+
+      toast({
+        title: "Password Changed",
+        description: "Your password has been successfully updated",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to change password",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const addNewAdmin = (e: React.FormEvent) => {
+  const addNewAdmin = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!newAdminForm.email || !newAdminForm.password || !newAdminForm.confirmPassword) {
+    if (!newAdminForm.email || !newAdminForm.password || !newAdminForm.confirmPassword || !newAdminForm.adminName) {
       toast({
         title: "Missing Fields",
-        description: "Please fill in all fields",
+        description: "Please fill in all fields including admin name",
         variant: "destructive",
       });
       return;
@@ -141,6 +212,15 @@ const Settings: React.FC = () => {
       return;
     }
 
+    if (newAdminForm.password.length < 8) {
+      toast({
+        title: "Password Too Short",
+        description: "Password must be at least 8 characters long",
+        variant: "destructive",
+      });
+      return;
+    }
+
     if (adminList.find(admin => admin.email === newAdminForm.email)) {
       toast({
         title: "Email Already Exists",
@@ -150,33 +230,118 @@ const Settings: React.FC = () => {
       return;
     }
 
-    setNewAdminForm({
-      email: '',
-      password: '',
-      confirmPassword: '',
-    });
+    setIsLoading(true);
 
-    toast({
-      title: "Admin Added",
-      description: `New admin ${newAdminForm.email} has been added successfully`,
-    });
+    try {
+      // Create new user account
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email: newAdminForm.email,
+        password: newAdminForm.password,
+        options: {
+          data: {
+            display_name: newAdminForm.adminName,
+            admin_name: newAdminForm.adminName,
+            role: 'admin'
+          }
+        }
+      });
+
+      if (authError) {
+        toast({
+          title: "Error",
+          description: authError.message,
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Update profile with admin role and name
+      if (authData.user) {
+        const { error: profileError } = await supabase
+          .from('profiles')
+          .update({
+            role: 'admin',
+            admin_name: newAdminForm.adminName,
+            display_name: newAdminForm.adminName
+          })
+          .eq('id', authData.user.id);
+
+        if (profileError) {
+          console.error('Error updating profile:', profileError);
+        }
+      }
+
+      setNewAdminForm({
+        email: '',
+        password: '',
+        confirmPassword: '',
+        adminName: '',
+      });
+
+      // Refresh admin list
+      await fetchAdminUsers();
+
+      toast({
+        title: "Admin Added",
+        description: `New admin ${newAdminForm.adminName} (${newAdminForm.email}) has been added successfully`,
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to create admin account",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const removeAdmin = (adminId: string, adminEmail: string) => {
-    if (adminId === '1') {
+  const removeAdmin = async (adminId: string, adminEmail: string) => {
+    // Prevent removing the currently logged-in admin
+    if (adminId === user?.id) {
       toast({
         title: "Cannot Remove",
-        description: "Cannot remove the super admin account",
+        description: "Cannot remove your own admin account",
         variant: "destructive",
       });
       return;
     }
 
     if (window.confirm(`Are you sure you want to remove admin ${adminEmail}?`)) {
-      toast({
-        title: "Admin Removed",
-        description: `Admin ${adminEmail} has been removed`,
-      });
+      setIsLoading(true);
+      
+      try {
+        // Update the profile role to 'user' instead of deleting
+        const { error } = await supabase
+          .from('profiles')
+          .update({ role: 'user' })
+          .eq('id', adminId);
+
+        if (error) {
+          toast({
+            title: "Error",
+            description: "Failed to remove admin",
+            variant: "destructive",
+          });
+          return;
+        }
+
+        // Refresh admin list
+        await fetchAdminUsers();
+
+        toast({
+          title: "Admin Removed",
+          description: `Admin ${adminEmail} has been removed`,
+        });
+      } catch (error) {
+        toast({
+          title: "Error",
+          description: "Failed to remove admin",
+          variant: "destructive",
+        });
+      } finally {
+        setIsLoading(false);
+      }
     }
   };
 
@@ -223,6 +388,7 @@ const Settings: React.FC = () => {
                     onChange={(e) => handleProfileInputChange('displayName', e.target.value)}
                     className="mt-1"
                     placeholder="Enter your display name"
+                    disabled={isLoading}
                   />
                   <p className="text-xs text-gray-500 mt-1">
                     This name will be shown in the admin header
@@ -235,14 +401,19 @@ const Settings: React.FC = () => {
                     id="email"
                     type="email"
                     value={profileForm.email}
-                    onChange={(e) => handleProfileInputChange('email', e.target.value)}
                     className="mt-1"
+                    disabled
                   />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Email cannot be changed
+                  </p>
                 </div>
                 
                 <div>
                   <Label className="text-gray-600">Role</Label>
-                  <p className="text-sm text-gray-900 font-medium mt-1">Super Admin</p>
+                  <p className="text-sm text-gray-900 font-medium mt-1">
+                    {userProfile?.role === 'admin' ? 'Administrator' : 'User'}
+                  </p>
                 </div>
                 
                 <div>
@@ -252,8 +423,12 @@ const Settings: React.FC = () => {
                   </p>
                 </div>
 
-                <Button type="submit" className="w-full bg-primary hover:bg-primary/90">
-                  Update Profile
+                <Button 
+                  type="submit" 
+                  className="w-full bg-primary hover:bg-primary/90"
+                  disabled={isLoading}
+                >
+                  {isLoading ? 'Updating...' : 'Update Profile'}
                 </Button>
               </form>
             </Card>
@@ -275,6 +450,7 @@ const Settings: React.FC = () => {
                       value={profileForm.currentPassword}
                       onChange={(e) => handleProfileInputChange('currentPassword', e.target.value)}
                       className="pr-10"
+                      disabled={isLoading}
                     />
                     <button
                       type="button"
@@ -295,6 +471,7 @@ const Settings: React.FC = () => {
                       value={profileForm.newPassword}
                       onChange={(e) => handleProfileInputChange('newPassword', e.target.value)}
                       className="pr-10"
+                      disabled={isLoading}
                     />
                     <button
                       type="button"
@@ -318,6 +495,7 @@ const Settings: React.FC = () => {
                       value={profileForm.confirmPassword}
                       onChange={(e) => handleProfileInputChange('confirmPassword', e.target.value)}
                       className="pr-10"
+                      disabled={isLoading}
                     />
                     <button
                       type="button"
@@ -329,8 +507,12 @@ const Settings: React.FC = () => {
                   </div>
                 </div>
 
-                <Button type="submit" className="w-full bg-primary hover:bg-primary/90">
-                  Change Password
+                <Button 
+                  type="submit" 
+                  className="w-full bg-primary hover:bg-primary/90"
+                  disabled={isLoading}
+                >
+                  {isLoading ? 'Changing...' : 'Change Password'}
                 </Button>
               </form>
             </Card>
@@ -348,7 +530,20 @@ const Settings: React.FC = () => {
               
               <form onSubmit={addNewAdmin} className="space-y-4">
                 <div>
-                  <Label htmlFor="newAdminEmail">Email Address</Label>
+                  <Label htmlFor="adminName">Admin Name *</Label>
+                  <Input
+                    id="adminName"
+                    type="text"
+                    value={newAdminForm.adminName}
+                    onChange={(e) => handleNewAdminInputChange('adminName', e.target.value)}
+                    className="mt-1"
+                    placeholder="Enter admin's full name"
+                    disabled={isLoading}
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="newAdminEmail">Email Address *</Label>
                   <Input
                     id="newAdminEmail"
                     type="email"
@@ -356,35 +551,60 @@ const Settings: React.FC = () => {
                     onChange={(e) => handleNewAdminInputChange('email', e.target.value)}
                     className="mt-1"
                     placeholder="new.admin@hospicecare.com"
+                    disabled={isLoading}
                   />
                 </div>
 
                 <div>
-                  <Label htmlFor="newAdminPassword">Password</Label>
-                  <Input
-                    id="newAdminPassword"
-                    type="password"
-                    value={newAdminForm.password}
-                    onChange={(e) => handleNewAdminInputChange('password', e.target.value)}
-                    className="mt-1"
-                    placeholder="Minimum 8 characters"
-                  />
+                  <Label htmlFor="newAdminPassword">Password *</Label>
+                  <div className="relative mt-1">
+                    <Input
+                      id="newAdminPassword"
+                      type={showAdminPassword ? 'text' : 'password'}
+                      value={newAdminForm.password}
+                      onChange={(e) => handleNewAdminInputChange('password', e.target.value)}
+                      className="pr-10"
+                      placeholder="Minimum 8 characters"
+                      disabled={isLoading}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowAdminPassword(!showAdminPassword)}
+                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                    >
+                      {showAdminPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  </div>
                 </div>
 
                 <div>
-                  <Label htmlFor="newAdminConfirmPassword">Confirm Password</Label>
-                  <Input
-                    id="newAdminConfirmPassword"
-                    type="password"
-                    value={newAdminForm.confirmPassword}
-                    onChange={(e) => handleNewAdminInputChange('confirmPassword', e.target.value)}
-                    className="mt-1"
-                  />
+                  <Label htmlFor="newAdminConfirmPassword">Confirm Password *</Label>
+                  <div className="relative mt-1">
+                    <Input
+                      id="newAdminConfirmPassword"
+                      type={showAdminConfirmPassword ? 'text' : 'password'}
+                      value={newAdminForm.confirmPassword}
+                      onChange={(e) => handleNewAdminInputChange('confirmPassword', e.target.value)}
+                      className="pr-10"
+                      disabled={isLoading}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowAdminConfirmPassword(!showAdminConfirmPassword)}
+                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                    >
+                      {showAdminConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  </div>
                 </div>
 
-                <Button type="submit" className="w-full bg-primary hover:bg-primary/90">
+                <Button 
+                  type="submit" 
+                  className="w-full bg-primary hover:bg-primary/90"
+                  disabled={isLoading}
+                >
                   <Plus className="w-4 h-4 mr-2" />
-                  Add Admin
+                  {isLoading ? 'Adding...' : 'Add Admin'}
                 </Button>
               </form>
             </Card>
@@ -393,32 +613,39 @@ const Settings: React.FC = () => {
             <Card className="p-6">
               <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
                 <Shield className="w-5 h-5 mr-2 text-primary" />
-                Current Admins
+                Current Admins ({adminList.length})
               </h3>
               
-              <div className="space-y-3">
-                {adminList.map((admin) => (
-                  <div key={admin.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                    <div>
-                      <p className="font-medium text-gray-900">{admin.email}</p>
-                      <p className="text-sm text-gray-600">{admin.role}</p>
-                      <p className="text-xs text-gray-500">
-                        Added {new Date(admin.createdAt).toLocaleDateString()}
-                      </p>
+              <div className="space-y-3 max-h-96 overflow-y-auto">
+                {adminList.length === 0 ? (
+                  <p className="text-gray-500 text-sm">No admin users found.</p>
+                ) : (
+                  adminList.map((admin) => (
+                    <div key={admin.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                      <div>
+                        <p className="font-medium text-gray-900">
+                          {admin.admin_name || admin.email}
+                        </p>
+                        <p className="text-sm text-gray-600">{admin.email}</p>
+                        <p className="text-xs text-gray-500">
+                          Added {new Date(admin.created_at).toLocaleDateString()}
+                        </p>
+                      </div>
+                      
+                      {admin.id !== user?.id && (
+                        <Button
+                          onClick={() => removeAdmin(admin.id, admin.email)}
+                          variant="ghost"
+                          size="sm"
+                          className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                          disabled={isLoading}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      )}
                     </div>
-                    
-                    {admin.id !== '1' && (
-                      <Button
-                        onClick={() => removeAdmin(admin.id, admin.email)}
-                        variant="ghost"
-                        size="sm"
-                        className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    )}
-                  </div>
-                ))}
+                  ))
+                )}
               </div>
             </Card>
           </div>
