@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
@@ -9,7 +10,7 @@ interface AppContextType {
   session: Session | null;
   isAuthenticated: boolean;
   userProfile: any | null;
-  login: (email: string, password: string) => Promise<boolean>;
+  login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
   signup: (email: string, password: string, displayName?: string) => Promise<{ success: boolean; error?: string }>;
   logout: () => Promise<void>;
   updateUserDisplayName: (displayName: string) => void;
@@ -65,22 +66,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   // Initialize auth state
   useEffect(() => {
-    // Get initial session
-    const getInitialSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      console.log('Initial session check:', session?.user?.email);
-      setSession(session);
-      setUser(session?.user ?? null);
-      
-      if (session?.user) {
-        // Defer profile fetching to avoid blocking
-        setTimeout(() => {
-          fetchUserProfile(session.user.id);
-        }, 100);
-      }
-    };
-
-    // Set up auth state listener
+    // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         console.log('Auth state changed:', event, session?.user?.email);
@@ -99,7 +85,17 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       }
     );
 
-    getInitialSession();
+    // THEN check for existing session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      console.log('Initial session check:', session?.user?.email);
+      setSession(session);
+      setUser(session?.user ?? null);
+      if (session?.user) {
+        setTimeout(() => {
+          fetchUserProfile(session.user.id);
+        }, 100);
+      }
+    });
 
     return () => subscription.unsubscribe();
   }, []);
@@ -109,44 +105,23 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     try {
       console.log('Fetching user profile for:', userId);
       
-      // Try to get profile data - use a simple query to avoid RLS issues
+      // Use a simpler query to avoid RLS recursion issues
       const { data, error } = await supabase
         .from('profiles')
         .select('id, email, display_name, role, admin_name, created_at')
         .eq('id', userId)
-        .maybeSingle(); // Use maybeSingle to avoid errors when no data exists
+        .maybeSingle();
       
       if (error) {
         console.error('Error fetching user profile:', error);
-        // For admin users, create a fallback profile
-        if (user?.email === 'admin@hospicecare.com') {
-          console.log('Creating fallback admin profile');
-          setUserProfile({
-            id: userId,
-            email: user.email,
-            display_name: 'Administrator',
-            role: 'admin',
-            created_at: new Date().toISOString()
-          });
-        }
+        // Don't throw - just log and continue without profile
         return;
       }
       
       console.log('User profile fetched:', data);
       setUserProfile(data);
     } catch (error) {
-      console.error('Exception fetching user profile:', error);
-      // For admin users, create a fallback profile
-      if (user?.email === 'admin@hospicecare.com') {
-        console.log('Creating fallback admin profile due to exception');
-        setUserProfile({
-          id: userId,
-          email: user.email,
-          display_name: 'Administrator',
-          role: 'admin',
-          created_at: new Date().toISOString()
-        });
-      }
+      console.error('Error fetching user profile:', error);
     }
   };
 
@@ -299,7 +274,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   }, [user, session, userProfile]);
 
-  const login = async (email: string, password: string): Promise<boolean> => {
+  const login = async (email: string, password: string): Promise<{ success: boolean; error?: string }> => {
     setIsLoading(true);
     
     try {
@@ -312,16 +287,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       if (error) {
         console.error('Login error:', error);
         setIsLoading(false);
-        return false;
+        return { success: false, error: error.message };
       }
 
       console.log('Login successful for:', email);
       setIsLoading(false);
-      return true;
+      return { success: true };
     } catch (error) {
       console.error('Login exception:', error);
       setIsLoading(false);
-      return false;
+      return { success: false, error: 'An unexpected error occurred' };
     }
   };
 
