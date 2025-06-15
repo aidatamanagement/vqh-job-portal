@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -10,13 +10,21 @@ import { toast } from '@/hooks/use-toast';
 import { Lock, Mail, Eye, EyeOff } from 'lucide-react';
 
 const AdminLogin: React.FC = () => {
-  const { login, isLoading } = useAppContext();
+  const { login, isLoading, isAuthenticated, userProfile } = useAppContext();
   const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
     email: '',
     password: '',
   });
+
+  // Redirect if already authenticated as admin
+  useEffect(() => {
+    if (isAuthenticated && userProfile?.role === 'admin') {
+      console.log('Already authenticated as admin, redirecting...');
+      navigate('/admin');
+    }
+  }, [isAuthenticated, userProfile, navigate]);
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -41,7 +49,7 @@ const AdminLogin: React.FC = () => {
         title: "Login Successful",
         description: "Welcome to the admin dashboard",
       });
-      navigate('/admin');
+      // Don't navigate here - let the useEffect handle it after profile loads
     } else {
       toast({
         title: "Login Failed",
@@ -50,6 +58,18 @@ const AdminLogin: React.FC = () => {
       });
     }
   };
+
+  // Show loading if we're checking authentication
+  if (isAuthenticated && !userProfile) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p>Loading...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center py-12 px-4 animate-slide-up">
@@ -111,7 +131,7 @@ const AdminLogin: React.FC = () => {
             >
               {isLoading ? (
                 <div className="flex items-center space-x-2">
-                  <div className="spinner" />
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
                   <span>Signing in...</span>
                 </div>
               ) : (
