@@ -12,12 +12,17 @@ import Settings from '@/components/admin/Settings';
 type AdminView = 'post-job' | 'manage-jobs' | 'submissions' | 'settings';
 
 const AdminDashboard: React.FC = () => {
-  const { isAuthenticated } = useAppContext();
+  const { isAuthenticated, userProfile } = useAppContext();
   const [currentView, setCurrentView] = useState<AdminView>('post-job');
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  if (!isAuthenticated) {
+  // Check if user is authenticated and is an admin
+  if (!isAuthenticated || !userProfile) {
     return <Navigate to="/admin/login" replace />;
+  }
+
+  if (userProfile.role !== 'admin') {
+    return <Navigate to="/" replace />;
   }
 
   const renderContent = () => {
