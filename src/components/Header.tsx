@@ -44,22 +44,6 @@ const Header: React.FC = () => {
           </div>
         </div>
 
-        {/* Navigation */}
-        <nav className="hidden md:flex items-center space-x-6">
-          <button 
-            onClick={() => navigate('/')}
-            className="text-gray-700 hover:text-primary transition-colors"
-          >
-            Jobs
-          </button>
-          <button className="text-gray-700 hover:text-primary transition-colors">
-            About
-          </button>
-          <button className="text-gray-700 hover:text-primary transition-colors">
-            Contact
-          </button>
-        </nav>
-
         {/* Authentication Controls */}
         <div className="flex items-center space-x-4">
           {isAuthenticated ? (
