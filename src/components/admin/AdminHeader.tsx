@@ -10,7 +10,7 @@ interface AdminHeaderProps {
 }
 
 const AdminHeader: React.FC<AdminHeaderProps> = ({ onMenuClick }) => {
-  const { logout, user } = useAppContext();
+  const { logout, userProfile } = useAppContext();
   const navigate = useNavigate();
 
   const handleLogout = () => {
@@ -61,7 +61,7 @@ const AdminHeader: React.FC<AdminHeaderProps> = ({ onMenuClick }) => {
             </div>
             <div className="text-sm">
               <p className="font-medium text-gray-900">
-                {user?.displayName || 'Administrator'}
+                {userProfile?.display_name || 'Administrator'}
               </p>
             </div>
           </div>

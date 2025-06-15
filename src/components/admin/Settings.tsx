@@ -18,7 +18,7 @@ import { useAppContext } from '@/contexts/AppContext';
 import { toast } from '@/hooks/use-toast';
 
 const Settings: React.FC = () => {
-  const { user, updateUserDisplayName } = useAppContext();
+  const { user, userProfile, updateUserDisplayName } = useAppContext();
   const [activeTab, setActiveTab] = useState('profile');
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
@@ -26,7 +26,7 @@ const Settings: React.FC = () => {
   
   // Profile form state
   const [profileForm, setProfileForm] = useState({
-    displayName: user?.displayName || '',
+    displayName: userProfile?.display_name || '',
     email: user?.email || '',
     currentPassword: '',
     newPassword: '',
@@ -67,7 +67,7 @@ const Settings: React.FC = () => {
     }
 
     // Update display name if changed
-    if (profileForm.displayName !== user?.displayName) {
+    if (profileForm.displayName !== userProfile?.display_name) {
       updateUserDisplayName(profileForm.displayName);
     }
 
@@ -248,7 +248,7 @@ const Settings: React.FC = () => {
                 <div>
                   <Label className="text-gray-600">Account Created</Label>
                   <p className="text-sm text-gray-900 font-medium mt-1">
-                    {new Date(user?.createdAt || '').toLocaleDateString()}
+                    {new Date(user?.created_at || '').toLocaleDateString()}
                   </p>
                 </div>
 

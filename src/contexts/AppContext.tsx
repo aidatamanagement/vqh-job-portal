@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
@@ -180,7 +179,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         earliestStartDate: app.earliest_start_date,
         cityState: app.city_state,
         coverLetter: app.cover_letter,
-        status: app.status,
+        status: app.status as 'waiting' | 'approved' | 'rejected', // Type assertion to match our interface
         additionalDocsUrls: app.additional_docs_urls || [],
         createdAt: app.created_at,
         updatedAt: app.updated_at,
