@@ -4,15 +4,13 @@ import { supabase } from '@/integrations/supabase/client';
 import { Job, JobApplication, JobPosition, JobLocation, JobFacility, FilterState } from '@/types';
 
 interface AppContextType {
-  // Auth state
+  // Auth state (admin only)
   user: User | null;
   session: Session | null;
   isAuthenticated: boolean;
   userProfile: any | null;
-  login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
-  signup: (email: string, password: string, displayName?: string) => Promise<{ success: boolean; error?: string }>;
+  login: (email: string, password: string) => Promise<boolean>;
   logout: () => Promise<void>;
-  updateUserDisplayName: (displayName: string) => void;
   
   // Jobs state
   jobs: Job[];
@@ -61,7 +59,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [facilities, setFacilities] = useState<JobFacility[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
-  const isAuthenticated = !!user;
+  const isAuthenticated = !!user && userProfile?.role === 'admin';
 
   // Initialize auth state
   useEffect(() => {
@@ -95,7 +93,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return () => subscription.unsubscribe();
   }, []);
 
-  // Fetch user profile
+  // Fetch user profile (admin only)
   const fetchUserProfile = async (userId: string) => {
     try {
       const { data, error } = await supabase
@@ -109,7 +107,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         return;
       }
       
-      setUserProfile(data);
+      // Only set profile if user is admin
+      if (data?.role === 'admin') {
+        setUserProfile(data);
+      } else {
+        // If not admin, logout
+        await supabase.auth.signOut();
+        setUser(null);
+        setSession(null);
+        setUserProfile(null);
+      }
     } catch (error) {
       console.error('Error fetching user profile:', error);
     }
@@ -246,14 +253,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     fetchMasterData();
   }, []);
 
-  // Fetch applications when user changes
+  // Fetch applications when admin user changes
   useEffect(() => {
-    if (user && userProfile) {
+    if (user && userProfile?.role === 'admin') {
       fetchApplications();
     }
   }, [user, userProfile]);
 
-  const login = async (email: string, password: string): Promise<{ success: boolean; error?: string }> => {
+  const login = async (email: string, password: string): Promise<boolean> => {
     setIsLoading(true);
     
     try {
@@ -264,44 +271,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
       if (error) {
         setIsLoading(false);
-        return { success: false, error: error.message };
+        return false;
       }
 
       setIsLoading(false);
-      return { success: true };
+      return true;
     } catch (error) {
       setIsLoading(false);
-      return { success: false, error: 'An unexpected error occurred' };
-    }
-  };
-
-  const signup = async (email: string, password: string, displayName?: string): Promise<{ success: boolean; error?: string }> => {
-    setIsLoading(true);
-    
-    try {
-      const redirectUrl = `${window.location.origin}/`;
-      
-      const { error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          emailRedirectTo: redirectUrl,
-          data: {
-            display_name: displayName || email,
-          }
-        }
-      });
-
-      if (error) {
-        setIsLoading(false);
-        return { success: false, error: error.message };
-      }
-
-      setIsLoading(false);
-      return { success: true };
-    } catch (error) {
-      setIsLoading(false);
-      return { success: false, error: 'An unexpected error occurred' };
+      return false;
     }
   };
 
@@ -315,32 +292,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setIsLoading(false);
   };
 
-  const updateUserDisplayName = async (displayName: string) => {
-    if (!user) return;
-    
-    try {
-      const { error } = await supabase
-        .from('profiles')
-        .update({ display_name: displayName })
-        .eq('id', user.id);
-
-      if (!error) {
-        setUserProfile(prev => prev ? { ...prev, display_name: displayName } : null);
-      }
-    } catch (error) {
-      console.error('Error updating display name:', error);
-    }
-  };
-
   const value = {
     user,
     session,
     isAuthenticated,
     userProfile,
     login,
-    signup,
     logout,
-    updateUserDisplayName,
     jobs,
     setJobs,
     applications,
