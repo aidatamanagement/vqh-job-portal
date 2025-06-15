@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -37,6 +36,7 @@ const Settings: React.FC = () => {
   const [showAdminConfirmPassword, setShowAdminConfirmPassword] = useState(false);
   const [adminList, setAdminList] = useState<AdminUser[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [isLoadingAdmins, setIsLoadingAdmins] = useState(true);
   
   // Profile form state
   const [profileForm, setProfileForm] = useState({
@@ -61,22 +61,48 @@ const Settings: React.FC = () => {
   }, []);
 
   const fetchAdminUsers = async () => {
+    console.log('Fetching admin users...');
+    setIsLoadingAdmins(true);
+    
     try {
-      const { data, error } = await supabase.rpc('get_admin_users');
+      // First try to get admins using the RPC function
+      const { data: rpcData, error: rpcError } = await supabase.rpc('get_admin_users');
       
-      if (error) {
-        console.error('Error fetching admin users:', error);
-        toast({
-          title: "Error",
-          description: "Failed to fetch admin users",
-          variant: "destructive",
-        });
-        return;
-      }
+      if (rpcError) {
+        console.error('RPC Error fetching admin users:', rpcError);
+        
+        // Fallback: Try direct query on profiles table
+        const { data: profilesData, error: profilesError } = await supabase
+          .from('profiles')
+          .select('id, email, admin_name, role, created_at')
+          .eq('role', 'admin')
+          .order('created_at', { ascending: false });
 
-      setAdminList(data || []);
+        if (profilesError) {
+          console.error('Profiles Error fetching admin users:', profilesError);
+          toast({
+            title: "Error",
+            description: "Failed to fetch admin users",
+            variant: "destructive",
+          });
+          return;
+        }
+
+        console.log('Admin users from profiles table:', profilesData);
+        setAdminList(profilesData || []);
+      } else {
+        console.log('Admin users from RPC:', rpcData);
+        setAdminList(rpcData || []);
+      }
     } catch (error) {
       console.error('Error fetching admin users:', error);
+      toast({
+        title: "Error",
+        description: "Failed to fetch admin users",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoadingAdmins(false);
     }
   };
 
@@ -233,6 +259,8 @@ const Settings: React.FC = () => {
     setIsLoading(true);
 
     try {
+      console.log('Creating new admin:', newAdminForm.email, newAdminForm.adminName);
+      
       // Create new user account
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: newAdminForm.email,
@@ -247,6 +275,7 @@ const Settings: React.FC = () => {
       });
 
       if (authError) {
+        console.error('Auth error:', authError);
         toast({
           title: "Error",
           description: authError.message,
@@ -255,8 +284,12 @@ const Settings: React.FC = () => {
         return;
       }
 
-      // Update profile with admin role and name
+      console.log('Auth data:', authData);
+
+      // Update profile with admin role and name if user was created
       if (authData.user) {
+        console.log('Updating profile for user:', authData.user.id);
+        
         const { error: profileError } = await supabase
           .from('profiles')
           .update({
@@ -268,6 +301,8 @@ const Settings: React.FC = () => {
 
         if (profileError) {
           console.error('Error updating profile:', profileError);
+        } else {
+          console.log('Profile updated successfully');
         }
       }
 
@@ -286,6 +321,7 @@ const Settings: React.FC = () => {
         description: `New admin ${newAdminForm.adminName} (${newAdminForm.email}) has been added successfully`,
       });
     } catch (error) {
+      console.error('Error creating admin:', error);
       toast({
         title: "Error",
         description: "Failed to create admin account",
@@ -318,6 +354,7 @@ const Settings: React.FC = () => {
           .eq('id', adminId);
 
         if (error) {
+          console.error('Error removing admin:', error);
           toast({
             title: "Error",
             description: "Failed to remove admin",
@@ -334,6 +371,7 @@ const Settings: React.FC = () => {
           description: `Admin ${adminEmail} has been removed`,
         });
       } catch (error) {
+        console.error('Error removing admin:', error);
         toast({
           title: "Error",
           description: "Failed to remove admin",
@@ -617,8 +655,20 @@ const Settings: React.FC = () => {
               </h3>
               
               <div className="space-y-3 max-h-96 overflow-y-auto">
-                {adminList.length === 0 ? (
-                  <p className="text-gray-500 text-sm">No admin users found.</p>
+                {isLoadingAdmins ? (
+                  <p className="text-gray-500 text-sm">Loading admin users...</p>
+                ) : adminList.length === 0 ? (
+                  <div className="text-center py-4">
+                    <p className="text-gray-500 text-sm">No admin users found.</p>
+                    <Button 
+                      onClick={fetchAdminUsers}
+                      variant="ghost" 
+                      size="sm" 
+                      className="mt-2 text-primary"
+                    >
+                      Refresh
+                    </Button>
+                  </div>
                 ) : (
                   adminList.map((admin) => (
                     <div key={admin.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
