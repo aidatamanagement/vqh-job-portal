@@ -1,12 +1,18 @@
+
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { Job, JobApplication, JobPosition, JobLocation, JobFacility, User, FilterState } from '@/types';
+import { User, Session } from '@supabase/supabase-js';
+import { supabase } from '@/integrations/supabase/client';
+import { Job, JobApplication, JobPosition, JobLocation, JobFacility, FilterState } from '@/types';
 
 interface AppContextType {
   // Auth state
   user: User | null;
+  session: Session | null;
   isAuthenticated: boolean;
-  login: (email: string, password: string) => Promise<boolean>;
-  logout: () => void;
+  userProfile: any | null;
+  login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
+  signup: (email: string, password: string, displayName?: string) => Promise<{ success: boolean; error?: string }>;
+  logout: () => Promise<void>;
   updateUserDisplayName: (displayName: string) => void;
   
   // Jobs state
@@ -28,6 +34,11 @@ interface AppContextType {
   // UI state
   isLoading: boolean;
   setIsLoading: React.Dispatch<React.SetStateAction<boolean>>;
+  
+  // Data fetching functions
+  fetchJobs: () => Promise<void>;
+  fetchApplications: () => Promise<void>;
+  fetchMasterData: () => Promise<void>;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -42,6 +53,8 @@ export const useAppContext = () => {
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
+  const [session, setSession] = useState<Session | null>(null);
+  const [userProfile, setUserProfile] = useState<any | null>(null);
   const [jobs, setJobs] = useState<Job[]>([]);
   const [applications, setApplications] = useState<JobApplication[]>([]);
   const [positions, setPositions] = useState<JobPosition[]>([]);
@@ -51,191 +64,282 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const isAuthenticated = !!user;
 
-  // Initialize with sample data
+  // Initialize auth state
   useEffect(() => {
-    // Sample positions
-    setPositions([
-      { id: '1', name: 'Registered Nurse', createdAt: new Date().toISOString() },
-      { id: '2', name: 'Certified Nursing Assistant', createdAt: new Date().toISOString() },
-      { id: '3', name: 'Social Worker', createdAt: new Date().toISOString() },
-      { id: '4', name: 'Chaplain', createdAt: new Date().toISOString() },
-      { id: '5', name: 'Physical Therapist', createdAt: new Date().toISOString() },
-      { id: '6', name: 'Home Health Aide', createdAt: new Date().toISOString() },
-    ]);
+    // Set up auth state listener
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        console.log('Auth state changed:', event, session?.user?.email);
+        setSession(session);
+        setUser(session?.user ?? null);
+        
+        if (session?.user) {
+          // Fetch user profile when user logs in
+          setTimeout(() => {
+            fetchUserProfile(session.user.id);
+          }, 0);
+        } else {
+          setUserProfile(null);
+        }
+      }
+    );
 
-    // Sample locations
-    setLocations([
-      { id: '1', name: 'Los Angeles, CA', createdAt: new Date().toISOString() },
-      { id: '2', name: 'San Francisco, CA', createdAt: new Date().toISOString() },
-      { id: '3', name: 'San Diego, CA', createdAt: new Date().toISOString() },
-      { id: '4', name: 'Sacramento, CA', createdAt: new Date().toISOString() },
-      { id: '5', name: 'Orange County, CA', createdAt: new Date().toISOString() },
-    ]);
+    // Check for existing session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      setUser(session?.user ?? null);
+      if (session?.user) {
+        fetchUserProfile(session.user.id);
+      }
+    });
 
-    // Sample facilities
-    setFacilities([
-      { id: '1', name: 'Full-time', createdAt: new Date().toISOString() },
-      { id: '2', name: 'Part-time', createdAt: new Date().toISOString() },
-      { id: '3', name: 'Benefits', createdAt: new Date().toISOString() },
-      { id: '4', name: 'Flexible Schedule', createdAt: new Date().toISOString() },
-      { id: '5', name: 'Remote Options', createdAt: new Date().toISOString() },
-      { id: '6', name: 'Training Provided', createdAt: new Date().toISOString() },
-      { id: '7', name: 'Professional Development', createdAt: new Date().toISOString() },
-      { id: '8', name: 'Evening Shift', createdAt: new Date().toISOString() },
-      { id: '9', name: 'Contract', createdAt: new Date().toISOString() },
-      { id: '10', name: 'Continuing Education', createdAt: new Date().toISOString() },
-    ]);
-
-    // Sample jobs
-    const sampleJobs: Job[] = [
-      {
-        id: '1',
-        title: 'Compassionate Registered Nurse - Home Care',
-        description: 'Join our dedicated team of healthcare professionals providing compassionate end-of-life care in patients\' homes. We are seeking an experienced Registered Nurse who is passionate about hospice care and committed to improving the quality of life for patients and their families during challenging times. This role involves comprehensive patient assessment, medication management, pain control, and providing emotional support to both patients and families. You will work closely with an interdisciplinary team including physicians, social workers, chaplains, and home health aides to develop and implement individualized care plans. The ideal candidate will have excellent clinical skills, strong communication abilities, and a deep understanding of palliative care principles. We offer competitive compensation, comprehensive benefits, flexible scheduling, and opportunities for professional development in a supportive work environment.',
-        position: 'Registered Nurse',
-        location: 'Los Angeles, CA',
-        facilities: ['Full-time', 'Benefits', 'Flexible Schedule'],
-        isActive: true,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      },
-      {
-        id: '2',
-        title: 'Certified Nursing Assistant - Evening Shift',
-        description: 'We are looking for a compassionate Certified Nursing Assistant to join our hospice care team for evening shifts. This position is perfect for someone who wants to make a meaningful difference in the lives of patients and families during their most vulnerable moments. As a CNA, you will provide direct patient care including personal hygiene assistance, mobility support, vital signs monitoring, and companionship. You will work under the supervision of registered nurses and contribute to maintaining detailed patient records. The role requires excellent interpersonal skills, attention to detail, and the ability to work independently while being part of a collaborative healthcare team.',
-        position: 'Certified Nursing Assistant',
-        location: 'San Francisco, CA',
-        facilities: ['Part-time', 'Evening Shift', 'Training Provided'],
-        isActive: true,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      },
-      {
-        id: '3',
-        title: 'Licensed Social Worker - Hospice Care',
-        description: 'Join our mission-driven organization as a Licensed Social Worker specializing in hospice and palliative care. This role involves providing psychosocial support to patients and families, conducting assessments, developing care plans, and facilitating difficult conversations about end-of-life care. You will collaborate with medical staff, chaplains, and other team members to ensure comprehensive care that addresses not only physical needs but also emotional, social, and spiritual concerns.',
-        position: 'Social Worker',
-        location: 'San Diego, CA',
-        facilities: ['Full-time', 'Remote Options', 'Continuing Education'],
-        isActive: true,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      },
-      {
-        id: '4',
-        title: 'Spiritual Care Coordinator - Chaplain',
-        description: 'We are seeking a dedicated Chaplain to provide spiritual care and support to hospice patients and their families. This role involves conducting spiritual assessments, providing pastoral care, facilitating memorial services, and offering guidance during times of grief and loss. The ideal candidate will have experience in healthcare chaplaincy, strong listening skills, and the ability to work with people of diverse faith backgrounds.',
-        position: 'Chaplain',
-        location: 'Orange County, CA',
-        facilities: ['Full-time', 'Flexible Schedule', 'Interfaith'],
-        isActive: true,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      },
-      {
-        id: '5',
-        title: 'Physical Therapist - Hospice Specialist',
-        description: 'Join our team as a Physical Therapist specializing in hospice care. Help patients maintain comfort, mobility, and independence during their end-of-life journey. This position involves conducting assessments, developing treatment plans focused on comfort and quality of life, and providing education to families and caregivers.',
-        position: 'Physical Therapist',
-        location: 'Sacramento, CA',
-        facilities: ['Part-time', 'Contract', 'Professional Development'],
-        isActive: true,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      },
-    ];
-
-    setJobs(sampleJobs);
-
-    // Sample applications
-    const sampleApplications: JobApplication[] = [
-      {
-        id: '1',
-        jobId: '1',
-        firstName: 'Sarah',
-        lastName: 'Johnson',
-        email: 'sarah.johnson@email.com',
-        phone: '(555) 123-4567',
-        appliedPosition: 'Registered Nurse',
-        earliestStartDate: '2024-01-15',
-        cityState: 'Los Angeles, CA',
-        coverLetter: 'I am passionate about providing compassionate care to hospice patients...',
-        status: 'waiting',
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        additionalDocsUrls: [],
-      },
-      {
-        id: '2',
-        jobId: '2',
-        firstName: 'Michael',
-        lastName: 'Chen',
-        email: 'michael.chen@email.com',
-        phone: '(555) 987-6543',
-        appliedPosition: 'Certified Nursing Assistant',
-        earliestStartDate: '2024-02-01',
-        cityState: 'San Francisco, CA',
-        coverLetter: 'With 3 years of experience in healthcare, I am excited to bring my skills...',
-        status: 'approved',
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        additionalDocsUrls: [],
-      },
-    ];
-
-    setApplications(sampleApplications);
+    return () => subscription.unsubscribe();
   }, []);
 
-  const login = async (email: string, password: string): Promise<boolean> => {
+  // Fetch user profile
+  const fetchUserProfile = async (userId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .single();
+      
+      if (error) {
+        console.error('Error fetching user profile:', error);
+        return;
+      }
+      
+      setUserProfile(data);
+    } catch (error) {
+      console.error('Error fetching user profile:', error);
+    }
+  };
+
+  // Fetch jobs from database
+  const fetchJobs = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('jobs')
+        .select('*')
+        .eq('is_active', true)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Error fetching jobs:', error);
+        return;
+      }
+
+      // Transform data to match existing Job interface
+      const transformedJobs = data.map(job => ({
+        id: job.id,
+        title: job.title,
+        description: job.description,
+        position: job.position,
+        location: job.location,
+        facilities: job.facilities || [],
+        isActive: job.is_active,
+        createdAt: job.created_at,
+        updatedAt: job.updated_at,
+      }));
+
+      setJobs(transformedJobs);
+    } catch (error) {
+      console.error('Error fetching jobs:', error);
+    }
+  };
+
+  // Fetch applications from database
+  const fetchApplications = async () => {
+    if (!user) return;
+    
+    try {
+      let query = supabase.from('job_applications').select('*');
+      
+      // If user is admin, fetch all applications, otherwise only their own
+      if (userProfile?.role !== 'admin') {
+        query = query.eq('user_id', user.id);
+      }
+      
+      const { data, error } = await query.order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Error fetching applications:', error);
+        return;
+      }
+
+      // Transform data to match existing JobApplication interface
+      const transformedApplications = data.map(app => ({
+        id: app.id,
+        jobId: app.job_id,
+        firstName: app.first_name,
+        lastName: app.last_name,
+        email: app.email,
+        phone: app.phone,
+        appliedPosition: app.applied_position,
+        earliestStartDate: app.earliest_start_date,
+        cityState: app.city_state,
+        coverLetter: app.cover_letter,
+        status: app.status,
+        additionalDocsUrls: app.additional_docs_urls || [],
+        createdAt: app.created_at,
+        updatedAt: app.updated_at,
+      }));
+
+      setApplications(transformedApplications);
+    } catch (error) {
+      console.error('Error fetching applications:', error);
+    }
+  };
+
+  // Fetch master data
+  const fetchMasterData = async () => {
+    try {
+      // Fetch positions
+      const { data: positionsData } = await supabase
+        .from('job_positions')
+        .select('*')
+        .order('name');
+
+      if (positionsData) {
+        setPositions(positionsData.map(p => ({
+          id: p.id,
+          name: p.name,
+          createdAt: p.created_at,
+        })));
+      }
+
+      // Fetch locations
+      const { data: locationsData } = await supabase
+        .from('job_locations')
+        .select('*')
+        .order('name');
+
+      if (locationsData) {
+        setLocations(locationsData.map(l => ({
+          id: l.id,
+          name: l.name,
+          createdAt: l.created_at,
+        })));
+      }
+
+      // Fetch facilities
+      const { data: facilitiesData } = await supabase
+        .from('job_facilities')
+        .select('*')
+        .order('name');
+
+      if (facilitiesData) {
+        setFacilities(facilitiesData.map(f => ({
+          id: f.id,
+          name: f.name,
+          createdAt: f.created_at,
+        })));
+      }
+    } catch (error) {
+      console.error('Error fetching master data:', error);
+    }
+  };
+
+  // Initialize data on mount
+  useEffect(() => {
+    fetchJobs();
+    fetchMasterData();
+  }, []);
+
+  // Fetch applications when user changes
+  useEffect(() => {
+    if (user && userProfile) {
+      fetchApplications();
+    }
+  }, [user, userProfile]);
+
+  const login = async (email: string, password: string): Promise<{ success: boolean; error?: string }> => {
     setIsLoading(true);
     
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    // Simple authentication check
-    if (email === 'admin@hospicecare.com' && password === 'admin123') {
-      const adminUser: User = {
-        id: '1',
-        email: 'admin@hospicecare.com',
-        role: 'admin',
-        displayName: 'System Administrator',
-        createdAt: new Date().toISOString(),
-      };
-      setUser(adminUser);
-      localStorage.setItem('user', JSON.stringify(adminUser));
+    try {
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (error) {
+        setIsLoading(false);
+        return { success: false, error: error.message };
+      }
+
       setIsLoading(false);
-      return true;
+      return { success: true };
+    } catch (error) {
+      setIsLoading(false);
+      return { success: false, error: 'An unexpected error occurred' };
     }
+  };
+
+  const signup = async (email: string, password: string, displayName?: string): Promise<{ success: boolean; error?: string }> => {
+    setIsLoading(true);
     
-    setIsLoading(false);
-    return false;
+    try {
+      const redirectUrl = `${window.location.origin}/`;
+      
+      const { error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          emailRedirectTo: redirectUrl,
+          data: {
+            display_name: displayName || email,
+          }
+        }
+      });
+
+      if (error) {
+        setIsLoading(false);
+        return { success: false, error: error.message };
+      }
+
+      setIsLoading(false);
+      return { success: true };
+    } catch (error) {
+      setIsLoading(false);
+      return { success: false, error: 'An unexpected error occurred' };
+    }
   };
 
-  const logout = () => {
+  const logout = async () => {
+    setIsLoading(true);
+    await supabase.auth.signOut();
     setUser(null);
-    localStorage.removeItem('user');
+    setSession(null);
+    setUserProfile(null);
+    setApplications([]);
+    setIsLoading(false);
   };
 
-  const updateUserDisplayName = (displayName: string) => {
-    if (user) {
-      const updatedUser = { ...user, displayName };
-      setUser(updatedUser);
-      localStorage.setItem('user', JSON.stringify(updatedUser));
+  const updateUserDisplayName = async (displayName: string) => {
+    if (!user) return;
+    
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ display_name: displayName })
+        .eq('id', user.id);
+
+      if (!error) {
+        setUserProfile(prev => prev ? { ...prev, display_name: displayName } : null);
+      }
+    } catch (error) {
+      console.error('Error updating display name:', error);
     }
   };
-
-  // Check for existing session on mount
-  useEffect(() => {
-    const savedUser = localStorage.getItem('user');
-    if (savedUser) {
-      setUser(JSON.parse(savedUser));
-    }
-  }, []);
 
   const value = {
     user,
+    session,
     isAuthenticated,
+    userProfile,
     login,
+    signup,
     logout,
     updateUserDisplayName,
     jobs,
@@ -250,6 +354,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setFacilities,
     isLoading,
     setIsLoading,
+    fetchJobs,
+    fetchApplications,
+    fetchMasterData,
   };
 
   return (

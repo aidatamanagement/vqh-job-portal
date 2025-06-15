@@ -1,72 +1,122 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { useNavigate } from 'react-router-dom';
 import { useAppContext } from '@/contexts/AppContext';
-import { LogOut } from 'lucide-react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { User, LogOut, Settings, Lock } from 'lucide-react';
 
 const Header: React.FC = () => {
-  const { isAuthenticated, logout } = useAppContext();
   const navigate = useNavigate();
-  const location = useLocation();
-
-  const handleAdminClick = () => {
-    if (isAuthenticated) {
-      navigate('/admin');
-    } else {
-      navigate('/admin/login');
-    }
-  };
+  const { isAuthenticated, user, userProfile, logout } = useAppContext();
 
   const handleLogoClick = () => {
     navigate('/');
   };
 
-  const handleLogout = () => {
-    logout();
+  const handleAuthClick = () => {
+    navigate('/auth');
+  };
+
+  const handleAdminClick = () => {
+    navigate('/admin');
+  };
+
+  const handleLogout = async () => {
+    await logout();
     navigate('/');
   };
 
   return (
-    <header className="bg-white/95 backdrop-blur-sm border-b border-gray-200 sticky top-0 z-50">
-      <div className="container mx-auto px-4 py-4">
-        <div className="flex items-center justify-between">
-          {/* Logo */}
-          <div 
-            className="flex items-center space-x-3 cursor-pointer group"
-            onClick={handleLogoClick}
-          >
-            <div className="w-12 h-12 bg-primary rounded-lg flex items-center justify-center group-hover:scale-105 transition-transform duration-200">
-              <span className="text-white font-bold text-xl">HC</span>
-            </div>
-            <div>
-              <h1 className="text-xl font-bold text-gray-900">HospiceCare</h1>
-              <p className="text-sm text-gray-600">Career Portal</p>
-            </div>
+    <header className="bg-white border-b border-gray-200 px-4 py-4 animate-slide-down">
+      <div className="container mx-auto flex items-center justify-between">
+        {/* Logo and Title */}
+        <div 
+          className="flex items-center space-x-3 cursor-pointer group"
+          onClick={handleLogoClick}
+        >
+          <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center group-hover:scale-105 transition-transform duration-200">
+            <span className="text-white font-bold text-lg">HC</span>
           </div>
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">HospiceCare</h1>
+            <p className="text-sm text-gray-600">Compassionate Career Opportunities</p>
+          </div>
+        </div>
 
-          {/* Admin Section */}
-          <div className="flex items-center space-x-4">
-            {isAuthenticated && location.pathname.startsWith('/admin') ? (
+        {/* Navigation */}
+        <nav className="hidden md:flex items-center space-x-6">
+          <button 
+            onClick={() => navigate('/')}
+            className="text-gray-700 hover:text-primary transition-colors"
+          >
+            Jobs
+          </button>
+          <button className="text-gray-700 hover:text-primary transition-colors">
+            About
+          </button>
+          <button className="text-gray-700 hover:text-primary transition-colors">
+            Contact
+          </button>
+        </nav>
+
+        {/* Authentication Controls */}
+        <div className="flex items-center space-x-4">
+          {isAuthenticated ? (
+            <>
+              {/* User Info */}
+              <div className="hidden sm:flex items-center space-x-3 px-3 py-2 bg-gray-50 rounded-lg">
+                <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center">
+                  <User className="w-4 h-4 text-white" />
+                </div>
+                <div className="text-sm">
+                  <p className="font-medium text-gray-900">
+                    {userProfile?.display_name || user?.email?.split('@')[0] || 'User'}
+                  </p>
+                  {userProfile?.role && (
+                    <Badge 
+                      variant={userProfile.role === 'admin' ? 'default' : 'secondary'}
+                      className="text-xs"
+                    >
+                      {userProfile.role}
+                    </Badge>
+                  )}
+                </div>
+              </div>
+
+              {/* Admin Access */}
+              {userProfile?.role === 'admin' && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleAdminClick}
+                  className="flex items-center space-x-2"
+                >
+                  <Settings className="w-4 h-4" />
+                  <span className="hidden sm:inline">Admin</span>
+                </Button>
+              )}
+
+              {/* Logout Button */}
               <Button
                 variant="outline"
                 size="sm"
                 onClick={handleLogout}
-                className="flex items-center space-x-2"
+                className="flex items-center space-x-2 hover:bg-red-50 hover:border-red-200 hover:text-red-700"
               >
                 <LogOut className="w-4 h-4" />
-                <span>Logout</span>
+                <span className="hidden sm:inline">Logout</span>
               </Button>
-            ) : (
-              <Button
-                onClick={handleAdminClick}
-                size="sm"
-                className="bg-primary hover:bg-primary/90"
-              >
-                {isAuthenticated ? 'Admin Dashboard' : 'Admin Login'}
-              </Button>
-            )}
-          </div>
+            </>
+          ) : (
+            <Button
+              onClick={handleAuthClick}
+              className="bg-primary hover:bg-primary/90 flex items-center space-x-2"
+            >
+              <Lock className="w-4 h-4" />
+              <span>Sign In</span>
+            </Button>
+          )}
         </div>
       </div>
     </header>
