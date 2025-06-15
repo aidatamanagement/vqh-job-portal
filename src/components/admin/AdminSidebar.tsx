@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -29,7 +28,7 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({ currentView, onViewChange }
   const totalJobs = jobs.length;
   const waitingApplications = applications.filter(app => app.status === 'waiting').length;
   const approvedApplications = applications.filter(app => app.status === 'approved').length;
-  const declinedApplications = applications.filter(app => app.status === 'declined').length;
+  const rejectedApplications = applications.filter(app => app.status === 'rejected').length;
 
   const menuItems = [
     {
