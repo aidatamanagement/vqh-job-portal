@@ -130,20 +130,20 @@ const JobFilters: React.FC<JobFiltersProps> = ({ filters, onFiltersChange, total
         {/* Sort and Location Controls - Show first on mobile */}
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center space-y-2 sm:space-y-0 sm:space-x-4 order-1 md:order-2">
           <Select value={filters.sortBy} onValueChange={handleSortChange}>
-            <SelectTrigger className="w-full sm:w-[140px] border-gray-300">
+            <SelectTrigger className="w-full sm:w-[140px] border-gray-300 bg-white">
               <SelectValue />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="bg-white border border-gray-200 shadow-lg z-50">
               <SelectItem value="newest">Newest First</SelectItem>
               <SelectItem value="oldest">Oldest First</SelectItem>
             </SelectContent>
           </Select>
 
           <Select value={filters.location || 'all'} onValueChange={handleLocationChange}>
-            <SelectTrigger className="w-full sm:w-[160px] border-gray-300">
+            <SelectTrigger className="w-full sm:w-[160px] border-gray-300 bg-white">
               <SelectValue placeholder="All Locations" />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="bg-white border border-gray-200 shadow-lg z-50">
               <SelectItem value="all">All Locations</SelectItem>
               {locations.map((location) => (
                 <SelectItem key={location.id} value={location.name}>
