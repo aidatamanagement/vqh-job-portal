@@ -21,30 +21,29 @@ const JobsList: React.FC = () => {
   const filteredJobs = useMemo(() => {
     let filtered = jobs.filter(job => job.isActive);
 
-    // Search filter - check multiple fields
+    // Search filter
     if (filters.search) {
       const searchLower = filters.search.toLowerCase();
       filtered = filtered.filter(job =>
         job.title.toLowerCase().includes(searchLower) ||
         job.description.toLowerCase().includes(searchLower) ||
-        job.position.toLowerCase().includes(searchLower) ||
-        job.location.toLowerCase().includes(searchLower)
+        job.position.toLowerCase().includes(searchLower)
       );
     }
 
-    // Position filter - check if job position matches any selected positions
+    // Position filter
     if (filters.positions.length > 0) {
       filtered = filtered.filter(job =>
         filters.positions.includes(job.position)
       );
     }
 
-    // Location filter - exact match
+    // Location filter
     if (filters.location) {
       filtered = filtered.filter(job => job.location === filters.location);
     }
 
-    // Sort by creation date
+    // Sort
     filtered.sort((a, b) => {
       const dateA = new Date(a.createdAt).getTime();
       const dateB = new Date(b.createdAt).getTime();
@@ -59,12 +58,6 @@ const JobsList: React.FC = () => {
 
   const handleLoadMore = () => {
     setDisplayCount(prev => prev + 12);
-  };
-
-  const handleFiltersChange = (newFilters: FilterState) => {
-    setFilters(newFilters);
-    // Reset display count when filters change
-    setDisplayCount(12);
   };
 
   return (
@@ -85,7 +78,7 @@ const JobsList: React.FC = () => {
           <div className="animate-slide-up-delayed">
             <JobFilters
               filters={filters}
-              onFiltersChange={handleFiltersChange}
+              onFiltersChange={setFilters}
               totalJobs={filteredJobs.length}
             />
           </div>
