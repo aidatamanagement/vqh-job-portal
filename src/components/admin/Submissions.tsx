@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -89,36 +88,25 @@ const Submissions: React.FC = () => {
 
   // Delete application and associated files
   const deleteApplication = async (applicationId: string) => {
+    if (!applicationId) {
+      toast({
+        title: "Error",
+        description: "Invalid application ID.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     try {
       setDeletingApplication(applicationId);
       console.log('Starting deletion process for application:', applicationId);
 
-      const application = submissions.find(app => app.id === applicationId);
-      if (!application) {
-        toast({
-          title: "Error",
-          description: "Application not found in local data.",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      // Step 1: Delete the application record from the database first
+      // Step 1: Delete the application record from the database
       console.log('Step 1: Deleting record from database...');
-      try {
-        await deleteApplicationFromDatabase(applicationId);
-        console.log('Successfully deleted application from database');
-      } catch (dbError) {
-        console.error('Database deletion failed:', dbError);
-        toast({
-          title: "Deletion Failed",
-          description: `Failed to delete application: ${dbError instanceof Error ? dbError.message : 'Unknown database error'}`,
-          variant: "destructive",
-        });
-        return;
-      }
+      await deleteApplicationFromDatabase(applicationId);
+      console.log('Successfully deleted application from database');
 
-      // Step 2: Delete files from storage (optional step, don't fail if this fails)
+      // Step 2: Delete files from storage (non-blocking)
       console.log('Step 2: Deleting files from storage...');
       try {
         await deleteApplicationFiles(applicationId);
@@ -137,15 +125,16 @@ const Submissions: React.FC = () => {
       }
 
       toast({
-        title: "Application Deleted",
-        description: "The application has been successfully deleted.",
+        title: "Success",
+        description: "Application has been successfully deleted.",
       });
 
     } catch (error) {
-      console.error('Error in deleteApplication:', error);
+      console.error('Error deleting application:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
       toast({
         title: "Deletion Failed",
-        description: `Failed to delete application: ${error instanceof Error ? error.message : 'Unknown error'}. Please try again.`,
+        description: `Failed to delete application: ${errorMessage}`,
         variant: "destructive",
       });
     } finally {
