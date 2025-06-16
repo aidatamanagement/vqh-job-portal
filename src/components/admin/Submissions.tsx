@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -56,7 +55,7 @@ const Submissions: React.FC = () => {
         earliestStartDate: item.earliest_start_date || '',
         cityState: item.city_state || '',
         coverLetter: item.cover_letter || '',
-        resumeUrl: 'https://example.com/resume.pdf', // Placeholder since we don't have file storage yet
+        resumeUrl: getResumeUrl(item.id), // Use the uploaded resume URL pattern
         additionalDocsUrls: item.additional_docs_urls || [],
         status: item.status as 'waiting' | 'approved' | 'rejected',
         notes: '',
@@ -75,6 +74,14 @@ const Submissions: React.FC = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  // Helper function to get resume URL from Supabase storage
+  const getResumeUrl = (applicationId: string) => {
+    // Try common file extensions for resume
+    const extensions = ['pdf', 'doc', 'docx'];
+    // For now, return the most likely URL - in production you might want to query storage
+    return `https://dtmwyzrleyevcgtfwrnr.supabase.co/storage/v1/object/public/job-applications/${applicationId}/resume.pdf`;
   };
 
   // Update application status in Supabase

@@ -62,6 +62,33 @@ const ApplicationModal: React.FC<ApplicationModalProps> = ({ isOpen, onClose, jo
     }
   };
 
+  const uploadFileToSupabase = async (file: File, applicationId: string, fileType: 'resume' | 'additional', index?: number): Promise<string> => {
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${applicationId}/${fileType}${index !== undefined ? `_${index}` : ''}.${fileExt}`;
+    
+    console.log(`Uploading file: ${fileName}`);
+    
+    const { data, error } = await supabase.storage
+      .from('job-applications')
+      .upload(fileName, file, {
+        cacheControl: '3600',
+        upsert: true
+      });
+
+    if (error) {
+      console.error('File upload error:', error);
+      throw new Error(`Failed to upload ${fileType}: ${error.message}`);
+    }
+
+    // Get the public URL for the uploaded file
+    const { data: { publicUrl } } = supabase.storage
+      .from('job-applications')
+      .getPublicUrl(fileName);
+
+    console.log(`File uploaded successfully: ${publicUrl}`);
+    return publicUrl;
+  };
+
   const validateForm = () => {
     const required = ['firstName', 'lastName', 'email', 'phone', 'earliestStartDate', 'cityState', 'coverLetter'];
     
@@ -105,8 +132,27 @@ const ApplicationModal: React.FC<ApplicationModalProps> = ({ isOpen, onClose, jo
     setIsSubmitting(true);
 
     try {
+      // Generate a unique application ID for file uploads
+      const applicationId = crypto.randomUUID();
+      
+      console.log('Starting application submission with ID:', applicationId);
+
+      // Upload resume
+      let resumeUrl = '';
+      if (files.resume) {
+        resumeUrl = await uploadFileToSupabase(files.resume, applicationId, 'resume');
+      }
+
+      // Upload additional documents
+      const additionalDocsUrls: string[] = [];
+      for (let i = 0; i < files.additionalDocs.length; i++) {
+        const docUrl = await uploadFileToSupabase(files.additionalDocs[i], applicationId, 'additional', i);
+        additionalDocsUrls.push(docUrl);
+      }
+
       // Create application data for Supabase
       const applicationData = {
+        id: applicationId,
         job_id: job.id,
         first_name: formData.firstName,
         last_name: formData.lastName,
@@ -116,9 +162,9 @@ const ApplicationModal: React.FC<ApplicationModalProps> = ({ isOpen, onClose, jo
         earliest_start_date: formData.earliestStartDate,
         city_state: formData.cityState,
         cover_letter: formData.coverLetter,
-        additional_docs_urls: files.additionalDocs.map(f => f.name),
+        additional_docs_urls: additionalDocsUrls,
         status: 'waiting',
-        user_id: crypto.randomUUID() // Generate a random UUID for anonymous users
+        user_id: null // Anonymous application
       };
 
       console.log('Submitting application data:', applicationData);
@@ -150,8 +196,8 @@ const ApplicationModal: React.FC<ApplicationModalProps> = ({ isOpen, onClose, jo
         cityState: formData.cityState,
         coverLetter: formData.coverLetter,
         status: 'waiting' as const,
-        resumeUrl: files.resume?.name,
-        additionalDocsUrls: files.additionalDocs.map(f => f.name),
+        resumeUrl: resumeUrl,
+        additionalDocsUrls: additionalDocsUrls,
         notes: '',
         createdAt: data.created_at,
         updatedAt: data.updated_at,
