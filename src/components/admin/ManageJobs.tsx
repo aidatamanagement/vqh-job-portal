@@ -96,7 +96,8 @@ const ManageJobs: React.FC = () => {
       location: job.location,
       facilities: [...job.facilities],
       isUrgent: job.isUrgent || false,
-      applicationDeadline: job.applicationDeadline || '',
+      applicationDeadline: job.applicationDeadline ? 
+        new Date(job.applicationDeadline).toISOString().slice(0, 16) : '',
     });
   };
 

@@ -122,6 +122,8 @@ const PostJob: React.FC = () => {
       location: jobForm.location,
       facilities: jobForm.facilities,
       isActive: true,
+      isUrgent: jobForm.isUrgent,
+      applicationDeadline: jobForm.applicationDeadline || null,
     });
 
     if (success) {
