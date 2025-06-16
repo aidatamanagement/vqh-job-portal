@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { ArrowLeft, MapPin, Calendar, Clock, Users, AlertTriangle, Briefcase } from 'lucide-react';
 import { useAppContext } from '@/contexts/AppContext';
 import ApplicationModal from '@/components/ApplicationModal';
+
 const JobDetails: React.FC = () => {
   const {
     id
@@ -89,13 +90,13 @@ const JobDetails: React.FC = () => {
                   {job.title}
                 </h1>
                 <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-6">
-                  <div className="flex items-center text-gray-600">
-                    <Briefcase className="w-5 h-5 mr-2" />
-                    <span className="text-lg">{job.position}</span>
+                  <div className="flex items-center text-gray-500">
+                    <Briefcase className="w-4 h-4 mr-2" />
+                    <span className="text-base">{job.position}</span>
                   </div>
-                  <div className="flex items-center text-gray-600">
-                    <MapPin className="w-5 h-5 mr-2" />
-                    <span className="text-lg">{job.location}</span>
+                  <div className="flex items-center text-gray-500">
+                    <MapPin className="w-4 h-4 mr-2" />
+                    <span className="text-base">{job.location}</span>
                   </div>
                 </div>
               </div>
