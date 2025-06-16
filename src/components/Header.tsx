@@ -1,9 +1,11 @@
+
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useNavigate } from 'react-router-dom';
 import { useAppContext } from '@/contexts/AppContext';
 import { User, LogOut, Settings, Lock } from 'lucide-react';
+
 const Header: React.FC = () => {
   const navigate = useNavigate();
   const {
@@ -12,20 +14,26 @@ const Header: React.FC = () => {
     userProfile,
     logout
   } = useAppContext();
+
   const handleLogoClick = () => {
     navigate('/');
   };
+
   const handleAdminLoginClick = () => {
     navigate('/admin/login');
   };
+
   const handleAdminClick = () => {
     navigate('/admin');
   };
+
   const handleLogout = async () => {
     await logout();
     navigate('/');
   };
-  return <header className="bg-white border-b border-gray-200 px-4 py-4 animate-slide-down">
+
+  return (
+    <header className="bg-white border-b border-gray-200 px-4 py-4 animate-slide-down">
       <div className="container mx-auto flex items-center justify-between">
         {/* Logo and Title */}
         <div className="flex items-center space-x-3 cursor-pointer group" onClick={handleLogoClick}>
@@ -40,27 +48,37 @@ const Header: React.FC = () => {
 
         {/* Authentication Controls */}
         <div className="flex items-center space-x-4">
-          {isAuthenticated ? <>
+          {isAuthenticated ? (
+            <>
               {/* User Info */}
               
 
               {/* Admin Access */}
-              {userProfile?.role === 'admin' && <Button variant="outline" size="sm" onClick={handleAdminClick} className="flex items-center space-x-2">
+              {userProfile?.role === 'admin' && (
+                <Button variant="outline" size="sm" onClick={handleAdminClick} className="flex items-center space-x-2">
                   <Settings className="w-4 h-4" />
-                  <span className="hidden sm:inline">Admin</span>
-                </Button>}
+                  <span className="hidden sm:inline">
+                    {userProfile?.display_name || userProfile?.email || 'Admin'}
+                  </span>
+                </Button>
+              )}
 
               {/* Logout Button */}
               <Button variant="outline" size="sm" onClick={handleLogout} className="flex items-center space-x-2 hover:bg-red-50 hover:border-red-200 hover:text-red-700">
                 <LogOut className="w-4 h-4" />
                 <span className="hidden sm:inline">Logout</span>
               </Button>
-            </> : <Button onClick={handleAdminLoginClick} className="bg-primary hover:bg-primary/90 flex items-center space-x-2">
+            </>
+          ) : (
+            <Button onClick={handleAdminLoginClick} className="bg-primary hover:bg-primary/90 flex items-center space-x-2">
               <Lock className="w-4 h-4" />
               <span>Admin Login</span>
-            </Button>}
+            </Button>
+          )}
         </div>
       </div>
-    </header>;
+    </header>
+  );
 };
+
 export default Header;
