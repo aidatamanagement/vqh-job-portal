@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, MapPin, Calendar, Clock, Users, AlertTriangle } from 'lucide-react';
+import { ArrowLeft, MapPin, Calendar, Clock, Users, AlertTriangle, Briefcase } from 'lucide-react';
 import { useAppContext } from '@/contexts/AppContext';
 import ApplicationModal from '@/components/ApplicationModal';
 const JobDetails: React.FC = () => {
@@ -85,15 +85,18 @@ const JobDetails: React.FC = () => {
                 </div>}
 
               <div>
-                <h1 className="text-3xl font-bold text-gray-900 mb-2">
+                <h1 className="text-3xl font-bold text-gray-900 mb-4">
                   {job.title}
                 </h1>
-                <p className="text-xl text-primary font-semibold mb-1">
-                  {job.position}
-                </p>
-                <div className="flex items-center text-gray-600">
-                  <MapPin className="w-5 h-5 mr-2" />
-                  <span className="text-lg">{job.location}</span>
+                <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-6">
+                  <div className="flex items-center text-gray-600">
+                    <Briefcase className="w-5 h-5 mr-2" />
+                    <span className="text-lg">{job.position}</span>
+                  </div>
+                  <div className="flex items-center text-gray-600">
+                    <MapPin className="w-5 h-5 mr-2" />
+                    <span className="text-lg">{job.location}</span>
+                  </div>
                 </div>
               </div>
               
