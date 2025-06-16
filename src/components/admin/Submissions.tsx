@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -8,72 +9,125 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Search, Filter, Eye, X, FileText, Download, ExternalLink, Inbox } from 'lucide-react';
 import { JobApplication } from '@/types';
-
-// Mock data for submissions
-const mockSubmissions: JobApplication[] = [
-  {
-    id: '1',
-    jobId: '1',
-    firstName: 'John',
-    lastName: 'Doe',
-    email: 'john.doe@email.com',
-    phone: '(555) 123-4567',
-    appliedPosition: 'Registered Nurse',
-    earliestStartDate: '2024-07-01',
-    cityState: 'New York, NY',
-    coverLetter: 'I am passionate about providing compassionate care...',
-    resumeUrl: 'https://example.com/resume.pdf',
-    additionalDocsUrls: ['https://example.com/license.pdf', 'https://example.com/references.pdf'],
-    status: 'waiting',
-    notes: '',
-    createdAt: '2024-06-15T10:30:00Z',
-    updatedAt: '2024-06-15T10:30:00Z',
-  },
-  {
-    id: '2',
-    jobId: '2',
-    firstName: 'Sarah',
-    lastName: 'Johnson',
-    email: 'sarah.johnson@email.com',
-    phone: '(555) 987-6543',
-    appliedPosition: 'Social Worker',
-    earliestStartDate: '2024-08-01',
-    cityState: 'Los Angeles, CA',
-    coverLetter: 'With my background in social work and dedication to helping others...',
-    resumeUrl: 'https://example.com/resume2.pdf',
-    additionalDocsUrls: ['https://example.com/certification.pdf'],
-    status: 'approved',
-    notes: 'Great candidate with excellent references',
-    createdAt: '2024-06-10T14:20:00Z',
-    updatedAt: '2024-06-12T09:15:00Z',
-  },
-  {
-    id: '3',
-    jobId: '1',
-    firstName: 'Michael',
-    lastName: 'Brown',
-    email: 'michael.brown@email.com',
-    phone: '(555) 456-7890',
-    appliedPosition: 'Registered Nurse',
-    earliestStartDate: '2024-09-01',
-    cityState: 'Chicago, IL',
-    coverLetter: 'I have been working in healthcare for over 10 years...',
-    resumeUrl: 'https://example.com/resume3.pdf',
-    additionalDocsUrls: [],
-    status: 'rejected',
-    notes: 'Not a good fit for the current position',
-    createdAt: '2024-06-08T16:45:00Z',
-    updatedAt: '2024-06-09T11:30:00Z',
-  },
-];
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from '@/hooks/use-toast';
 
 const Submissions: React.FC = () => {
-  const [submissions, setSubmissions] = useState<JobApplication[]>(mockSubmissions);
+  const [submissions, setSubmissions] = useState<JobApplication[]>([]);
+  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [positionFilter, setPositionFilter] = useState<string>('all');
   const [selectedApplication, setSelectedApplication] = useState<JobApplication | null>(null);
   const [viewingFile, setViewingFile] = useState<{ url: string; name: string } | null>(null);
+
+  // Fetch submissions from Supabase
+  const fetchSubmissions = async () => {
+    try {
+      setLoading(true);
+      console.log('Fetching submissions from Supabase...');
+
+      const { data, error } = await supabase
+        .from('job_applications')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Error fetching submissions:', error);
+        toast({
+          title: "Error",
+          description: "Failed to load submissions. Please try again.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      console.log('Fetched submissions:', data);
+
+      // Transform data to match the expected format
+      const transformedSubmissions: JobApplication[] = data.map(item => ({
+        id: item.id,
+        jobId: item.job_id,
+        firstName: item.first_name,
+        lastName: item.last_name,
+        email: item.email,
+        phone: item.phone || '',
+        appliedPosition: item.applied_position,
+        earliestStartDate: item.earliest_start_date || '',
+        cityState: item.city_state || '',
+        coverLetter: item.cover_letter || '',
+        resumeUrl: 'https://example.com/resume.pdf', // Placeholder since we don't have file storage yet
+        additionalDocsUrls: item.additional_docs_urls || [],
+        status: item.status as 'waiting' | 'approved' | 'rejected',
+        notes: '',
+        createdAt: item.created_at,
+        updatedAt: item.updated_at,
+      }));
+
+      setSubmissions(transformedSubmissions);
+    } catch (error) {
+      console.error('Error in fetchSubmissions:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load submissions. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Update application status in Supabase
+  const updateApplicationStatus = async (id: string, newStatus: 'waiting' | 'approved' | 'rejected') => {
+    try {
+      console.log('Updating application status:', { id, newStatus });
+
+      const { error } = await supabase
+        .from('job_applications')
+        .update({ 
+          status: newStatus,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', id);
+
+      if (error) {
+        console.error('Error updating status:', error);
+        toast({
+          title: "Error",
+          description: "Failed to update application status. Please try again.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Update local state
+      setSubmissions(prev => prev.map(app => 
+        app.id === id 
+          ? { ...app, status: newStatus, updatedAt: new Date().toISOString() }
+          : app
+      ));
+
+      if (selectedApplication && selectedApplication.id === id) {
+        setSelectedApplication(prev => prev ? { ...prev, status: newStatus } : null);
+      }
+
+      toast({
+        title: "Status Updated",
+        description: `Application status has been updated to ${newStatus}`,
+      });
+    } catch (error) {
+      console.error('Error in updateApplicationStatus:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update application status. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  useEffect(() => {
+    fetchSubmissions();
+  }, []);
 
   const filteredSubmissions = submissions.filter(submission => {
     const matchesSearch = searchTerm === '' || 
@@ -137,17 +191,6 @@ const Submissions: React.FC = () => {
     });
   };
 
-  const updateApplicationStatus = (id: string, newStatus: 'waiting' | 'approved' | 'rejected') => {
-    setSubmissions(prev => prev.map(app => 
-      app.id === id 
-        ? { ...app, status: newStatus, updatedAt: new Date().toISOString() }
-        : app
-    ));
-    if (selectedApplication && selectedApplication.id === id) {
-      setSelectedApplication(prev => prev ? { ...prev, status: newStatus } : null);
-    }
-  };
-
   const getUniquePositions = () => {
     const positions = [...new Set(submissions.map(s => s.appliedPosition))];
     return positions;
@@ -156,6 +199,25 @@ const Submissions: React.FC = () => {
   const openFileViewer = (url: string, name: string) => {
     setViewingFile({ url, name });
   };
+
+  if (loading) {
+    return (
+      <div className="space-y-6 animate-slide-up">
+        <div className="flex justify-between items-center">
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-lg" style={{ backgroundColor: '#005586' }}>
+              <Inbox className="w-6 h-6 text-white" />
+            </div>
+            <h1 className="font-bold text-gray-900 text-lg sm:text-xl lg:text-2xl">Submissions</h1>
+          </div>
+        </div>
+        <div className="flex justify-center items-center h-64">
+          <div className="spinner" />
+          <span className="ml-2">Loading submissions...</span>
+        </div>
+      </div>
+    );
+  }
 
   const renderSubmissionsTable = (submissions: JobApplication[]) => (
     <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
@@ -357,7 +419,7 @@ const Submissions: React.FC = () => {
                     </div>
                     <div>
                       <span className="font-medium text-gray-700">Earliest Start Date:</span>
-                      <span className="ml-2">{formatDate(selectedApplication.earliestStartDate)}</span>
+                      <span className="ml-2">{selectedApplication.earliestStartDate ? formatDate(selectedApplication.earliestStartDate) : 'Not specified'}</span>
                     </div>
                   </div>
                 </div>
@@ -390,7 +452,7 @@ const Submissions: React.FC = () => {
               <div>
                 <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-3">Cover Letter</h3>
                 <div className="bg-gray-50 p-3 sm:p-4 rounded-lg">
-                  <p className="text-gray-700 whitespace-pre-wrap text-sm">{selectedApplication.coverLetter}</p>
+                  <div className="text-gray-700 whitespace-pre-wrap text-sm" dangerouslySetInnerHTML={{ __html: selectedApplication.coverLetter }} />
                 </div>
               </div>
 
@@ -459,16 +521,6 @@ const Submissions: React.FC = () => {
                   ))}
                 </div>
               </div>
-
-              {/* Notes */}
-              {selectedApplication.notes && (
-                <div>
-                  <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-3">Notes</h3>
-                  <div className="bg-yellow-50 p-3 sm:p-4 rounded-lg border border-yellow-200">
-                    <p className="text-gray-700 text-sm">{selectedApplication.notes}</p>
-                  </div>
-                </div>
-              )}
 
               {/* Action Buttons */}
               <div className="flex flex-col sm:flex-row gap-3 pt-4 border-t">

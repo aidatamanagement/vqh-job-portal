@@ -10,6 +10,7 @@ import { Job } from '@/types';
 import { useAppContext } from '@/contexts/AppContext';
 import { toast } from '@/hooks/use-toast';
 import RichTextEditor from '@/components/ui/rich-text-editor';
+import { supabase } from '@/integrations/supabase/client';
 
 interface ApplicationModalProps {
   isOpen: boolean;
@@ -104,21 +105,56 @@ const ApplicationModal: React.FC<ApplicationModalProps> = ({ isOpen, onClose, jo
     setIsSubmitting(true);
 
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      // Create application data for Supabase
+      const applicationData = {
+        job_id: job.id,
+        first_name: formData.firstName,
+        last_name: formData.lastName,
+        email: formData.email,
+        phone: formData.phone,
+        applied_position: job.position,
+        earliest_start_date: formData.earliestStartDate,
+        city_state: formData.cityState,
+        cover_letter: formData.coverLetter,
+        additional_docs_urls: files.additionalDocs.map(f => f.name),
+        status: 'waiting',
+        user_id: '00000000-0000-0000-0000-000000000000' // Temporary user ID since we don't have auth
+      };
 
-      // Create new application
+      console.log('Submitting application data:', applicationData);
+
+      // Insert into Supabase
+      const { data, error } = await supabase
+        .from('job_applications')
+        .insert([applicationData])
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Supabase error:', error);
+        throw new Error('Failed to submit application to database');
+      }
+
+      console.log('Application submitted successfully:', data);
+
+      // Update local state for immediate UI update
       const newApplication = {
-        id: Date.now().toString(),
+        id: data.id,
         jobId: job.id,
-        ...formData,
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        email: formData.email,
+        phone: formData.phone,
         appliedPosition: job.position,
+        earliestStartDate: formData.earliestStartDate,
+        cityState: formData.cityState,
+        coverLetter: formData.coverLetter,
         status: 'waiting' as const,
         resumeUrl: files.resume?.name,
         additionalDocsUrls: files.additionalDocs.map(f => f.name),
         notes: '',
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
+        createdAt: data.created_at,
+        updatedAt: data.updated_at,
       };
 
       setApplications(prev => [...prev, newApplication]);
@@ -130,6 +166,7 @@ const ApplicationModal: React.FC<ApplicationModalProps> = ({ isOpen, onClose, jo
       });
 
     } catch (error) {
+      console.error('Application submission error:', error);
       toast({
         title: "Submission Error",
         description: "There was an error submitting your application. Please try again.",
