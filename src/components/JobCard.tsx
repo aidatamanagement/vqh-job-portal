@@ -37,7 +37,7 @@ const JobCard: React.FC<JobCardProps> = ({ job }) => {
   };
 
   return (
-    <Card className="job-card p-4 bg-white border border-gray-200 hover:border-primary/30 animate-fade-in-up h-80 flex flex-col">
+    <Card className="job-card p-4 bg-white border border-gray-200 hover:border-primary/30 animate-fade-in-up flex flex-col h-full">
       <div className="space-y-3 flex-1 flex flex-col">
         {/* Position and Location */}
         <div className="flex justify-between items-center">
