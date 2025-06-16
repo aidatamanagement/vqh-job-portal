@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -91,7 +90,7 @@ const Submissions: React.FC = () => {
   const deleteApplication = async (applicationId: string) => {
     try {
       setDeletingApplication(applicationId);
-      console.log('Deleting application:', applicationId);
+      console.log('Starting deletion process for application:', applicationId);
 
       const application = submissions.find(app => app.id === applicationId);
       if (!application) {
@@ -103,13 +102,19 @@ const Submissions: React.FC = () => {
         return;
       }
 
-      // Delete files from storage
-      await deleteApplicationFiles(applicationId);
+      // Step 1: Delete files from storage (non-critical, can continue if fails)
+      console.log('Step 1: Deleting files from storage...');
+      const filesDeleted = await deleteApplicationFiles(applicationId);
+      if (!filesDeleted) {
+        console.warn('Some files may not have been deleted from storage, but continuing with database deletion');
+      }
 
-      // Delete the application record from the database
+      // Step 2: Delete the application record from the database (critical)
+      console.log('Step 2: Deleting record from database...');
       await deleteApplicationFromDatabase(applicationId);
 
-      // Update local state
+      // Step 3: Update local state only after successful database deletion
+      console.log('Step 3: Updating local state...');
       setSubmissions(prev => prev.filter(app => app.id !== applicationId));
 
       // Close the details modal if the deleted application was selected
@@ -119,14 +124,14 @@ const Submissions: React.FC = () => {
 
       toast({
         title: "Application Deleted",
-        description: "The application and all associated files have been deleted successfully.",
+        description: "The application has been successfully deleted from the database and storage.",
       });
 
     } catch (error) {
       console.error('Error in deleteApplication:', error);
       toast({
-        title: "Error",
-        description: `Failed to delete application: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        title: "Deletion Failed",
+        description: `Failed to delete application: ${error instanceof Error ? error.message : 'Unknown error'}. Please try again.`,
         variant: "destructive",
       });
     } finally {
