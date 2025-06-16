@@ -112,40 +112,50 @@ export const deleteApplicationFiles = async (applicationId: string) => {
 
 export const deleteApplicationFromDatabase = async (applicationId: string) => {
   try {
-    console.log('Deleting application record from database:', applicationId);
+    console.log('=== STARTING DATABASE DELETION ===');
+    console.log('Application ID to delete:', applicationId);
     
-    // First, let's check if the record exists
+    // First, verify the record exists
+    console.log('Step 1: Checking if record exists...');
     const { data: existingRecord, error: checkError } = await supabase
       .from('job_applications')
-      .select('id')
+      .select('id, first_name, last_name, email')
       .eq('id', applicationId)
-      .single();
+      .maybeSingle();
 
-    if (checkError && checkError.code !== 'PGRST116') {
+    if (checkError) {
       console.error('Error checking if record exists:', checkError);
-      throw new Error(`Failed to check application record: ${checkError.message}`);
+      throw new Error(`Database check failed: ${checkError.message}`);
     }
 
     if (!existingRecord) {
-      console.log('Record not found in database, may have been already deleted');
-      return;
+      console.log('Record not found in database - may have been already deleted');
+      return { success: true, message: 'Record not found - may have been already deleted' };
     }
 
-    console.log('Record exists, proceeding with deletion');
+    console.log('Record found:', existingRecord);
+    console.log('Step 2: Proceeding with deletion...');
 
-    const { error: deleteError } = await supabase
+    // Perform the deletion
+    const { data: deletedData, error: deleteError } = await supabase
       .from('job_applications')
       .delete()
-      .eq('id', applicationId);
+      .eq('id', applicationId)
+      .select();
 
     if (deleteError) {
-      console.error('Error deleting application from database:', deleteError);
-      throw new Error(`Failed to delete application from database: ${deleteError.message}`);
+      console.error('Error deleting from database:', deleteError);
+      throw new Error(`Database deletion failed: ${deleteError.message}`);
     }
 
-    console.log('Successfully deleted application from database');
+    console.log('Deletion result:', deletedData);
+    console.log('=== DATABASE DELETION COMPLETED SUCCESSFULLY ===');
+    
+    return { success: true, deletedData };
+    
   } catch (error) {
-    console.error('Error in deleteApplicationFromDatabase:', error);
+    console.error('=== DATABASE DELETION FAILED ===');
+    console.error('Error details:', error);
     throw error;
   }
 };
