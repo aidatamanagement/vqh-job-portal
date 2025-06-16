@@ -118,7 +118,7 @@ const ApplicationModal: React.FC<ApplicationModalProps> = ({ isOpen, onClose, jo
         cover_letter: formData.coverLetter,
         additional_docs_urls: files.additionalDocs.map(f => f.name),
         status: 'waiting',
-        user_id: '00000000-0000-0000-0000-000000000000' // Temporary user ID since we don't have auth
+        user_id: crypto.randomUUID() // Generate a random UUID for anonymous users
       };
 
       console.log('Submitting application data:', applicationData);
@@ -131,8 +131,8 @@ const ApplicationModal: React.FC<ApplicationModalProps> = ({ isOpen, onClose, jo
         .single();
 
       if (error) {
-        console.error('Supabase error:', error);
-        throw new Error('Failed to submit application to database');
+        console.error('Supabase error details:', error);
+        throw new Error(`Failed to submit application: ${error.message}`);
       }
 
       console.log('Application submitted successfully:', data);
@@ -169,7 +169,7 @@ const ApplicationModal: React.FC<ApplicationModalProps> = ({ isOpen, onClose, jo
       console.error('Application submission error:', error);
       toast({
         title: "Submission Error",
-        description: "There was an error submitting your application. Please try again.",
+        description: error instanceof Error ? error.message : "There was an error submitting your application. Please try again.",
         variant: "destructive",
       });
     } finally {
