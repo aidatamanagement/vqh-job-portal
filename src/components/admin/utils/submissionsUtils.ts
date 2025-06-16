@@ -114,25 +114,7 @@ export const deleteApplicationFromDatabase = async (applicationId: string) => {
   try {
     console.log('Deleting application record from database:', applicationId);
     
-    // First, verify the application exists
-    const { data: checkData, error: checkError } = await supabase
-      .from('job_applications')
-      .select('id')
-      .eq('id', applicationId);
-
-    if (checkError) {
-      console.error('Error checking application existence:', checkError);
-      throw new Error(`Failed to verify application: ${checkError.message}`);
-    }
-
-    if (!checkData || checkData.length === 0) {
-      console.warn('Application not found in database:', applicationId);
-      throw new Error('Application not found in database');
-    }
-
-    console.log('Application found, proceeding with deletion');
-
-    // Now delete the application
+    // Directly delete the application - Supabase will handle if it doesn't exist
     const { error: deleteError } = await supabase
       .from('job_applications')
       .delete()
