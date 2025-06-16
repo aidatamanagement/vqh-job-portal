@@ -12,30 +12,12 @@ import Settings from '@/components/admin/Settings';
 type AdminView = 'post-job' | 'manage-jobs' | 'submissions' | 'settings';
 
 const AdminDashboard: React.FC = () => {
-  const { isAuthenticated, userProfile } = useAppContext();
+  const { isAuthenticated } = useAppContext();
   const [currentView, setCurrentView] = useState<AdminView>('post-job');
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  // Show loading while checking authentication
-  if (isAuthenticated && userProfile === null) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="spinner mb-4" />
-          <p>Loading dashboard...</p>
-        </div>
-      </div>
-    );
-  }
-
-  // Check if user is authenticated
   if (!isAuthenticated) {
     return <Navigate to="/admin/login" replace />;
-  }
-
-  // Check if user is admin (only redirect after we have profile data)
-  if (userProfile && userProfile.role !== 'admin') {
-    return <Navigate to="/" replace />;
   }
 
   const renderContent = () => {

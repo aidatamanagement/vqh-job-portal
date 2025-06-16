@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
@@ -62,63 +61,54 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [facilities, setFacilities] = useState<JobFacility[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
-  const isAuthenticated = !!user && !!session;
+  const isAuthenticated = !!user;
 
   // Initialize auth state
   useEffect(() => {
-    // Set up auth state listener FIRST
+    // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         console.log('Auth state changed:', event, session?.user?.email);
         setSession(session);
         setUser(session?.user ?? null);
         
-        if (session?.user && event === 'SIGNED_IN') {
-          // Defer profile fetching to avoid blocking auth state change
+        if (session?.user) {
+          // Fetch user profile when user logs in
           setTimeout(() => {
             fetchUserProfile(session.user.id);
-          }, 100);
-        } else if (event === 'SIGNED_OUT') {
+          }, 0);
+        } else {
           setUserProfile(null);
-          setApplications([]);
         }
       }
     );
 
-    // THEN check for existing session
+    // Check for existing session
     supabase.auth.getSession().then(({ data: { session } }) => {
-      console.log('Initial session check:', session?.user?.email);
       setSession(session);
       setUser(session?.user ?? null);
       if (session?.user) {
-        setTimeout(() => {
-          fetchUserProfile(session.user.id);
-        }, 100);
+        fetchUserProfile(session.user.id);
       }
     });
 
     return () => subscription.unsubscribe();
   }, []);
 
-  // Fetch user profile with better error handling
+  // Fetch user profile
   const fetchUserProfile = async (userId: string) => {
     try {
-      console.log('Fetching user profile for:', userId);
-      
-      // Use a simpler query to avoid RLS recursion issues
       const { data, error } = await supabase
         .from('profiles')
-        .select('id, email, display_name, role, admin_name, created_at')
+        .select('*')
         .eq('id', userId)
-        .maybeSingle();
+        .single();
       
       if (error) {
         console.error('Error fetching user profile:', error);
-        // Don't throw - just log and continue without profile
         return;
       }
       
-      console.log('User profile fetched:', data);
       setUserProfile(data);
     } catch (error) {
       console.error('Error fetching user profile:', error);
@@ -128,7 +118,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   // Fetch jobs from database
   const fetchJobs = async () => {
     try {
-      console.log('Fetching jobs...');
       const { data, error } = await supabase
         .from('jobs')
         .select('*')
@@ -140,7 +129,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         return;
       }
 
-      console.log('Jobs fetched:', data?.length);
       // Transform data to match existing Job interface
       const transformedJobs = data.map(job => ({
         id: job.id,
@@ -162,13 +150,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   // Fetch applications from database
   const fetchApplications = async () => {
-    if (!user || !session) {
-      console.log('No user or session for fetching applications');
-      return;
-    }
+    if (!user) return;
     
     try {
-      console.log('Fetching applications for user:', user.id);
       let query = supabase.from('job_applications').select('*');
       
       // If user is admin, fetch all applications, otherwise only their own
@@ -183,7 +167,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         return;
       }
 
-      console.log('Applications fetched:', data?.length);
       // Transform data to match existing JobApplication interface
       const transformedApplications = data.map(app => ({
         id: app.id,
@@ -196,7 +179,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         earliestStartDate: app.earliest_start_date,
         cityState: app.city_state,
         coverLetter: app.cover_letter,
-        status: app.status as 'waiting' | 'approved' | 'rejected',
+        status: app.status as 'waiting' | 'approved' | 'rejected', // Type assertion to match our interface
         additionalDocsUrls: app.additional_docs_urls || [],
         createdAt: app.created_at,
         updatedAt: app.updated_at,
@@ -211,8 +194,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   // Fetch master data
   const fetchMasterData = async () => {
     try {
-      console.log('Fetching master data...');
-      
       // Fetch positions
       const { data: positionsData } = await supabase
         .from('job_positions')
@@ -254,8 +235,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           createdAt: f.created_at,
         })));
       }
-      
-      console.log('Master data fetched successfully');
     } catch (error) {
       console.error('Error fetching master data:', error);
     }
@@ -267,34 +246,30 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     fetchMasterData();
   }, []);
 
-  // Fetch applications when user changes and profile is loaded
+  // Fetch applications when user changes
   useEffect(() => {
-    if (user && session && userProfile !== null) {
+    if (user && userProfile) {
       fetchApplications();
     }
-  }, [user, session, userProfile]);
+  }, [user, userProfile]);
 
   const login = async (email: string, password: string): Promise<{ success: boolean; error?: string }> => {
     setIsLoading(true);
     
     try {
-      console.log('Attempting login for:', email);
-      const { data, error } = await supabase.auth.signInWithPassword({
+      const { error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
 
       if (error) {
-        console.error('Login error:', error);
         setIsLoading(false);
         return { success: false, error: error.message };
       }
 
-      console.log('Login successful for:', email);
       setIsLoading(false);
       return { success: true };
     } catch (error) {
-      console.error('Login exception:', error);
       setIsLoading(false);
       return { success: false, error: 'An unexpected error occurred' };
     }
@@ -304,10 +279,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setIsLoading(true);
     
     try {
-      console.log('Attempting signup for:', email);
       const redirectUrl = `${window.location.origin}/`;
       
-      const { data, error } = await supabase.auth.signUp({
+      const { error } = await supabase.auth.signUp({
         email,
         password,
         options: {
@@ -319,16 +293,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       });
 
       if (error) {
-        console.error('Signup error:', error);
         setIsLoading(false);
         return { success: false, error: error.message };
       }
 
-      console.log('Signup successful for:', email);
       setIsLoading(false);
       return { success: true };
     } catch (error) {
-      console.error('Signup exception:', error);
       setIsLoading(false);
       return { success: false, error: 'An unexpected error occurred' };
     }
@@ -336,7 +307,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const logout = async () => {
     setIsLoading(true);
-    console.log('Logging out...');
     await supabase.auth.signOut();
     setUser(null);
     setSession(null);

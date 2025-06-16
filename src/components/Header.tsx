@@ -22,12 +22,6 @@ const Header: React.FC = () => {
     navigate('/admin');
   };
 
-  const handleUserInfoClick = () => {
-    if (userProfile?.role === 'admin') {
-      navigate('/admin');
-    }
-  };
-
   const handleLogout = async () => {
     await logout();
     navigate('/');
@@ -54,13 +48,8 @@ const Header: React.FC = () => {
         <div className="flex items-center space-x-4">
           {isAuthenticated ? (
             <>
-              {/* User Info - Now clickable for admins */}
-              <div 
-                className={`hidden sm:flex items-center space-x-3 px-3 py-2 bg-gray-50 rounded-lg ${
-                  userProfile?.role === 'admin' ? 'cursor-pointer hover:bg-gray-100 transition-colors' : ''
-                }`}
-                onClick={handleUserInfoClick}
-              >
+              {/* User Info */}
+              <div className="hidden sm:flex items-center space-x-3 px-3 py-2 bg-gray-50 rounded-lg">
                 <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center">
                   <User className="w-4 h-4 text-white" />
                 </div>
