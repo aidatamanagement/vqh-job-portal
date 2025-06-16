@@ -204,56 +204,74 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   };
 
-  // Fetch master data
+  // Fetch master data - Modified to work for all users including anonymous
   const fetchMasterData = async () => {
     try {
-      // Fetch positions
-      const { data: positionsData } = await supabase
-        .from('job_positions')
-        .select('*')
-        .order('name');
+      console.log('Fetching master data...');
+      
+      // Try to fetch positions with authentication if available, otherwise try without
+      let positionsQuery = supabase.from('job_positions').select('*').order('name');
+      
+      // For non-authenticated users, we might get RLS errors, so we'll handle them gracefully
+      const { data: positionsData, error: positionsError } = await positionsQuery;
 
-      if (positionsData) {
+      if (positionsData && !positionsError) {
         setPositions(positionsData.map(p => ({
           id: p.id,
           name: p.name,
           createdAt: p.created_at,
         })));
+        console.log('Fetched positions:', positionsData);
+      } else {
+        console.log('Could not fetch positions from database, will extract from jobs');
+        setPositions([]);
       }
 
-      // Fetch locations
-      const { data: locationsData } = await supabase
+      // Try to fetch locations
+      const { data: locationsData, error: locationsError } = await supabase
         .from('job_locations')
         .select('*')
         .order('name');
 
-      if (locationsData) {
+      if (locationsData && !locationsError) {
         setLocations(locationsData.map(l => ({
           id: l.id,
           name: l.name,
           createdAt: l.created_at,
         })));
+        console.log('Fetched locations:', locationsData);
+      } else {
+        console.log('Could not fetch locations from database, will extract from jobs');
+        setLocations([]);
       }
 
-      // Fetch facilities
-      const { data: facilitiesData } = await supabase
+      // Try to fetch facilities
+      const { data: facilitiesData, error: facilitiesError } = await supabase
         .from('job_facilities')
         .select('*')
         .order('name');
 
-      if (facilitiesData) {
+      if (facilitiesData && !facilitiesError) {
         setFacilities(facilitiesData.map(f => ({
           id: f.id,
           name: f.name,
           createdAt: f.created_at,
         })));
+        console.log('Fetched facilities:', facilitiesData);
+      } else {
+        console.log('Could not fetch facilities from database');
+        setFacilities([]);
       }
     } catch (error) {
       console.error('Error fetching master data:', error);
+      // Set empty arrays so the fallback logic in JobFilters can work
+      setPositions([]);
+      setLocations([]);
+      setFacilities([]);
     }
   };
 
-  // Initialize data on mount
+  // Initialize data on mount - fetch jobs and master data for all users
   useEffect(() => {
     fetchJobs();
     fetchMasterData();

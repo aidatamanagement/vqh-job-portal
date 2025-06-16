@@ -15,7 +15,24 @@ interface JobFiltersProps {
 }
 
 const JobFilters: React.FC<JobFiltersProps> = ({ filters, onFiltersChange, totalJobs }) => {
-  const { positions, locations } = useAppContext();
+  const { positions, locations, jobs } = useAppContext();
+
+  // Extract unique positions and locations from jobs if master data isn't available
+  const availablePositions = positions.length > 0 
+    ? positions 
+    : [...new Set(jobs.map(job => job.position))].map((position, index) => ({
+        id: `pos-${index}`,
+        name: position,
+        createdAt: new Date().toISOString()
+      }));
+
+  const availableLocations = locations.length > 0 
+    ? locations 
+    : [...new Set(jobs.map(job => job.location))].map((location, index) => ({
+        id: `loc-${index}`,
+        name: location,
+        createdAt: new Date().toISOString()
+      }));
 
   // Check if any filters are active
   const hasActiveFilters = filters.search !== '' || filters.positions.length > 0 || filters.location !== '';
@@ -66,49 +83,51 @@ const JobFilters: React.FC<JobFiltersProps> = ({ filters, onFiltersChange, total
       </div>
 
       {/* Position Categories */}
-      <div>
-        <h3 className="text-sm font-semibold text-gray-900 mb-3">Job Categories</h3>
-        <div className="flex flex-wrap gap-2">
-          {positions.map((position) => (
-            <Button
-              key={position.id}
-              variant={filters.positions.includes(position.name) ? "default" : "outline"}
-              size="sm"
-              onClick={() => handlePositionToggle(position.name)}
-              className={`${
-                filters.positions.includes(position.name)
-                  ? 'bg-primary text-white hover:bg-primary/90'
-                  : 'border-gray-300 text-gray-700 hover:bg-gray-50'
-              }`}
-            >
-              {position.name}
-            </Button>
-          ))}
-        </div>
-        
-        {/* Active position filters */}
-        {filters.positions.length > 0 && (
-          <div className="mt-3 flex flex-wrap gap-2">
-            {filters.positions.map((position) => (
-              <Badge
-                key={position}
-                variant="secondary"
-                className="bg-primary/10 text-primary border-primary/20 flex items-center gap-1"
+      {availablePositions.length > 0 && (
+        <div>
+          <h3 className="text-sm font-semibold text-gray-900 mb-3">Job Categories</h3>
+          <div className="flex flex-wrap gap-2">
+            {availablePositions.map((position) => (
+              <Button
+                key={position.id}
+                variant={filters.positions.includes(position.name) ? "default" : "outline"}
+                size="sm"
+                onClick={() => handlePositionToggle(position.name)}
+                className={`${
+                  filters.positions.includes(position.name)
+                    ? 'bg-primary text-white hover:bg-primary/90'
+                    : 'border-gray-300 text-gray-700 hover:bg-gray-50'
+                }`}
               >
-                {position}
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-auto p-0 ml-1 hover:bg-transparent"
-                  onClick={() => clearPositionFilter(position)}
-                >
-                  <X className="w-3 h-3" />
-                </Button>
-              </Badge>
+                {position.name}
+              </Button>
             ))}
           </div>
-        )}
-      </div>
+          
+          {/* Active position filters */}
+          {filters.positions.length > 0 && (
+            <div className="mt-3 flex flex-wrap gap-2">
+              {filters.positions.map((position) => (
+                <Badge
+                  key={position}
+                  variant="secondary"
+                  className="bg-primary/10 text-primary border-primary/20 flex items-center gap-1"
+                >
+                  {position}
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-auto p-0 ml-1 hover:bg-transparent"
+                    onClick={() => clearPositionFilter(position)}
+                  >
+                    <X className="w-3 h-3" />
+                  </Button>
+                </Badge>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Clear Filters Button */}
       {hasActiveFilters && (
@@ -139,19 +158,21 @@ const JobFilters: React.FC<JobFiltersProps> = ({ filters, onFiltersChange, total
             </SelectContent>
           </Select>
 
-          <Select value={filters.location || 'all'} onValueChange={handleLocationChange}>
-            <SelectTrigger className="w-full sm:w-[160px] border-gray-300">
-              <SelectValue placeholder="All Locations" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Locations</SelectItem>
-              {locations.map((location) => (
-                <SelectItem key={location.id} value={location.name}>
-                  {location.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          {availableLocations.length > 0 && (
+            <Select value={filters.location || 'all'} onValueChange={handleLocationChange}>
+              <SelectTrigger className="w-full sm:w-[160px] border-gray-300">
+                <SelectValue placeholder="All Locations" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Locations</SelectItem>
+                {availableLocations.map((location) => (
+                  <SelectItem key={location.id} value={location.name}>
+                    {location.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
         </div>
         
         {/* Results Count - Show after controls on mobile */}
