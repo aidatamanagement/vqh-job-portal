@@ -90,11 +90,11 @@ const JobDetails: React.FC = () => {
                   {job.title}
                 </h1>
                 <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-6">
-                  <div className="flex items-center text-gray-500">
+                  <div className="flex items-center" style={{ color: '#005586' }}>
                     <Briefcase className="w-4 h-4 mr-2" />
                     <span className="text-base">{job.position}</span>
                   </div>
-                  <div className="flex items-center text-gray-500">
+                  <div className="flex items-center" style={{ color: '#005586' }}>
                     <MapPin className="w-4 h-4 mr-2" />
                     <span className="text-base">{job.location}</span>
                   </div>
