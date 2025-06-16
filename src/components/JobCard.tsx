@@ -14,9 +14,17 @@ interface JobCardProps {
 const JobCard: React.FC<JobCardProps> = ({ job }) => {
   const navigate = useNavigate();
 
-  const truncateDescription = (text: string, maxWords: number = 18) => {
-    const words = text.split(' ');
-    if (words.length <= maxWords) return text;
+  const stripHtmlAndTruncate = (html: string, maxWords: number = 18) => {
+    // Create a temporary div to parse HTML
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = html;
+    
+    // Get text content without HTML tags
+    const textContent = tempDiv.textContent || tempDiv.innerText || '';
+    
+    // Split into words and truncate
+    const words = textContent.split(' ');
+    if (words.length <= maxWords) return textContent;
     return words.slice(0, maxWords).join(' ') + '...';
   };
 
@@ -51,7 +59,7 @@ const JobCard: React.FC<JobCardProps> = ({ job }) => {
 
         {/* Description */}
         <p className="text-gray-600 text-sm leading-relaxed">
-          {truncateDescription(job.description)}
+          {stripHtmlAndTruncate(job.description)}
         </p>
 
         {/* Urgent badge and Facilities/Tags */}
