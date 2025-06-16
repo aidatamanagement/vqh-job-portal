@@ -4,9 +4,10 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Search, Filter, Eye, X, FileText, Download, ExternalLink, Inbox } from 'lucide-react';
+import { Search, Filter, Eye, X, FileText, Download, ExternalLink, Inbox, Trash2 } from 'lucide-react';
 import { JobApplication } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
@@ -19,6 +20,7 @@ const Submissions: React.FC = () => {
   const [positionFilter, setPositionFilter] = useState<string>('all');
   const [selectedApplication, setSelectedApplication] = useState<JobApplication | null>(null);
   const [viewingFile, setViewingFile] = useState<{ url: string; name: string } | null>(null);
+  const [deletingApplication, setDeletingApplication] = useState<string | null>(null);
 
   // Fetch submissions from Supabase
   const fetchSubmissions = async () => {
@@ -82,6 +84,93 @@ const Submissions: React.FC = () => {
     const extensions = ['pdf', 'doc', 'docx'];
     // For now, return the most likely URL - in production you might want to query storage
     return `https://dtmwyzrleyevcgtfwrnr.supabase.co/storage/v1/object/public/job-applications/${applicationId}/resume.pdf`;
+  };
+
+  // Delete application and associated files
+  const deleteApplication = async (applicationId: string) => {
+    try {
+      setDeletingApplication(applicationId);
+      console.log('Deleting application:', applicationId);
+
+      // Get the application details to know what files to delete
+      const application = submissions.find(app => app.id === applicationId);
+      if (!application) {
+        toast({
+          title: "Error",
+          description: "Application not found.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Delete files from storage
+      const filesToDelete: string[] = [];
+      
+      // Add resume file path if it exists
+      if (application.resumeUrl) {
+        // Extract the file path from the URL
+        const resumePath = `${applicationId}/resume.pdf`; // Assuming PDF for now
+        filesToDelete.push(resumePath);
+      }
+
+      // Add additional document file paths
+      application.additionalDocsUrls.forEach((_, index) => {
+        const docPath = `${applicationId}/additional_${index}.pdf`; // Assuming PDF for now
+        filesToDelete.push(docPath);
+      });
+
+      // Delete files from storage if any exist
+      if (filesToDelete.length > 0) {
+        console.log('Deleting files from storage:', filesToDelete);
+        const { error: storageError } = await supabase.storage
+          .from('job-applications')
+          .remove(filesToDelete);
+
+        if (storageError) {
+          console.error('Error deleting files from storage:', storageError);
+          // Continue with database deletion even if file deletion fails
+        }
+      }
+
+      // Delete the application record from the database
+      const { error: dbError } = await supabase
+        .from('job_applications')
+        .delete()
+        .eq('id', applicationId);
+
+      if (dbError) {
+        console.error('Error deleting application from database:', dbError);
+        toast({
+          title: "Error",
+          description: "Failed to delete application from database. Please try again.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Update local state
+      setSubmissions(prev => prev.filter(app => app.id !== applicationId));
+
+      // Close the details modal if the deleted application was selected
+      if (selectedApplication && selectedApplication.id === applicationId) {
+        setSelectedApplication(null);
+      }
+
+      toast({
+        title: "Application Deleted",
+        description: "The application and all associated files have been deleted successfully.",
+      });
+
+    } catch (error) {
+      console.error('Error in deleteApplication:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete application. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setDeletingApplication(null);
+    }
   };
 
   // Update application status in Supabase
@@ -237,7 +326,7 @@ const Submissions: React.FC = () => {
               <TableHead className="font-semibold min-w-[120px]">Applied Date</TableHead>
               <TableHead className="font-semibold min-w-[140px]">Location</TableHead>
               <TableHead className="font-semibold min-w-[100px]">Status</TableHead>
-              <TableHead className="font-semibold text-right min-w-[120px]">Actions</TableHead>
+              <TableHead className="font-semibold text-right min-w-[160px]">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -272,17 +361,49 @@ const Submissions: React.FC = () => {
                       {getStatusText(application.status)}
                     </Badge>
                   </TableCell>
-                  <TableCell className="text-right min-w-[120px]">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setSelectedApplication(application)}
-                      className="inline-flex items-center gap-1 text-xs px-2 py-1"
-                    >
-                      <Eye className="w-3 h-3" />
-                      <span className="hidden sm:inline">View Details</span>
-                      <span className="sm:hidden">View</span>
-                    </Button>
+                  <TableCell className="text-right min-w-[160px]">
+                    <div className="flex gap-2 justify-end">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setSelectedApplication(application)}
+                        className="inline-flex items-center gap-1 text-xs px-2 py-1"
+                      >
+                        <Eye className="w-3 h-3" />
+                        <span className="hidden sm:inline">View</span>
+                      </Button>
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            disabled={deletingApplication === application.id}
+                            className="inline-flex items-center gap-1 text-xs px-2 py-1 text-red-600 hover:text-red-700 hover:bg-red-50"
+                          >
+                            <Trash2 className="w-3 h-3" />
+                            <span className="hidden sm:inline">Delete</span>
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Delete Application</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              Are you sure you want to delete this application from {application.firstName} {application.lastName}? 
+                              This will permanently delete the application record and all uploaded files. This action cannot be undone.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction
+                              onClick={() => deleteApplication(application.id)}
+                              className="bg-red-600 hover:bg-red-700"
+                            >
+                              Delete Application
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    </div>
                   </TableCell>
                 </TableRow>
               ))
@@ -554,6 +675,38 @@ const Submissions: React.FC = () => {
                 >
                   Mark as Pending
                 </Button>
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button
+                      variant="outline"
+                      disabled={deletingApplication === selectedApplication.id}
+                      className="text-sm px-4 py-2 text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200"
+                    >
+                      <Trash2 className="w-4 h-4 mr-2" />
+                      Delete Application
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Delete Application</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Are you sure you want to delete this application from {selectedApplication.firstName} {selectedApplication.lastName}? 
+                        This will permanently delete the application record and all uploaded files. This action cannot be undone.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogAction
+                        onClick={() => {
+                          deleteApplication(selectedApplication.id);
+                        }}
+                        className="bg-red-600 hover:bg-red-700"
+                      >
+                        Delete Application
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
               </div>
             </div>
           )}
