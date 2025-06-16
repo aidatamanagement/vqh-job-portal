@@ -114,28 +114,10 @@ export const deleteApplicationFromDatabase = async (applicationId: string) => {
   try {
     console.log('Deleting application record from database:', applicationId);
     
-    // First, let's check if the record exists
-    const { data: existingRecord, error: checkError } = await supabase
+    // Delete the application record from the job_applications table
+    const { error: deleteError, count } = await supabase
       .from('job_applications')
-      .select('id')
-      .eq('id', applicationId)
-      .single();
-
-    if (checkError && checkError.code !== 'PGRST116') {
-      console.error('Error checking if record exists:', checkError);
-      throw new Error(`Failed to check application record: ${checkError.message}`);
-    }
-
-    if (!existingRecord) {
-      console.log('Record not found in database, may have been already deleted');
-      return;
-    }
-
-    console.log('Record exists, proceeding with deletion');
-
-    const { error: deleteError } = await supabase
-      .from('job_applications')
-      .delete()
+      .delete({ count: 'exact' })
       .eq('id', applicationId);
 
     if (deleteError) {
@@ -143,7 +125,13 @@ export const deleteApplicationFromDatabase = async (applicationId: string) => {
       throw new Error(`Failed to delete application from database: ${deleteError.message}`);
     }
 
-    console.log('Successfully deleted application from database');
+    console.log('Successfully deleted application from database. Rows affected:', count);
+    
+    if (count === 0) {
+      console.warn('No rows were deleted - application may not exist in database');
+    }
+    
+    return count;
   } catch (error) {
     console.error('Error in deleteApplicationFromDatabase:', error);
     throw error;
