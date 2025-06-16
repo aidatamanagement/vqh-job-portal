@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -7,52 +6,47 @@ import { Badge } from '@/components/ui/badge';
 import { ArrowLeft, MapPin, Calendar, Clock, Users, AlertTriangle } from 'lucide-react';
 import { useAppContext } from '@/contexts/AppContext';
 import ApplicationModal from '@/components/ApplicationModal';
-
 const JobDetails: React.FC = () => {
-  const { id } = useParams<{ id: string }>();
+  const {
+    id
+  } = useParams<{
+    id: string;
+  }>();
   const navigate = useNavigate();
-  const { jobs } = useAppContext();
+  const {
+    jobs
+  } = useAppContext();
   const [showApplicationModal, setShowApplicationModal] = useState(false);
-
   const job = jobs.find(j => j.id === id);
-
   if (!job) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+    return <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <h2 className="text-2xl font-bold text-gray-900 mb-4">Job Not Found</h2>
           <Button onClick={() => navigate('/')} className="bg-primary hover:bg-primary/90">
             Back to Jobs
           </Button>
         </div>
-      </div>
-    );
+      </div>;
   }
-
   const handleBack = () => {
     navigate('/');
   };
-
   const handleApplyNow = () => {
     setShowApplicationModal(true);
   };
-
   const isDeadlineApproaching = (deadline: string) => {
     const deadlineDate = new Date(deadline);
     const now = new Date();
     const daysUntilDeadline = Math.ceil((deadlineDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
     return daysUntilDeadline <= 7 && daysUntilDeadline > 0;
   };
-
   const isDeadlinePassed = (deadline: string) => {
     return new Date(deadline) < new Date();
   };
-
   const formatDeadline = (deadline: string) => {
     const deadlineDate = new Date(deadline);
     const now = new Date();
     const daysUntilDeadline = Math.ceil((deadlineDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
-    
     if (daysUntilDeadline < 0) {
       return 'Applications have closed';
     } else if (daysUntilDeadline === 0) {
@@ -65,19 +59,12 @@ const JobDetails: React.FC = () => {
       return `Applications close on ${deadlineDate.toLocaleDateString()}`;
     }
   };
-
   const isApplicationDisabled = job.applicationDeadline && isDeadlinePassed(job.applicationDeadline);
-
-  return (
-    <div className="min-h-screen bg-gray-50">
+  return <div className="min-h-screen bg-gray-50">
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-7xl mx-auto">
           {/* Back Button */}
-          <Button
-            variant="ghost"
-            onClick={handleBack}
-            className="mb-6 text-gray-600 hover:text-gray-900"
-          >
+          <Button variant="ghost" onClick={handleBack} className="mb-6 text-gray-600 hover:text-gray-900">
             <ArrowLeft className="w-4 h-4 mr-2" />
             Back to All Jobs
           </Button>
@@ -86,28 +73,16 @@ const JobDetails: React.FC = () => {
           <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8 mb-8 animate-fade-in-up">
             <div className="space-y-4">
               {/* Urgent and deadline badges */}
-              {(job.isUrgent || job.applicationDeadline) && (
-                <div className="flex flex-wrap gap-2">
-                  {job.isUrgent && (
-                    <Badge variant="destructive" className="flex items-center gap-1 text-sm">
+              {(job.isUrgent || job.applicationDeadline) && <div className="flex flex-wrap gap-2">
+                  {job.isUrgent && <Badge variant="destructive" className="flex items-center gap-1 text-sm">
                       <AlertTriangle className="w-4 h-4" />
                       Urgent Position
-                    </Badge>
-                  )}
-                  {job.applicationDeadline && (
-                    <Badge 
-                      variant={isDeadlinePassed(job.applicationDeadline) ? "destructive" : 
-                              isDeadlineApproaching(job.applicationDeadline) ? "outline" : "secondary"}
-                      className={`flex items-center gap-1 text-sm ${
-                        isDeadlineApproaching(job.applicationDeadline) ? 'border-orange-400 text-orange-700' : ''
-                      }`}
-                    >
+                    </Badge>}
+                  {job.applicationDeadline && <Badge variant={isDeadlinePassed(job.applicationDeadline) ? "destructive" : isDeadlineApproaching(job.applicationDeadline) ? "outline" : "secondary"} className={`flex items-center gap-1 text-sm ${isDeadlineApproaching(job.applicationDeadline) ? 'border-orange-400 text-orange-700' : ''}`}>
                       <Clock className="w-4 h-4" />
                       {formatDeadline(job.applicationDeadline)}
-                    </Badge>
-                  )}
-                </div>
-              )}
+                    </Badge>}
+                </div>}
 
               <div>
                 <h1 className="text-3xl font-bold text-gray-900 mb-2">
@@ -123,15 +98,9 @@ const JobDetails: React.FC = () => {
               </div>
               
               <div className="flex flex-wrap gap-2">
-                {job.facilities.map((facility, index) => (
-                  <Badge 
-                    key={index} 
-                    variant="secondary" 
-                    className="bg-primary/10 text-primary border-primary/20"
-                  >
+                {job.facilities.map((facility, index) => <Badge key={index} variant="secondary" className="bg-primary/10 text-primary border-primary/20">
                     {facility}
-                  </Badge>
-                ))}
+                  </Badge>)}
               </div>
             </div>
           </div>
@@ -145,35 +114,12 @@ const JobDetails: React.FC = () => {
                   Job Description
                 </h2>
                 <div className="prose prose-gray max-w-none">
-                  <div 
-                    className="text-gray-700 leading-relaxed job-description-content"
-                    dangerouslySetInnerHTML={{ __html: job.description }}
-                  />
+                  <div className="text-gray-700 leading-relaxed job-description-content" dangerouslySetInnerHTML={{
+                  __html: job.description
+                }} />
                 </div>
 
-                <div className="mt-8 pt-8 border-t border-gray-200">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4">
-                    What We Offer
-                  </h3>
-                  <ul className="space-y-2 text-gray-700">
-                    <li className="flex items-start">
-                      <span className="w-2 h-2 bg-primary rounded-full mt-2 mr-3 flex-shrink-0"></span>
-                      Competitive salary and comprehensive benefits package
-                    </li>
-                    <li className="flex items-start">
-                      <span className="w-2 h-2 bg-primary rounded-full mt-2 mr-3 flex-shrink-0"></span>
-                      Flexible scheduling options to support work-life balance
-                    </li>
-                    <li className="flex items-start">
-                      <span className="w-2 h-2 bg-primary rounded-full mt-2 mr-3 flex-shrink-0"></span>
-                      Ongoing professional development and training opportunities
-                    </li>
-                    <li className="flex items-start">
-                      <span className="w-2 h-2 bg-primary rounded-full mt-2 mr-3 flex-shrink-0"></span>
-                      Supportive team environment with interdisciplinary collaboration
-                    </li>
-                  </ul>
-                </div>
+                
               </Card>
             </div>
 
@@ -211,56 +157,38 @@ const JobDetails: React.FC = () => {
                     </div>
                   </div>
 
-                  {job.applicationDeadline && (
-                    <div className="flex items-start space-x-3">
+                  {job.applicationDeadline && <div className="flex items-start space-x-3">
                       <Clock className="w-5 h-5 text-primary mt-0.5" />
                       <div>
                         <p className="text-sm font-medium text-gray-900">Application Deadline</p>
-                        <p className={`text-sm ${isDeadlinePassed(job.applicationDeadline) ? 'text-red-600' : 
-                                                  isDeadlineApproaching(job.applicationDeadline) ? 'text-orange-600' : 'text-gray-600'}`}>
-                          {new Date(job.applicationDeadline).toLocaleDateString()} at {new Date(job.applicationDeadline).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                        <p className={`text-sm ${isDeadlinePassed(job.applicationDeadline) ? 'text-red-600' : isDeadlineApproaching(job.applicationDeadline) ? 'text-orange-600' : 'text-gray-600'}`}>
+                          {new Date(job.applicationDeadline).toLocaleDateString()} at {new Date(job.applicationDeadline).toLocaleTimeString([], {
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      })}
                         </p>
                       </div>
-                    </div>
-                  )}
+                    </div>}
                   
                   <div className="flex items-start space-x-3">
                     <Clock className="w-5 h-5 text-primary mt-0.5" />
                     <div>
                       <p className="text-sm font-medium text-gray-900">Employment Type</p>
                       <div className="flex flex-wrap gap-1 mt-1">
-                        {job.facilities.map((facility, index) => (
-                          <Badge 
-                            key={index} 
-                            variant="outline" 
-                            className="text-xs border-gray-300"
-                          >
+                        {job.facilities.map((facility, index) => <Badge key={index} variant="outline" className="text-xs border-gray-300">
                             {facility}
-                          </Badge>
-                        ))}
+                          </Badge>)}
                       </div>
                     </div>
                   </div>
                 </div>
 
-                <Button 
-                  onClick={handleApplyNow}
-                  disabled={isApplicationDisabled}
-                  className={`w-full font-semibold py-3 ${
-                    isApplicationDisabled 
-                      ? 'bg-gray-400 cursor-not-allowed' 
-                      : 'bg-primary hover:bg-primary/90 text-white'
-                  }`}
-                  size="lg"
-                >
+                <Button onClick={handleApplyNow} disabled={isApplicationDisabled} className={`w-full font-semibold py-3 ${isApplicationDisabled ? 'bg-gray-400 cursor-not-allowed' : 'bg-primary hover:bg-primary/90 text-white'}`} size="lg">
                   {isApplicationDisabled ? 'Applications Closed' : 'Apply Now'}
                 </Button>
                 
                 <p className="text-xs text-gray-500 text-center mt-3">
-                  {isApplicationDisabled 
-                    ? 'The application deadline has passed' 
-                    : 'By applying, you agree to our terms and conditions'
-                  }
+                  {isApplicationDisabled ? 'The application deadline has passed' : 'By applying, you agree to our terms and conditions'}
                 </p>
               </Card>
             </div>
@@ -269,13 +197,7 @@ const JobDetails: React.FC = () => {
       </div>
 
       {/* Application Modal */}
-      <ApplicationModal
-        isOpen={showApplicationModal}
-        onClose={() => setShowApplicationModal(false)}
-        job={job}
-      />
-    </div>
-  );
+      <ApplicationModal isOpen={showApplicationModal} onClose={() => setShowApplicationModal(false)} job={job} />
+    </div>;
 };
-
 export default JobDetails;
