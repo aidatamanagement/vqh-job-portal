@@ -10,7 +10,7 @@ import ManageJobCard from './ManageJobCard';
 import EditJobModal from './EditJobModal';
 
 const ManageJobs: React.FC = () => {
-  const { jobs, setJobs, applications, positions, locations } = useAppContext();
+  const { jobs, applications, positions, locations, updateJob, deleteJob } = useAppContext();
   const [searchTerm, setSearchTerm] = useState('');
   const [filterPosition, setFilterPosition] = useState('all');
   const [filterLocation, setFilterLocation] = useState('all');
@@ -47,28 +47,43 @@ const ManageJobs: React.FC = () => {
     return matchesSearch && matchesPosition && matchesLocation && matchesStatus;
   });
 
-  const toggleJobStatus = (jobId: string) => {
-    setJobs(prev => prev.map(job => 
-      job.id === jobId 
-        ? { ...job, isActive: !job.isActive, updatedAt: new Date().toISOString() }
-        : job
-    ));
-    
+  const toggleJobStatus = async (jobId: string) => {
     const job = jobs.find(j => j.id === jobId);
-    toast({
-      title: "Job Status Updated",
-      description: `Job "${job?.title}" is now ${job?.isActive ? 'inactive' : 'active'}`,
-    });
+    if (!job) return;
+
+    const success = await updateJob(jobId, { isActive: !job.isActive });
+    
+    if (success) {
+      toast({
+        title: "Job Status Updated",
+        description: `Job "${job.title}" is now ${job.isActive ? 'inactive' : 'active'}`,
+      });
+    } else {
+      toast({
+        title: "Error",
+        description: "Failed to update job status. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
-  const deleteJob = (jobId: string) => {
+  const handleDeleteJob = async (jobId: string) => {
     const job = jobs.find(j => j.id === jobId);
     if (job && window.confirm(`Are you sure you want to delete "${job.title}"?`)) {
-      setJobs(prev => prev.filter(j => j.id !== jobId));
-      toast({
-        title: "Job Deleted",
-        description: `"${job.title}" has been permanently deleted`,
-      });
+      const success = await deleteJob(jobId);
+      
+      if (success) {
+        toast({
+          title: "Job Deleted",
+          description: `"${job.title}" has been permanently deleted`,
+        });
+      } else {
+        toast({
+          title: "Error",
+          description: "Failed to delete job. Please try again.",
+          variant: "destructive",
+        });
+      }
     }
   };
 
@@ -98,7 +113,7 @@ const ManageJobs: React.FC = () => {
     setJobForm(prev => ({ ...prev, facilities: newFacilities }));
   };
 
-  const saveJobChanges = () => {
+  const saveJobChanges = async () => {
     if (!editingJob || !jobForm.title || !jobForm.description || !jobForm.position || !jobForm.location) {
       toast({
         title: "Missing Required Fields",
@@ -122,23 +137,23 @@ const ManageJobs: React.FC = () => {
       }
     }
 
-    setJobs(prev => prev.map(job => 
-      job.id === editingJob.id 
-        ? {
-            ...job,
-            ...jobForm,
-            updatedAt: new Date().toISOString(),
-          }
-        : job
-    ));
-
-    setEditingJob(null);
-    setJobForm({});
+    const success = await updateJob(editingJob.id, jobForm);
     
-    toast({
-      title: "Job Updated",
-      description: `"${jobForm.title}" has been successfully updated`,
-    });
+    if (success) {
+      setEditingJob(null);
+      setJobForm({});
+      
+      toast({
+        title: "Job Updated",
+        description: `"${jobForm.title}" has been successfully updated`,
+      });
+    } else {
+      toast({
+        title: "Error",
+        description: "Failed to update job. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   return (
@@ -193,7 +208,7 @@ const ManageJobs: React.FC = () => {
               index={index}
               onToggleStatus={toggleJobStatus}
               onEdit={openEditModal}
-              onDelete={deleteJob}
+              onDelete={handleDeleteJob}
             />
           ))
         )}

@@ -13,7 +13,18 @@ import { toast } from '@/hooks/use-toast';
 import RichTextEditor from '@/components/ui/rich-text-editor';
 
 const PostJob: React.FC = () => {
-  const { positions, locations, setPositions, setLocations, jobs, setJobs, facilities, setFacilities } = useAppContext();
+  const { 
+    positions, 
+    locations, 
+    facilities, 
+    createJob, 
+    createPosition, 
+    deletePosition, 
+    createLocation, 
+    deleteLocation, 
+    createFacility, 
+    deleteFacility 
+  } = useAppContext();
   const [activeTab, setActiveTab] = useState('create-job');
   
   // Job form state
@@ -63,7 +74,7 @@ const PostJob: React.FC = () => {
     }));
   };
 
-  const handleJobSubmit = (e: React.FormEvent) => {
+  const handleJobSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!jobForm.title || !jobForm.description || !jobForm.position || !jobForm.location) {
@@ -89,104 +100,144 @@ const PostJob: React.FC = () => {
       }
     }
 
-    const newJob = {
-      id: Date.now().toString(),
-      ...jobForm,
+    const success = await createJob({
+      title: jobForm.title,
+      description: jobForm.description,
+      position: jobForm.position,
+      location: jobForm.location,
+      facilities: jobForm.facilities,
       isActive: true,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
-
-    setJobs(prev => [...prev, newJob]);
-    
-    // Reset form
-    setJobForm({
-      title: '',
-      description: '',
-      position: '',
-      location: '',
-      facilities: [],
-      customFacility: '',
-      isUrgent: false,
-      applicationDeadline: '',
     });
 
-    toast({
-      title: "Job Posted Successfully",
-      description: "Your job posting is now live and accepting applications",
-    });
+    if (success) {
+      // Reset form
+      setJobForm({
+        title: '',
+        description: '',
+        position: '',
+        location: '',
+        facilities: [],
+        customFacility: '',
+        isUrgent: false,
+        applicationDeadline: '',
+      });
+
+      toast({
+        title: "Job Posted Successfully",
+        description: "Your job posting is now live and accepting applications",
+      });
+    } else {
+      toast({
+        title: "Error",
+        description: "Failed to create job posting. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
-  const addPosition = () => {
+  const addPosition = async () => {
     if (newPosition.trim() && !positions.find(p => p.name === newPosition.trim())) {
-      const newPos = {
-        id: Date.now().toString(),
-        name: newPosition.trim(),
-        createdAt: new Date().toISOString(),
-      };
-      setPositions(prev => [...prev, newPos]);
-      setNewPosition('');
-      toast({
-        title: "Position Added",
-        description: `${newPos.name} has been added to job categories`,
-      });
+      const success = await createPosition(newPosition.trim());
+      if (success) {
+        setNewPosition('');
+        toast({
+          title: "Position Added",
+          description: `${newPosition.trim()} has been added to job categories`,
+        });
+      } else {
+        toast({
+          title: "Error",
+          description: "Failed to add position. Please try again.",
+          variant: "destructive",
+        });
+      }
     }
   };
 
-  const addLocation = () => {
+  const addLocation = async () => {
     if (newLocation.trim() && !locations.find(l => l.name === newLocation.trim())) {
-      const newLoc = {
-        id: Date.now().toString(),
-        name: newLocation.trim(),
-        createdAt: new Date().toISOString(),
-      };
-      setLocations(prev => [...prev, newLoc]);
-      setNewLocation('');
-      toast({
-        title: "Location Added",
-        description: `${newLoc.name} has been added to available locations`,
-      });
+      const success = await createLocation(newLocation.trim());
+      if (success) {
+        setNewLocation('');
+        toast({
+          title: "Location Added",
+          description: `${newLocation.trim()} has been added to available locations`,
+        });
+      } else {
+        toast({
+          title: "Error",
+          description: "Failed to add location. Please try again.",
+          variant: "destructive",
+        });
+      }
     }
   };
 
-  const addFacilityToList = () => {
+  const addFacilityToList = async () => {
     if (newFacility.trim() && !facilities.find(f => f.name === newFacility.trim())) {
-      const newFac = {
-        id: Date.now().toString(),
-        name: newFacility.trim(),
-        createdAt: new Date().toISOString(),
-      };
-      setFacilities(prev => [...prev, newFac]);
-      setNewFacility('');
+      const success = await createFacility(newFacility.trim());
+      if (success) {
+        setNewFacility('');
+        toast({
+          title: "Benefit Added",
+          description: `${newFacility.trim()} has been added to available benefits`,
+        });
+      } else {
+        toast({
+          title: "Error",
+          description: "Failed to add benefit. Please try again.",
+          variant: "destructive",
+        });
+      }
+    }
+  };
+
+  const removePosition = async (id: string) => {
+    const success = await deletePosition(id);
+    if (success) {
       toast({
-        title: "Benefit Added",
-        description: `${newFac.name} has been added to available benefits`,
+        title: "Position Removed",
+        description: "Job category has been removed",
+      });
+    } else {
+      toast({
+        title: "Error",
+        description: "Failed to remove position. Please try again.",
+        variant: "destructive",
       });
     }
   };
 
-  const removePosition = (id: string) => {
-    setPositions(prev => prev.filter(p => p.id !== id));
-    toast({
-      title: "Position Removed",
-      description: "Job category has been removed",
-    });
+  const removeLocation = async (id: string) => {
+    const success = await deleteLocation(id);
+    if (success) {
+      toast({
+        title: "Location Removed",
+        description: "Location has been removed",
+      });
+    } else {
+      toast({
+        title: "Error",
+        description: "Failed to remove location. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
-  const removeLocation = (id: string) => {
-    setLocations(prev => prev.filter(l => l.id !== id));
-    toast({
-      title: "Location Removed",
-      description: "Location has been removed",
-    });
-  };
-
-  const removeFacilityFromList = (id: string) => {
-    setFacilities(prev => prev.filter(f => f.id !== id));
-    toast({
-      title: "Benefit Removed",
-      description: "Employment benefit has been removed",
-    });
+  const removeFacilityFromList = async (id: string) => {
+    const success = await deleteFacility(id);
+    if (success) {
+      toast({
+        title: "Benefit Removed",
+        description: "Employment benefit has been removed",
+      });
+    } else {
+      toast({
+        title: "Error",
+        description: "Failed to remove benefit. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   return (

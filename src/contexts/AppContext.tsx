@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
@@ -9,7 +10,7 @@ interface AppContextType {
   session: Session | null;
   isAuthenticated: boolean;
   userProfile: any | null;
-  login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
+  login: (email: string, password: string) => Promise<boolean>;
   signup: (email: string, password: string, displayName?: string) => Promise<{ success: boolean; error?: string }>;
   logout: () => Promise<void>;
   updateUserDisplayName: (displayName: string) => void;
@@ -38,6 +39,17 @@ interface AppContextType {
   fetchJobs: () => Promise<void>;
   fetchApplications: () => Promise<void>;
   fetchMasterData: () => Promise<void>;
+  
+  // Database operations for admin
+  createJob: (jobData: Omit<Job, 'id' | 'createdAt' | 'updatedAt'>) => Promise<boolean>;
+  updateJob: (jobId: string, jobData: Partial<Job>) => Promise<boolean>;
+  deleteJob: (jobId: string) => Promise<boolean>;
+  createPosition: (name: string) => Promise<boolean>;
+  deletePosition: (id: string) => Promise<boolean>;
+  createLocation: (name: string) => Promise<boolean>;
+  deleteLocation: (id: string) => Promise<boolean>;
+  createFacility: (name: string) => Promise<boolean>;
+  deleteFacility: (id: string) => Promise<boolean>;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -121,7 +133,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       const { data, error } = await supabase
         .from('jobs')
         .select('*')
-        .eq('is_active', true)
         .order('created_at', { ascending: false });
 
       if (error) {
@@ -179,7 +190,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         earliestStartDate: app.earliest_start_date,
         cityState: app.city_state,
         coverLetter: app.cover_letter,
-        status: app.status as 'waiting' | 'approved' | 'rejected', // Type assertion to match our interface
+        status: app.status as 'waiting' | 'approved' | 'rejected',
         additionalDocsUrls: app.additional_docs_urls || [],
         createdAt: app.created_at,
         updatedAt: app.updated_at,
@@ -253,7 +264,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   }, [user, userProfile]);
 
-  const login = async (email: string, password: string): Promise<{ success: boolean; error?: string }> => {
+  const login = async (email: string, password: string): Promise<boolean> => {
     setIsLoading(true);
     
     try {
@@ -263,15 +274,17 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       });
 
       if (error) {
+        console.error('Login error:', error);
         setIsLoading(false);
-        return { success: false, error: error.message };
+        return false;
       }
 
       setIsLoading(false);
-      return { success: true };
+      return true;
     } catch (error) {
+      console.error('Login error:', error);
       setIsLoading(false);
-      return { success: false, error: 'An unexpected error occurred' };
+      return false;
     }
   };
 
@@ -332,6 +345,198 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   };
 
+  // Admin database operations
+  const createJob = async (jobData: Omit<Job, 'id' | 'createdAt' | 'updatedAt'>): Promise<boolean> => {
+    try {
+      const { error } = await supabase
+        .from('jobs')
+        .insert({
+          title: jobData.title,
+          description: jobData.description,
+          position: jobData.position,
+          location: jobData.location,
+          facilities: jobData.facilities,
+          is_active: jobData.isActive,
+        });
+
+      if (error) {
+        console.error('Error creating job:', error);
+        return false;
+      }
+
+      await fetchJobs(); // Refresh jobs list
+      return true;
+    } catch (error) {
+      console.error('Error creating job:', error);
+      return false;
+    }
+  };
+
+  const updateJob = async (jobId: string, jobData: Partial<Job>): Promise<boolean> => {
+    try {
+      const updateData: any = {};
+      if (jobData.title !== undefined) updateData.title = jobData.title;
+      if (jobData.description !== undefined) updateData.description = jobData.description;
+      if (jobData.position !== undefined) updateData.position = jobData.position;
+      if (jobData.location !== undefined) updateData.location = jobData.location;
+      if (jobData.facilities !== undefined) updateData.facilities = jobData.facilities;
+      if (jobData.isActive !== undefined) updateData.is_active = jobData.isActive;
+
+      const { error } = await supabase
+        .from('jobs')
+        .update(updateData)
+        .eq('id', jobId);
+
+      if (error) {
+        console.error('Error updating job:', error);
+        return false;
+      }
+
+      await fetchJobs(); // Refresh jobs list
+      return true;
+    } catch (error) {
+      console.error('Error updating job:', error);
+      return false;
+    }
+  };
+
+  const deleteJob = async (jobId: string): Promise<boolean> => {
+    try {
+      const { error } = await supabase
+        .from('jobs')
+        .delete()
+        .eq('id', jobId);
+
+      if (error) {
+        console.error('Error deleting job:', error);
+        return false;
+      }
+
+      await fetchJobs(); // Refresh jobs list
+      return true;
+    } catch (error) {
+      console.error('Error deleting job:', error);
+      return false;
+    }
+  };
+
+  const createPosition = async (name: string): Promise<boolean> => {
+    try {
+      const { error } = await supabase
+        .from('job_positions')
+        .insert({ name });
+
+      if (error) {
+        console.error('Error creating position:', error);
+        return false;
+      }
+
+      await fetchMasterData(); // Refresh master data
+      return true;
+    } catch (error) {
+      console.error('Error creating position:', error);
+      return false;
+    }
+  };
+
+  const deletePosition = async (id: string): Promise<boolean> => {
+    try {
+      const { error } = await supabase
+        .from('job_positions')
+        .delete()
+        .eq('id', id);
+
+      if (error) {
+        console.error('Error deleting position:', error);
+        return false;
+      }
+
+      await fetchMasterData(); // Refresh master data
+      return true;
+    } catch (error) {
+      console.error('Error deleting position:', error);
+      return false;
+    }
+  };
+
+  const createLocation = async (name: string): Promise<boolean> => {
+    try {
+      const { error } = await supabase
+        .from('job_locations')
+        .insert({ name });
+
+      if (error) {
+        console.error('Error creating location:', error);
+        return false;
+      }
+
+      await fetchMasterData(); // Refresh master data
+      return true;
+    } catch (error) {
+      console.error('Error creating location:', error);
+      return false;
+    }
+  };
+
+  const deleteLocation = async (id: string): Promise<boolean> => {
+    try {
+      const { error } = await supabase
+        .from('job_locations')
+        .delete()
+        .eq('id', id);
+
+      if (error) {
+        console.error('Error deleting location:', error);
+        return false;
+      }
+
+      await fetchMasterData(); // Refresh master data
+      return true;
+    } catch (error) {
+      console.error('Error deleting location:', error);
+      return false;
+    }
+  };
+
+  const createFacility = async (name: string): Promise<boolean> => {
+    try {
+      const { error } = await supabase
+        .from('job_facilities')
+        .insert({ name });
+
+      if (error) {
+        console.error('Error creating facility:', error);
+        return false;
+      }
+
+      await fetchMasterData(); // Refresh master data
+      return true;
+    } catch (error) {
+      console.error('Error creating facility:', error);
+      return false;
+    }
+  };
+
+  const deleteFacility = async (id: string): Promise<boolean> => {
+    try {
+      const { error } = await supabase
+        .from('job_facilities')
+        .delete()
+        .eq('id', id);
+
+      if (error) {
+        console.error('Error deleting facility:', error);
+        return false;
+      }
+
+      await fetchMasterData(); // Refresh master data
+      return true;
+    } catch (error) {
+      console.error('Error deleting facility:', error);
+      return false;
+    }
+  };
+
   const value = {
     user,
     session,
@@ -356,6 +561,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     fetchJobs,
     fetchApplications,
     fetchMasterData,
+    createJob,
+    updateJob,
+    deleteJob,
+    createPosition,
+    deletePosition,
+    createLocation,
+    deleteLocation,
+    createFacility,
+    deleteFacility,
   };
 
   return (
