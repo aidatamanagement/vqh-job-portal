@@ -16,12 +16,25 @@ const AdminDashboard: React.FC = () => {
   const [currentView, setCurrentView] = useState<AdminView>('post-job');
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  // Check if user is authenticated and is an admin
-  if (!isAuthenticated || !userProfile) {
+  // Show loading while checking authentication
+  if (isAuthenticated && userProfile === null) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="spinner mb-4" />
+          <p>Loading dashboard...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Check if user is authenticated
+  if (!isAuthenticated) {
     return <Navigate to="/admin/login" replace />;
   }
 
-  if (userProfile.role !== 'admin') {
+  // Check if user is admin (only redirect after we have profile data)
+  if (userProfile && userProfile.role !== 'admin') {
     return <Navigate to="/" replace />;
   }
 
