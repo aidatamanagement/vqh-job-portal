@@ -134,36 +134,42 @@ export type Database = {
       }
       jobs: {
         Row: {
+          application_deadline: string | null
           created_at: string | null
           created_by: string | null
           description: string
           facilities: string[] | null
           id: string
           is_active: boolean | null
+          is_urgent: boolean | null
           location: string
           position: string
           title: string
           updated_at: string | null
         }
         Insert: {
+          application_deadline?: string | null
           created_at?: string | null
           created_by?: string | null
           description: string
           facilities?: string[] | null
           id?: string
           is_active?: boolean | null
+          is_urgent?: boolean | null
           location: string
           position: string
           title: string
           updated_at?: string | null
         }
         Update: {
+          application_deadline?: string | null
           created_at?: string | null
           created_by?: string | null
           description?: string
           facilities?: string[] | null
           id?: string
           is_active?: boolean | null
+          is_urgent?: boolean | null
           location?: string
           position?: string
           title?: string

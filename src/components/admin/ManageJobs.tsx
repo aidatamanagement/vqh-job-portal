@@ -138,7 +138,17 @@ const ManageJobs: React.FC = () => {
       }
     }
 
-    const success = await updateJob(editingJob.id, jobForm);
+    const updateData: Partial<Job> = {
+      title: jobForm.title,
+      description: jobForm.description,
+      position: jobForm.position,
+      location: jobForm.location,
+      facilities: jobForm.facilities,
+      isUrgent: jobForm.isUrgent,
+      applicationDeadline: jobForm.applicationDeadline || null,
+    };
+
+    const success = await updateJob(editingJob.id, updateData);
     
     if (success) {
       setEditingJob(null);
