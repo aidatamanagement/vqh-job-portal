@@ -37,8 +37,8 @@ const JobCard: React.FC<JobCardProps> = ({ job }) => {
   };
 
   return (
-    <Card className="job-card p-4 bg-white border border-gray-200 hover:border-primary/30 animate-fade-in-up">
-      <div className="space-y-3">
+    <Card className="job-card p-4 bg-white border border-gray-200 hover:border-primary/30 animate-fade-in-up h-80 flex flex-col">
+      <div className="space-y-3 flex-1 flex flex-col">
         {/* Position and Location */}
         <div className="flex justify-between items-center">
           <p className="text-sm text-primary font-medium">
@@ -58,7 +58,7 @@ const JobCard: React.FC<JobCardProps> = ({ job }) => {
         </div>
 
         {/* Description */}
-        <p className="text-gray-600 text-sm leading-relaxed">
+        <p className="text-gray-600 text-sm leading-relaxed flex-1">
           {stripHtmlAndTruncate(job.description)}
         </p>
 
@@ -82,7 +82,7 @@ const JobCard: React.FC<JobCardProps> = ({ job }) => {
         </div>
 
         {/* Action Button */}
-        <div className="pt-2">
+        <div className="pt-2 mt-auto">
           <Button 
             onClick={handleViewDetails}
             className="w-full bg-primary hover:bg-primary/90 text-white"
