@@ -103,36 +103,40 @@ const Submissions: React.FC = () => {
         return;
       }
 
-      // Delete files from storage
-      const filesToDelete: string[] = [];
-      
-      // Add resume file path if it exists
-      if (application.resumeUrl) {
-        // Extract the file path from the URL
-        const resumePath = `${applicationId}/resume.pdf`; // Assuming PDF for now
-        filesToDelete.push(resumePath);
-      }
-
-      // Add additional document file paths
-      application.additionalDocsUrls.forEach((_, index) => {
-        const docPath = `${applicationId}/additional_${index}.pdf`; // Assuming PDF for now
-        filesToDelete.push(docPath);
-      });
-
-      // Delete files from storage if any exist
-      if (filesToDelete.length > 0) {
-        console.log('Deleting files from storage:', filesToDelete);
-        const { error: storageError } = await supabase.storage
+      // First, try to delete files from storage
+      try {
+        console.log('Attempting to delete files from storage for application:', applicationId);
+        
+        // List all files in the application folder
+        const { data: files, error: listError } = await supabase.storage
           .from('job-applications')
-          .remove(filesToDelete);
+          .list(applicationId);
 
-        if (storageError) {
-          console.error('Error deleting files from storage:', storageError);
-          // Continue with database deletion even if file deletion fails
+        if (listError) {
+          console.error('Error listing files:', listError);
+        } else if (files && files.length > 0) {
+          // Delete all files in the application folder
+          const filePaths = files.map(file => `${applicationId}/${file.name}`);
+          console.log('Deleting files:', filePaths);
+          
+          const { error: deleteFilesError } = await supabase.storage
+            .from('job-applications')
+            .remove(filePaths);
+
+          if (deleteFilesError) {
+            console.error('Error deleting files from storage:', deleteFilesError);
+            // Continue with database deletion even if file deletion fails
+          } else {
+            console.log('Successfully deleted files from storage');
+          }
         }
+      } catch (storageError) {
+        console.error('Storage deletion error:', storageError);
+        // Continue with database deletion even if file deletion fails
       }
 
       // Delete the application record from the database
+      console.log('Deleting application record from database:', applicationId);
       const { error: dbError } = await supabase
         .from('job_applications')
         .delete()
@@ -142,11 +146,13 @@ const Submissions: React.FC = () => {
         console.error('Error deleting application from database:', dbError);
         toast({
           title: "Error",
-          description: "Failed to delete application from database. Please try again.",
+          description: `Failed to delete application from database: ${dbError.message}`,
           variant: "destructive",
         });
         return;
       }
+
+      console.log('Successfully deleted application from database');
 
       // Update local state
       setSubmissions(prev => prev.filter(app => app.id !== applicationId));
@@ -165,7 +171,7 @@ const Submissions: React.FC = () => {
       console.error('Error in deleteApplication:', error);
       toast({
         title: "Error",
-        description: "Failed to delete application. Please try again.",
+        description: `Failed to delete application: ${error instanceof Error ? error.message : 'Unknown error'}`,
         variant: "destructive",
       });
     } finally {
