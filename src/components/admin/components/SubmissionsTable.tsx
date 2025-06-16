@@ -2,8 +2,9 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Eye } from 'lucide-react';
+import { Eye, Trash2 } from 'lucide-react';
 import { JobApplication } from '@/types';
 import { formatDate, getStatusBadgeVariant, getStatusText } from '../utils/submissionsUtils';
 
@@ -31,7 +32,7 @@ const SubmissionsTable: React.FC<SubmissionsTableProps> = ({
               <TableHead className="font-semibold min-w-[120px]">Applied Date</TableHead>
               <TableHead className="font-semibold min-w-[140px]">Location</TableHead>
               <TableHead className="font-semibold min-w-[100px]">Status</TableHead>
-              <TableHead className="font-semibold text-right min-w-[100px]">Actions</TableHead>
+              <TableHead className="font-semibold text-right min-w-[160px]">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -66,7 +67,7 @@ const SubmissionsTable: React.FC<SubmissionsTableProps> = ({
                       {getStatusText(application.status)}
                     </Badge>
                   </TableCell>
-                  <TableCell className="text-right min-w-[100px]">
+                  <TableCell className="text-right min-w-[160px]">
                     <div className="flex gap-2 justify-end">
                       <Button
                         variant="outline"
@@ -77,6 +78,37 @@ const SubmissionsTable: React.FC<SubmissionsTableProps> = ({
                         <Eye className="w-3 h-3" />
                         <span className="hidden sm:inline">View</span>
                       </Button>
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            disabled={deletingApplication === application.id}
+                            className="inline-flex items-center gap-1 text-xs px-2 py-1 text-red-600 hover:text-red-700 hover:bg-red-50"
+                          >
+                            <Trash2 className="w-3 h-3" />
+                            <span className="hidden sm:inline">Delete</span>
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Delete Application</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              Are you sure you want to delete this application from {application.firstName} {application.lastName}? 
+                              This will permanently delete the application record and all uploaded files. This action cannot be undone.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction
+                              onClick={() => onDeleteApplication(application.id)}
+                              className="bg-red-600 hover:bg-red-700"
+                            >
+                              {deletingApplication === application.id ? 'Deleting...' : 'Delete Application'}
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
                     </div>
                   </TableCell>
                 </TableRow>
