@@ -115,16 +115,18 @@ export const deleteApplicationFromDatabase = async (applicationId: string) => {
     console.log('Deleting application record from database:', applicationId);
     
     // Delete the application record from the job_applications table
-    const { error: deleteError, count } = await supabase
+    const { data, error: deleteError } = await supabase
       .from('job_applications')
-      .delete({ count: 'exact' })
-      .eq('id', applicationId);
+      .delete()
+      .eq('id', applicationId)
+      .select();
 
     if (deleteError) {
       console.error('Error deleting application from database:', deleteError);
       throw new Error(`Failed to delete application from database: ${deleteError.message}`);
     }
 
+    const count = data ? data.length : 0;
     console.log('Successfully deleted application from database. Rows affected:', count);
     
     if (count === 0) {
