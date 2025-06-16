@@ -114,7 +114,6 @@ export const deleteApplicationFromDatabase = async (applicationId: string) => {
   try {
     console.log('Deleting application record from database:', applicationId);
     
-    // Directly delete the application - Supabase will handle if it doesn't exist
     const { error: deleteError } = await supabase
       .from('job_applications')
       .delete()
