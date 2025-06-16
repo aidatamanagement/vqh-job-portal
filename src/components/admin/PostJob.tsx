@@ -114,7 +114,7 @@ const PostJob: React.FC = () => {
       }
     }
 
-    const success = await createJob({
+    const jobData = {
       title: jobForm.title,
       description: jobForm.description,
       position: jobForm.position,
@@ -123,7 +123,11 @@ const PostJob: React.FC = () => {
       isActive: true,
       isUrgent: jobForm.isUrgent,
       applicationDeadline: jobForm.applicationDeadline || null,
-    });
+    };
+
+    console.log('Submitting job data:', jobData);
+
+    const success = await createJob(jobData);
 
     if (success) {
       // Reset form
@@ -140,7 +144,7 @@ const PostJob: React.FC = () => {
 
       toast({
         title: "Job Posted Successfully",
-        description: "Your job posting is now live and accepting applications",
+        description: `Your job posting "${jobData.title}" is now live${jobData.isUrgent ? ' and marked as urgent' : ''}${jobData.applicationDeadline ? ' with application deadline set' : ''}`,
       });
     } else {
       toast({

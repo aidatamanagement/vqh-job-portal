@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Briefcase } from 'lucide-react';
@@ -148,6 +147,8 @@ const ManageJobs: React.FC = () => {
       applicationDeadline: jobForm.applicationDeadline || null,
     };
 
+    console.log('Updating job with data:', updateData);
+
     const success = await updateJob(editingJob.id, updateData);
     
     if (success) {
@@ -156,7 +157,7 @@ const ManageJobs: React.FC = () => {
       
       toast({
         title: "Job Updated",
-        description: `"${jobForm.title}" has been successfully updated`,
+        description: `"${jobForm.title}" has been successfully updated${jobForm.isUrgent ? ' and marked as urgent' : ''}${jobForm.applicationDeadline ? ' with deadline set' : ''}`,
       });
     } else {
       toast({
