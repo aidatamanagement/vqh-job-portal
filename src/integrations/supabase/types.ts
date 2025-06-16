@@ -25,7 +25,7 @@ export type Database = {
           phone: string | null
           status: string | null
           updated_at: string | null
-          user_id: string
+          user_id: string | null
         }
         Insert: {
           additional_docs_urls?: string[] | null
@@ -42,7 +42,7 @@ export type Database = {
           phone?: string | null
           status?: string | null
           updated_at?: string | null
-          user_id: string
+          user_id?: string | null
         }
         Update: {
           additional_docs_urls?: string[] | null
@@ -59,7 +59,7 @@ export type Database = {
           phone?: string | null
           status?: string | null
           updated_at?: string | null
-          user_id?: string
+          user_id?: string | null
         }
         Relationships: [
           {
@@ -67,13 +67,6 @@ export type Database = {
             columns: ["job_id"]
             isOneToOne: false
             referencedRelation: "jobs"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "job_applications_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
