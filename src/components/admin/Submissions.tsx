@@ -97,48 +97,49 @@ const Submissions: React.FC = () => {
       if (!application) {
         toast({
           title: "Error",
-          description: "Application not found.",
+          description: "Application not found in local data.",
           variant: "destructive",
         });
         return;
       }
 
-      // Step 1: Delete files from storage (optional step, can continue if fails)
-      console.log('Step 1: Deleting files from storage...');
+      // Step 1: Delete the application record from the database first
+      console.log('Step 1: Deleting record from database...');
+      try {
+        await deleteApplicationFromDatabase(applicationId);
+        console.log('Successfully deleted application from database');
+      } catch (dbError) {
+        console.error('Database deletion failed:', dbError);
+        toast({
+          title: "Deletion Failed",
+          description: `Failed to delete application: ${dbError instanceof Error ? dbError.message : 'Unknown database error'}`,
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Step 2: Delete files from storage (optional step, don't fail if this fails)
+      console.log('Step 2: Deleting files from storage...');
       try {
         await deleteApplicationFiles(applicationId);
         console.log('Files deleted from storage successfully');
       } catch (storageError) {
-        console.warn('Storage deletion failed, but continuing with database deletion:', storageError);
+        console.warn('Storage deletion failed, but continuing since database deletion succeeded:', storageError);
       }
 
-      // Step 2: Delete the application record from the database (critical step)
-      console.log('Step 2: Deleting record from database...');
-      const deletedCount = await deleteApplicationFromDatabase(applicationId);
+      // Step 3: Update local state after successful database deletion
+      console.log('Step 3: Updating local state...');
+      setSubmissions(prev => prev.filter(app => app.id !== applicationId));
 
-      if (deletedCount === 0) {
-        toast({
-          title: "Warning",
-          description: "Application was not found in the database. It may have already been deleted.",
-          variant: "destructive",
-        });
-      } else {
-        console.log('Successfully deleted application from database');
-        
-        // Step 3: Update local state only after successful database deletion
-        console.log('Step 3: Updating local state...');
-        setSubmissions(prev => prev.filter(app => app.id !== applicationId));
-
-        // Close the details modal if the deleted application was selected
-        if (selectedApplication && selectedApplication.id === applicationId) {
-          setSelectedApplication(null);
-        }
-
-        toast({
-          title: "Application Deleted",
-          description: "The application has been successfully deleted from the database.",
-        });
+      // Close the details modal if the deleted application was selected
+      if (selectedApplication && selectedApplication.id === applicationId) {
+        setSelectedApplication(null);
       }
+
+      toast({
+        title: "Application Deleted",
+        description: "The application has been successfully deleted.",
+      });
 
     } catch (error) {
       console.error('Error in deleteApplication:', error);
