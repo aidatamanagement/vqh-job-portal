@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
@@ -149,10 +148,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         location: job.location,
         facilities: job.facilities || [],
         isActive: job.is_active,
+        isUrgent: job.is_urgent || false,
+        applicationDeadline: job.application_deadline,
         createdAt: job.created_at,
         updatedAt: job.updated_at,
       }));
 
+      console.log('Fetched jobs:', transformedJobs);
       setJobs(transformedJobs);
     } catch (error) {
       console.error('Error fetching jobs:', error);
@@ -357,6 +359,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           location: jobData.location,
           facilities: jobData.facilities,
           is_active: jobData.isActive,
+          is_urgent: jobData.isUrgent || false,
+          application_deadline: jobData.applicationDeadline,
         });
 
       if (error) {
@@ -381,6 +385,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       if (jobData.location !== undefined) updateData.location = jobData.location;
       if (jobData.facilities !== undefined) updateData.facilities = jobData.facilities;
       if (jobData.isActive !== undefined) updateData.is_active = jobData.isActive;
+      if (jobData.isUrgent !== undefined) updateData.is_urgent = jobData.isUrgent;
+      if (jobData.applicationDeadline !== undefined) updateData.application_deadline = jobData.applicationDeadline;
 
       const { error } = await supabase
         .from('jobs')
