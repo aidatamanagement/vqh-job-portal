@@ -1,16 +1,25 @@
+
 import React, { useState, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Search, Filter, Eye, X, FileText, Download, ExternalLink, Inbox, Trash2 } from 'lucide-react';
+import { Inbox } from 'lucide-react';
 import { JobApplication } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
+import SubmissionsFilters from './components/SubmissionsFilters';
+import SubmissionsTable from './components/SubmissionsTable';
+import ApplicationDetailsModal from './components/ApplicationDetailsModal';
+import FileViewerModal from './components/FileViewerModal';
+import {
+  getResumeUrl,
+  getUniquePositions,
+  filterSubmissions,
+  getSubmissionsByStatus,
+  getStatusCount,
+  deleteApplicationFiles,
+  deleteApplicationFromDatabase,
+  updateApplicationStatusInDatabase
+} from './utils/submissionsUtils';
 
 const Submissions: React.FC = () => {
   const [submissions, setSubmissions] = useState<JobApplication[]>([]);
@@ -57,7 +66,7 @@ const Submissions: React.FC = () => {
         earliestStartDate: item.earliest_start_date || '',
         cityState: item.city_state || '',
         coverLetter: item.cover_letter || '',
-        resumeUrl: getResumeUrl(item.id), // Use the uploaded resume URL pattern
+        resumeUrl: getResumeUrl(item.id),
         additionalDocsUrls: item.additional_docs_urls || [],
         status: item.status as 'waiting' | 'approved' | 'rejected',
         notes: '',
@@ -78,21 +87,12 @@ const Submissions: React.FC = () => {
     }
   };
 
-  // Helper function to get resume URL from Supabase storage
-  const getResumeUrl = (applicationId: string) => {
-    // Try common file extensions for resume
-    const extensions = ['pdf', 'doc', 'docx'];
-    // For now, return the most likely URL - in production you might want to query storage
-    return `https://dtmwyzrleyevcgtfwrnr.supabase.co/storage/v1/object/public/job-applications/${applicationId}/resume.pdf`;
-  };
-
   // Delete application and associated files
   const deleteApplication = async (applicationId: string) => {
     try {
       setDeletingApplication(applicationId);
       console.log('Deleting application:', applicationId);
 
-      // Get the application details to know what files to delete
       const application = submissions.find(app => app.id === applicationId);
       if (!application) {
         toast({
@@ -103,56 +103,11 @@ const Submissions: React.FC = () => {
         return;
       }
 
-      // First, try to delete files from storage
-      try {
-        console.log('Attempting to delete files from storage for application:', applicationId);
-        
-        // List all files in the application folder
-        const { data: files, error: listError } = await supabase.storage
-          .from('job-applications')
-          .list(applicationId);
-
-        if (listError) {
-          console.error('Error listing files:', listError);
-        } else if (files && files.length > 0) {
-          // Delete all files in the application folder
-          const filePaths = files.map(file => `${applicationId}/${file.name}`);
-          console.log('Deleting files:', filePaths);
-          
-          const { error: deleteFilesError } = await supabase.storage
-            .from('job-applications')
-            .remove(filePaths);
-
-          if (deleteFilesError) {
-            console.error('Error deleting files from storage:', deleteFilesError);
-            // Continue with database deletion even if file deletion fails
-          } else {
-            console.log('Successfully deleted files from storage');
-          }
-        }
-      } catch (storageError) {
-        console.error('Storage deletion error:', storageError);
-        // Continue with database deletion even if file deletion fails
-      }
+      // Delete files from storage
+      await deleteApplicationFiles(applicationId);
 
       // Delete the application record from the database
-      console.log('Deleting application record from database:', applicationId);
-      const { error: dbError } = await supabase
-        .from('job_applications')
-        .delete()
-        .eq('id', applicationId);
-
-      if (dbError) {
-        console.error('Error deleting application from database:', dbError);
-        toast({
-          title: "Error",
-          description: `Failed to delete application from database: ${dbError.message}`,
-          variant: "destructive",
-        });
-        return;
-      }
-
-      console.log('Successfully deleted application from database');
+      await deleteApplicationFromDatabase(applicationId);
 
       // Update local state
       setSubmissions(prev => prev.filter(app => app.id !== applicationId));
@@ -182,25 +137,7 @@ const Submissions: React.FC = () => {
   // Update application status in Supabase
   const updateApplicationStatus = async (id: string, newStatus: 'waiting' | 'approved' | 'rejected') => {
     try {
-      console.log('Updating application status:', { id, newStatus });
-
-      const { error } = await supabase
-        .from('job_applications')
-        .update({ 
-          status: newStatus,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', id);
-
-      if (error) {
-        console.error('Error updating status:', error);
-        toast({
-          title: "Error",
-          description: "Failed to update application status. Please try again.",
-          variant: "destructive",
-        });
-        return;
-      }
+      await updateApplicationStatusInDatabase(id, newStatus);
 
       // Update local state
       setSubmissions(prev => prev.map(app => 
@@ -221,7 +158,7 @@ const Submissions: React.FC = () => {
       console.error('Error in updateApplicationStatus:', error);
       toast({
         title: "Error",
-        description: "Failed to update application status. Please try again.",
+        description: error instanceof Error ? error.message : "Failed to update application status. Please try again.",
         variant: "destructive",
       });
     }
@@ -231,72 +168,8 @@ const Submissions: React.FC = () => {
     fetchSubmissions();
   }, []);
 
-  const filteredSubmissions = submissions.filter(submission => {
-    const matchesSearch = searchTerm === '' || 
-      submission.firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      submission.lastName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      submission.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      submission.appliedPosition.toLowerCase().includes(searchTerm.toLowerCase());
-    
-    const matchesStatus = statusFilter === 'all' || submission.status === statusFilter;
-    const matchesPosition = positionFilter === 'all' || submission.appliedPosition === positionFilter;
-    
-    return matchesSearch && matchesStatus && matchesPosition;
-  });
-
-  const getSubmissionsByStatus = (status: string) => {
-    if (status === 'all') return filteredSubmissions;
-    return filteredSubmissions.filter(submission => submission.status === status);
-  };
-
-  const getStatusCount = (status: string) => {
-    if (status === 'all') return submissions.length;
-    return submissions.filter(submission => submission.status === status).length;
-  };
-
-  const hasActiveFilters = searchTerm !== '' || positionFilter !== 'all';
-
-  const clearAllFilters = () => {
-    setSearchTerm('');
-    setPositionFilter('all');
-  };
-
-  const getStatusBadgeVariant = (status: string) => {
-    switch (status) {
-      case 'approved':
-        return 'default';
-      case 'rejected':
-        return 'destructive';
-      default:
-        return 'secondary';
-    }
-  };
-
-  const getStatusText = (status: string) => {
-    switch (status) {
-      case 'waiting':
-        return 'Pending';
-      case 'approved':
-        return 'Approved';
-      case 'rejected':
-        return 'Rejected';
-      default:
-        return status;
-    }
-  };
-
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
-    });
-  };
-
-  const getUniquePositions = () => {
-    const positions = [...new Set(submissions.map(s => s.appliedPosition))];
-    return positions;
-  };
+  const filteredSubmissions = filterSubmissions(submissions, searchTerm, statusFilter, positionFilter);
+  const uniquePositions = getUniquePositions(submissions);
 
   const openFileViewer = (url: string, name: string) => {
     setViewingFile({ url, name });
@@ -321,105 +194,6 @@ const Submissions: React.FC = () => {
     );
   }
 
-  const renderSubmissionsTable = (submissions: JobApplication[]) => (
-    <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
-      <div className="overflow-x-auto">
-        <Table>
-          <TableHeader>
-            <TableRow className="bg-gray-50">
-              <TableHead className="font-semibold min-w-[200px]">Candidate</TableHead>
-              <TableHead className="font-semibold min-w-[150px]">Position</TableHead>
-              <TableHead className="font-semibold min-w-[120px]">Applied Date</TableHead>
-              <TableHead className="font-semibold min-w-[140px]">Location</TableHead>
-              <TableHead className="font-semibold min-w-[100px]">Status</TableHead>
-              <TableHead className="font-semibold text-right min-w-[160px]">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {submissions.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={6} className="text-center py-8 text-gray-500">
-                  No applications found matching your criteria.
-                </TableCell>
-              </TableRow>
-            ) : (
-              submissions.map((application) => (
-                <TableRow key={application.id} className="hover:bg-gray-50 transition-colors">
-                  <TableCell className="min-w-[200px]">
-                    <div>
-                      <div className="font-medium text-gray-900 text-sm">
-                        {application.firstName} {application.lastName}
-                      </div>
-                      <div className="text-xs text-gray-500 truncate max-w-[180px]">{application.email}</div>
-                    </div>
-                  </TableCell>
-                  <TableCell className="min-w-[150px]">
-                    <span className="font-medium text-gray-900 text-sm">{application.appliedPosition}</span>
-                  </TableCell>
-                  <TableCell className="min-w-[120px]">
-                    <span className="text-gray-600 text-sm">{formatDate(application.createdAt)}</span>
-                  </TableCell>
-                  <TableCell className="min-w-[140px]">
-                    <span className="text-gray-600 text-sm">{application.cityState}</span>
-                  </TableCell>
-                  <TableCell className="min-w-[100px]">
-                    <Badge variant={getStatusBadgeVariant(application.status)} className="text-xs">
-                      {getStatusText(application.status)}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="text-right min-w-[160px]">
-                    <div className="flex gap-2 justify-end">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setSelectedApplication(application)}
-                        className="inline-flex items-center gap-1 text-xs px-2 py-1"
-                      >
-                        <Eye className="w-3 h-3" />
-                        <span className="hidden sm:inline">View</span>
-                      </Button>
-                      <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            disabled={deletingApplication === application.id}
-                            className="inline-flex items-center gap-1 text-xs px-2 py-1 text-red-600 hover:text-red-700 hover:bg-red-50"
-                          >
-                            <Trash2 className="w-3 h-3" />
-                            <span className="hidden sm:inline">Delete</span>
-                          </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                          <AlertDialogHeader>
-                            <AlertDialogTitle>Delete Application</AlertDialogTitle>
-                            <AlertDialogDescription>
-                              Are you sure you want to delete this application from {application.firstName} {application.lastName}? 
-                              This will permanently delete the application record and all uploaded files. This action cannot be undone.
-                            </AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                            <AlertDialogCancel>Cancel</AlertDialogCancel>
-                            <AlertDialogAction
-                              onClick={() => deleteApplication(application.id)}
-                              className="bg-red-600 hover:bg-red-700"
-                            >
-                              Delete Application
-                            </AlertDialogAction>
-                          </AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialog>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
-      </div>
-    </div>
-  );
-
   return (
     <div className="space-y-6 animate-slide-up">
       <div className="flex justify-between items-center">
@@ -432,44 +206,13 @@ const Submissions: React.FC = () => {
       </div>
 
       {/* Filters */}
-      <div className="bg-white p-4 sm:p-6 rounded-lg border border-gray-200 shadow-sm animate-slide-up-delayed">
-        <div className="flex flex-col space-y-4 sm:space-y-0 sm:flex-row sm:gap-4">
-          <div className="flex-1">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-              <Input
-                placeholder="Search by name, email, or position..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
-              />
-            </div>
-          </div>
-
-          <Select value={positionFilter} onValueChange={setPositionFilter}>
-            <SelectTrigger className="w-full sm:w-48">
-              <SelectValue placeholder="Filter by position" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Positions</SelectItem>
-              {getUniquePositions().map(position => (
-                <SelectItem key={position} value={position}>{position}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-
-          {hasActiveFilters && (
-            <Button
-              variant="outline"
-              onClick={clearAllFilters}
-              className="whitespace-nowrap text-sm px-3"
-            >
-              <X className="w-4 h-4 mr-2" />
-              Clear Filters
-            </Button>
-          )}
-        </div>
-      </div>
+      <SubmissionsFilters
+        searchTerm={searchTerm}
+        setSearchTerm={setSearchTerm}
+        positionFilter={positionFilter}
+        setPositionFilter={setPositionFilter}
+        uniquePositions={uniquePositions}
+      />
 
       {/* Status Tabs with Counts */}
       <Tabs 
@@ -481,263 +224,81 @@ const Submissions: React.FC = () => {
           <TabsTrigger value="all" className="flex flex-col sm:flex-row items-center gap-1 sm:gap-2 p-2 text-xs sm:text-sm">
             <span>All</span>
             <Badge variant="secondary" className="text-xs">
-              {getStatusCount('all')}
+              {getStatusCount(submissions, 'all')}
             </Badge>
           </TabsTrigger>
           <TabsTrigger value="waiting" className="flex flex-col sm:flex-row items-center gap-1 sm:gap-2 p-2 text-xs sm:text-sm">
             <span>Pending</span>
             <Badge variant="secondary" className="text-xs">
-              {getStatusCount('waiting')}
+              {getStatusCount(submissions, 'waiting')}
             </Badge>
           </TabsTrigger>
           <TabsTrigger value="approved" className="flex flex-col sm:flex-row items-center gap-1 sm:gap-2 p-2 text-xs sm:text-sm">
             <span>Approved</span>
             <Badge variant="secondary" className="text-xs">
-              {getStatusCount('approved')}
+              {getStatusCount(submissions, 'approved')}
             </Badge>
           </TabsTrigger>
           <TabsTrigger value="rejected" className="flex flex-col sm:flex-row items-center gap-1 sm:gap-2 p-2 text-xs sm:text-sm">
             <span>Rejected</span>
             <Badge variant="secondary" className="text-xs">
-              {getStatusCount('rejected')}
+              {getStatusCount(submissions, 'rejected')}
             </Badge>
           </TabsTrigger>
         </TabsList>
 
         <TabsContent value="all" className="mt-6">
-          {renderSubmissionsTable(getSubmissionsByStatus('all'))}
+          <SubmissionsTable
+            submissions={getSubmissionsByStatus(filteredSubmissions, 'all')}
+            onViewApplication={setSelectedApplication}
+            onDeleteApplication={deleteApplication}
+            deletingApplication={deletingApplication}
+          />
         </TabsContent>
 
         <TabsContent value="waiting" className="mt-6">
-          {renderSubmissionsTable(getSubmissionsByStatus('waiting'))}
+          <SubmissionsTable
+            submissions={getSubmissionsByStatus(filteredSubmissions, 'waiting')}
+            onViewApplication={setSelectedApplication}
+            onDeleteApplication={deleteApplication}
+            deletingApplication={deletingApplication}
+          />
         </TabsContent>
 
         <TabsContent value="approved" className="mt-6">
-          {renderSubmissionsTable(getSubmissionsByStatus('approved'))}
+          <SubmissionsTable
+            submissions={getSubmissionsByStatus(filteredSubmissions, 'approved')}
+            onViewApplication={setSelectedApplication}
+            onDeleteApplication={deleteApplication}
+            deletingApplication={deletingApplication}
+          />
         </TabsContent>
 
         <TabsContent value="rejected" className="mt-6">
-          {renderSubmissionsTable(getSubmissionsByStatus('rejected'))}
+          <SubmissionsTable
+            submissions={getSubmissionsByStatus(filteredSubmissions, 'rejected')}
+            onViewApplication={setSelectedApplication}
+            onDeleteApplication={deleteApplication}
+            deletingApplication={deletingApplication}
+          />
         </TabsContent>
       </Tabs>
 
       {/* Application Details Modal */}
-      <Dialog open={!!selectedApplication} onOpenChange={(open) => !open && setSelectedApplication(null)}>
-        <DialogContent className="w-[95vw] max-w-4xl max-h-[90vh] overflow-y-auto m-2">
-          <DialogHeader>
-            <DialogTitle className="text-lg sm:text-xl">Application Details</DialogTitle>
-          </DialogHeader>
-          
-          {selectedApplication && (
-            <div className="space-y-6">
-              {/* Candidate Information */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <div className="space-y-4">
-                  <h3 className="text-base sm:text-lg font-semibold text-gray-900">Candidate Information</h3>
-                  <div className="space-y-2 text-sm">
-                    <div>
-                      <span className="font-medium text-gray-700">Name:</span>
-                      <span className="ml-2">{selectedApplication.firstName} {selectedApplication.lastName}</span>
-                    </div>
-                    <div>
-                      <span className="font-medium text-gray-700">Email:</span>
-                      <span className="ml-2 break-all">{selectedApplication.email}</span>
-                    </div>
-                    <div>
-                      <span className="font-medium text-gray-700">Phone:</span>
-                      <span className="ml-2">{selectedApplication.phone}</span>
-                    </div>
-                    <div>
-                      <span className="font-medium text-gray-700">Location:</span>
-                      <span className="ml-2">{selectedApplication.cityState}</span>
-                    </div>
-                    <div>
-                      <span className="font-medium text-gray-700">Earliest Start Date:</span>
-                      <span className="ml-2">{selectedApplication.earliestStartDate ? formatDate(selectedApplication.earliestStartDate) : 'Not specified'}</span>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="space-y-4">
-                  <h3 className="text-base sm:text-lg font-semibold text-gray-900">Application Details</h3>
-                  <div className="space-y-2 text-sm">
-                    <div>
-                      <span className="font-medium text-gray-700">Applied Position:</span>
-                      <span className="ml-2">{selectedApplication.appliedPosition}</span>
-                    </div>
-                    <div>
-                      <span className="font-medium text-gray-700">Applied Date:</span>
-                      <span className="ml-2">{formatDate(selectedApplication.createdAt)}</span>
-                    </div>
-                    <div>
-                      <span className="font-medium text-gray-700">Current Status:</span>
-                      <Badge 
-                        variant={getStatusBadgeVariant(selectedApplication.status)}
-                        className="ml-2 text-xs"
-                      >
-                        {getStatusText(selectedApplication.status)}
-                      </Badge>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Cover Letter */}
-              <div>
-                <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-3">Cover Letter</h3>
-                <div className="bg-gray-50 p-3 sm:p-4 rounded-lg">
-                  <div className="text-gray-700 whitespace-pre-wrap text-sm" dangerouslySetInnerHTML={{ __html: selectedApplication.coverLetter }} />
-                </div>
-              </div>
-
-              {/* Attachments */}
-              <div>
-                <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-3">Attachments</h3>
-                <div className="space-y-2">
-                  {selectedApplication.resumeUrl && (
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between p-3 bg-gray-50 rounded-lg gap-3">
-                      <div className="flex items-center gap-3">
-                        <FileText className="w-5 h-5 text-blue-600 flex-shrink-0" />
-                        <span className="font-medium text-sm">Resume</span>
-                      </div>
-                      <div className="flex gap-2 flex-wrap">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => openFileViewer(selectedApplication.resumeUrl!, 'Resume')}
-                          className="text-xs px-2 py-1"
-                        >
-                          <ExternalLink className="w-3 h-3 mr-1" />
-                          <span className="hidden sm:inline">View Online</span>
-                          <span className="sm:hidden">View</span>
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => window.open(selectedApplication.resumeUrl, '_blank')}
-                          className="text-xs px-2 py-1"
-                        >
-                          <Download className="w-3 h-3 mr-1" />
-                          Download
-                        </Button>
-                      </div>
-                    </div>
-                  )}
-                  
-                  {selectedApplication.additionalDocsUrls.map((docUrl, index) => (
-                    <div key={index} className="flex flex-col sm:flex-row sm:items-center justify-between p-3 bg-gray-50 rounded-lg gap-3">
-                      <div className="flex items-center gap-3">
-                        <FileText className="w-5 h-5 text-blue-600 flex-shrink-0" />
-                        <span className="font-medium text-sm">Additional Document {index + 1}</span>
-                      </div>
-                      <div className="flex gap-2 flex-wrap">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => openFileViewer(docUrl, `Additional Document ${index + 1}`)}
-                          className="text-xs px-2 py-1"
-                        >
-                          <ExternalLink className="w-3 h-3 mr-1" />
-                          <span className="hidden sm:inline">View Online</span>
-                          <span className="sm:hidden">View</span>
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => window.open(docUrl, '_blank')}
-                          className="text-xs px-2 py-1"
-                        >
-                          <Download className="w-3 h-3 mr-1" />
-                          Download
-                        </Button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Action Buttons */}
-              <div className="flex flex-col sm:flex-row gap-3 pt-4 border-t">
-                <Button
-                  onClick={() => updateApplicationStatus(selectedApplication.id, 'approved')}
-                  disabled={selectedApplication.status === 'approved'}
-                  className="bg-green-600 hover:bg-green-700 text-sm px-4 py-2"
-                >
-                  Approve
-                </Button>
-                <Button
-                  variant="destructive"
-                  onClick={() => updateApplicationStatus(selectedApplication.id, 'rejected')}
-                  disabled={selectedApplication.status === 'rejected'}
-                  className="text-sm px-4 py-2"
-                >
-                  Reject
-                </Button>
-                <Button
-                  variant="outline"
-                  onClick={() => updateApplicationStatus(selectedApplication.id, 'waiting')}
-                  disabled={selectedApplication.status === 'waiting'}
-                  className="text-sm px-4 py-2"
-                >
-                  Mark as Pending
-                </Button>
-                <AlertDialog>
-                  <AlertDialogTrigger asChild>
-                    <Button
-                      variant="outline"
-                      disabled={deletingApplication === selectedApplication.id}
-                      className="text-sm px-4 py-2 text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200"
-                    >
-                      <Trash2 className="w-4 h-4 mr-2" />
-                      Delete Application
-                    </Button>
-                  </AlertDialogTrigger>
-                  <AlertDialogContent>
-                    <AlertDialogHeader>
-                      <AlertDialogTitle>Delete Application</AlertDialogTitle>
-                      <AlertDialogDescription>
-                        Are you sure you want to delete this application from {selectedApplication.firstName} {selectedApplication.lastName}? 
-                        This will permanently delete the application record and all uploaded files. This action cannot be undone.
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel>Cancel</AlertDialogCancel>
-                      <AlertDialogAction
-                        onClick={() => {
-                          deleteApplication(selectedApplication.id);
-                        }}
-                        className="bg-red-600 hover:bg-red-700"
-                      >
-                        Delete Application
-                      </AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
-              </div>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
+      <ApplicationDetailsModal
+        selectedApplication={selectedApplication}
+        onClose={() => setSelectedApplication(null)}
+        onUpdateStatus={updateApplicationStatus}
+        onDeleteApplication={deleteApplication}
+        onOpenFileViewer={openFileViewer}
+        deletingApplication={deletingApplication}
+      />
 
       {/* File Viewer Modal */}
-      <Dialog open={!!viewingFile} onOpenChange={(open) => !open && setViewingFile(null)}>
-        <DialogContent className="w-[95vw] max-w-6xl max-h-[90vh] p-0 m-2">
-          <DialogHeader className="p-4 sm:p-6 pb-0">
-            <DialogTitle className="text-base sm:text-lg">{viewingFile?.name}</DialogTitle>
-          </DialogHeader>
-          {viewingFile && (
-            <div className="p-4 sm:p-6 pt-4">
-              <div className="w-full h-[60vh] sm:h-[70vh] border rounded-lg overflow-hidden">
-                <iframe
-                  src={viewingFile.url}
-                  className="w-full h-full"
-                  title={viewingFile.name}
-                />
-              </div>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
+      <FileViewerModal
+        viewingFile={viewingFile}
+        onClose={() => setViewingFile(null)}
+      />
     </div>
   );
 };
