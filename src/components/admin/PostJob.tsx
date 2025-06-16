@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Plus, X, Briefcase, MapPin, Settings as SettingsIcon, Award, AlertTriangle, Calendar, Loader2, Clock } from 'lucide-react';
+import { Plus, X, Briefcase, MapPin, Settings as SettingsIcon, Award, AlertTriangle, Calendar, Loader2 } from 'lucide-react';
 import { useAppContext } from '@/contexts/AppContext';
 import { toast } from '@/hooks/use-toast';
 import RichTextEditor from '@/components/ui/rich-text-editor';
@@ -114,17 +114,6 @@ const PostJob: React.FC = () => {
       }
     }
 
-    console.log('Submitting job with data:', {
-      title: jobForm.title,
-      description: jobForm.description,
-      position: jobForm.position,
-      location: jobForm.location,
-      facilities: jobForm.facilities,
-      isActive: true,
-      isUrgent: jobForm.isUrgent, // This should now be properly connected
-      applicationDeadline: jobForm.applicationDeadline || null, // This should now be properly connected
-    });
-
     const success = await createJob({
       title: jobForm.title,
       description: jobForm.description,
@@ -132,8 +121,8 @@ const PostJob: React.FC = () => {
       location: jobForm.location,
       facilities: jobForm.facilities,
       isActive: true,
-      isUrgent: jobForm.isUrgent, // Make sure this is passed correctly
-      applicationDeadline: jobForm.applicationDeadline || null, // Make sure this is passed correctly
+      isUrgent: jobForm.isUrgent,
+      applicationDeadline: jobForm.applicationDeadline || null,
     });
 
     if (success) {
@@ -151,7 +140,7 @@ const PostJob: React.FC = () => {
 
       toast({
         title: "Job Posted Successfully",
-        description: `Job has been created${jobForm.isUrgent ? ' and marked as urgent' : ''}${jobForm.applicationDeadline ? ' with application deadline' : ''}`,
+        description: "Your job posting is now live and accepting applications",
       });
     } else {
       toast({
@@ -382,7 +371,7 @@ const PostJob: React.FC = () => {
                 </div>
               </div>
 
-              {/* Priority and Deadline Settings - Updated with proper connections */}
+              {/* Priority and Deadline Settings */}
               <div className="space-y-4">
                 <h3 className="text-lg font-semibold text-gray-900">Priority & Timing</h3>
                 
@@ -391,10 +380,7 @@ const PostJob: React.FC = () => {
                     <Checkbox
                       id="urgent"
                       checked={jobForm.isUrgent}
-                      onCheckedChange={(checked) => {
-                        console.log('Urgent checkbox changed:', checked);
-                        handleJobInputChange('isUrgent', checked as boolean);
-                      }}
+                      onCheckedChange={(checked) => handleJobInputChange('isUrgent', checked as boolean)}
                       disabled={isSubmitting}
                     />
                     <div className="flex items-center space-x-2">
@@ -407,17 +393,14 @@ const PostJob: React.FC = () => {
 
                   <div>
                     <Label htmlFor="deadline" className="flex items-center space-x-2">
-                      <Clock className="w-4 h-4" />
+                      <Calendar className="w-4 h-4" />
                       <span>Application Deadline</span>
                     </Label>
                     <Input
                       id="deadline"
                       type="datetime-local"
                       value={jobForm.applicationDeadline}
-                      onChange={(e) => {
-                        console.log('Deadline changed:', e.target.value);
-                        handleJobInputChange('applicationDeadline', e.target.value);
-                      }}
+                      onChange={(e) => handleJobInputChange('applicationDeadline', e.target.value)}
                       className="mt-1"
                       min={new Date().toISOString().slice(0, 16)}
                       disabled={isSubmitting}
