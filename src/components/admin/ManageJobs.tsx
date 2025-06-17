@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Briefcase } from 'lucide-react';
@@ -10,7 +9,7 @@ import ManageJobCard from './ManageJobCard';
 import EditJobModal from './EditJobModal';
 
 const ManageJobs: React.FC = () => {
-  const { jobs, applications, positions, locations, updateJob, deleteJob, jobsLoading } = useAppContext();
+  const { jobs, applications, positions, locations, updateJob, deleteJob } = useAppContext();
   const [searchTerm, setSearchTerm] = useState('');
   const [filterPosition, setFilterPosition] = useState('all');
   const [filterLocation, setFilterLocation] = useState('all');
@@ -169,29 +168,6 @@ const ManageJobs: React.FC = () => {
     }
   };
 
-  // Show loading state
-  if (jobsLoading) {
-    return (
-      <div className="space-y-4 lg:space-y-6 p-2 sm:p-0">
-        {/* Header */}
-        <div className="flex items-center space-x-3 animate-fade-in-up">
-          <div className="w-8 h-8 lg:w-10 lg:h-10 bg-primary rounded-lg flex items-center justify-center">
-            <Briefcase className="w-4 h-4 lg:w-6 lg:h-6 text-white" />
-          </div>
-          <div>
-            <h1 className="font-bold text-gray-900" style={{ fontSize: '1.3rem' }}>Manage Jobs</h1>
-          </div>
-        </div>
-
-        {/* Loading State */}
-        <div className="flex justify-center items-center py-20">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-          <span className="ml-3 text-gray-600">Loading jobs...</span>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="space-y-4 lg:space-y-6 p-2 sm:p-0">
       {/* Header */}
@@ -229,7 +205,7 @@ const ManageJobs: React.FC = () => {
             </div>
             <h3 className="text-lg font-semibold text-gray-900 mb-2">No jobs found</h3>
             <p className="text-sm sm:text-base text-gray-600">
-              {hasActiveFilters
+              {searchTerm || filterPosition !== 'all' || filterLocation !== 'all' || filterStatus !== 'all'
                 ? "Try adjusting your search criteria" 
                 : "No jobs have been posted yet"
               }
