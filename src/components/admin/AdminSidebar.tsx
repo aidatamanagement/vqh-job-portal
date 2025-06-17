@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -14,7 +14,9 @@ import {
   XCircle,
   Mail,
   MailCheck,
-  MailX
+  MailX,
+  ChevronDown,
+  ChevronRight
 } from 'lucide-react';
 import { useAppContext } from '@/contexts/AppContext';
 
@@ -27,6 +29,7 @@ interface AdminSidebarProps {
 
 const AdminSidebar: React.FC<AdminSidebarProps> = ({ currentView, onViewChange }) => {
   const { jobs, applications } = useAppContext();
+  const [isEmailSectionOpen, setIsEmailSectionOpen] = useState(true);
 
   const activeJobs = jobs.filter(job => job.isActive).length;
   const totalJobs = jobs.length;
@@ -34,7 +37,7 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({ currentView, onViewChange }
   const approvedApplications = applications.filter(app => app.status === 'approved').length;
   const rejectedApplications = applications.filter(app => app.status === 'rejected').length;
 
-  const menuItems = [
+  const mainMenuItems = [
     {
       id: 'post-job' as AdminView,
       label: 'Post Job',
@@ -52,7 +55,9 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({ currentView, onViewChange }
       icon: FileText,
       badge: waitingApplications > 0 ? waitingApplications.toString() : undefined,
     },
-    // Email Management Section
+  ];
+
+  const emailMenuItems = [
     {
       id: 'email-templates' as AdminView,
       label: 'Email Templates',
@@ -68,12 +73,9 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({ currentView, onViewChange }
       label: 'Email Settings',
       icon: MailX,
     },
-    {
-      id: 'settings' as AdminView,
-      label: 'Settings',
-      icon: SettingsIcon,
-    },
   ];
+
+  const isEmailViewActive = ['email-templates', 'email-logs', 'email-settings'].includes(currentView);
 
   return (
     <div className="w-80 lg:w-80 w-72 bg-white border-r border-gray-200 min-h-screen">
@@ -122,58 +124,114 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({ currentView, onViewChange }
 
         {/* Navigation Menu */}
         <nav className="space-y-1 lg:space-y-2">
-          {menuItems.map((item, index) => {
+          {/* Main Menu Items */}
+          {mainMenuItems.map((item) => {
             const Icon = item.icon;
             const isActive = currentView === item.id;
-            const isEmailSection = ['email-templates', 'email-logs', 'email-settings'].includes(item.id);
             
             return (
-              <div key={item.id}>
-                {/* Email section divider */}
-                {index === 3 && (
-                  <div className="py-2">
-                    <div className="flex items-center space-x-2 px-2 py-1">
-                      <Mail className="w-4 h-4 text-gray-400" />
-                      <span className="text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Email Management
-                      </span>
+              <Button
+                key={item.id}
+                variant={isActive ? "default" : "ghost"}
+                onClick={() => onViewChange(item.id)}
+                className={`w-full justify-start p-3 lg:p-4 h-auto ${
+                  isActive 
+                    ? 'bg-primary text-white hover:bg-primary/90' 
+                    : 'text-gray-700 hover:bg-gray-100'
+                }`}
+              >
+                <div className="flex items-center justify-between w-full">
+                  <div className="flex items-center space-x-2 lg:space-x-3">
+                    <Icon className={`w-4 h-4 lg:w-5 lg:h-5 ${isActive ? 'text-white' : 'text-gray-500'}`} />
+                    <div className={`font-medium text-sm lg:text-base ${isActive ? 'text-white' : 'text-gray-900'}`}>
+                      {item.label}
                     </div>
                   </div>
-                )}
-                
-                <Button
-                  variant={isActive ? "default" : "ghost"}
-                  onClick={() => onViewChange(item.id)}
-                  className={`w-full justify-start p-3 lg:p-4 h-auto ${
-                    isActive 
-                      ? 'bg-primary text-white hover:bg-primary/90' 
-                      : 'text-gray-700 hover:bg-gray-100'
-                  } ${isEmailSection ? 'ml-4' : ''}`}
-                >
-                  <div className="flex items-center justify-between w-full">
-                    <div className="flex items-center space-x-2 lg:space-x-3">
-                      <Icon className={`w-4 h-4 lg:w-5 lg:h-5 ${isActive ? 'text-white' : 'text-gray-500'}`} />
-                      <div className={`font-medium text-sm lg:text-base ${isActive ? 'text-white' : 'text-gray-900'}`}>
-                        {item.label}
-                      </div>
-                    </div>
-                    {item.badge && (
-                      <Badge 
-                        variant={isActive ? "secondary" : "outline"}
-                        className={`text-xs ${
-                          isActive 
-                            ? 'bg-white/20 text-white border-white/30' 
-                            : 'bg-primary/10 text-primary border-primary/20'
-                        }`}
-                      >
-                        {item.badge}
-                      </Badge>
-                    )}
-                  </div>
-                </Button>
-              </div>
+                  {item.badge && (
+                    <Badge 
+                      variant={isActive ? "secondary" : "outline"}
+                      className={`text-xs ${
+                        isActive 
+                          ? 'bg-white/20 text-white border-white/30' 
+                          : 'bg-primary/10 text-primary border-primary/20'
+                      }`}
+                    >
+                      {item.badge}
+                    </Badge>
+                  )}
+                </div>
+              </Button>
             );
           })}
+
+          {/* Email Management Section */}
+          <div className="py-2">
+            <Button
+              variant="ghost"
+              onClick={() => setIsEmailSectionOpen(!isEmailSectionOpen)}
+              className={`w-full justify-start p-3 lg:p-4 h-auto ${
+                isEmailViewActive ? 'bg-primary/10 hover:bg-primary/20' : 'hover:bg-gray-100'
+              }`}
+            >
+              <div className="flex items-center space-x-2 lg:space-x-3">
+                {isEmailSectionOpen ? (
+                  <ChevronDown className="w-4 h-4 text-gray-500" />
+                ) : (
+                  <ChevronRight className="w-4 h-4 text-gray-500" />
+                )}
+                <Mail className="w-4 h-4 text-gray-500" />
+                <span className="text-sm font-medium text-gray-700">Email Management</span>
+              </div>
+            </Button>
+
+            {/* Email Sub-menu */}
+            {isEmailSectionOpen && (
+              <div className="ml-4 mt-1 space-y-1">
+                {emailMenuItems.map((item) => {
+                  const Icon = item.icon;
+                  const isActive = currentView === item.id;
+                  
+                  return (
+                    <Button
+                      key={item.id}
+                      variant={isActive ? "default" : "ghost"}
+                      onClick={() => onViewChange(item.id)}
+                      className={`w-full justify-start p-2 lg:p-3 h-auto text-sm ${
+                        isActive 
+                          ? 'bg-primary text-white hover:bg-primary/90' 
+                          : 'text-gray-600 hover:bg-gray-100'
+                      }`}
+                    >
+                      <div className="flex items-center space-x-2">
+                        <Icon className={`w-4 h-4 ${isActive ? 'text-white' : 'text-gray-500'}`} />
+                        <span className={`${isActive ? 'text-white' : 'text-gray-700'}`}>
+                          {item.label}
+                        </span>
+                      </div>
+                    </Button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
+          {/* Settings */}
+          <Button
+            variant={currentView === 'settings' ? "default" : "ghost"}
+            onClick={() => onViewChange('settings')}
+            className={`w-full justify-start p-3 lg:p-4 h-auto ${
+              currentView === 'settings'
+                ? 'bg-primary text-white hover:bg-primary/90' 
+                : 'text-gray-700 hover:bg-gray-100'
+            }`}
+          >
+            <div className="flex items-center space-x-2 lg:space-x-3">
+              <SettingsIcon className={`w-4 h-4 lg:w-5 lg:h-5 ${currentView === 'settings' ? 'text-white' : 'text-gray-500'}`} />
+              <div className={`font-medium text-sm lg:text-base ${currentView === 'settings' ? 'text-white' : 'text-gray-900'}`}>
+                Settings
+              </div>
+            </div>
+          </Button>
         </nav>
       </div>
     </div>
