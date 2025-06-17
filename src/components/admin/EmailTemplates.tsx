@@ -2,15 +2,19 @@
 import React, { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { Switch } from '@/components/ui/switch';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
-import { Mail, Eye, Edit, Save, X } from 'lucide-react';
+import { Mail, Eye, Edit } from 'lucide-react';
 import { EmailTemplate } from '@/types';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
 import {
   Dialog,
   DialogContent,
@@ -18,13 +22,20 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
+import EditTemplateModal from './EditTemplateModal';
 
 const EmailTemplates: React.FC = () => {
   const [templates, setTemplates] = useState<EmailTemplate[]>([]);
   const [selectedTemplate, setSelectedTemplate] = useState<EmailTemplate | null>(null);
-  const [isEditing, setIsEditing] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  const [previewHtml, setPreviewHtml] = useState('');
+  const [previewTemplate, setPreviewTemplate] = useState<EmailTemplate | null>(null);
 
   useEffect(() => {
     fetchTemplates();
@@ -85,7 +96,7 @@ const EmailTemplates: React.FC = () => {
         description: "Email template updated successfully",
       });
 
-      setIsEditing(false);
+      setIsEditModalOpen(false);
       fetchTemplates();
     } catch (error) {
       console.error('Error updating template:', error);
@@ -121,6 +132,19 @@ const EmailTemplates: React.FC = () => {
     return html;
   };
 
+  const truncateText = (text: string, maxLength: number) => {
+    return text.length > maxLength ? text.substring(0, maxLength) + '...' : text;
+  };
+
+  const handleEditClick = (template: EmailTemplate) => {
+    setSelectedTemplate(template);
+    setIsEditModalOpen(true);
+  };
+
+  const handlePreviewClick = (template: EmailTemplate) => {
+    setPreviewTemplate(template);
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -138,185 +162,135 @@ const EmailTemplates: React.FC = () => {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Templates List */}
-        <div className="space-y-4">
-          {templates.map((template) => (
-            <Card key={template.id} className="p-4">
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center space-x-3">
-                  <Mail className="w-5 h-5 text-primary" />
-                  <h3 className="font-semibold">{template.name}</h3>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Badge variant={template.is_active ? "default" : "secondary"}>
-                    {template.is_active ? "Active" : "Inactive"}
-                  </Badge>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {
-                      setSelectedTemplate(template);
-                      setIsEditing(false);
-                      setPreviewHtml(generatePreview(template));
-                    }}
-                  >
-                    <Eye className="w-4 h-4" />
-                  </Button>
-                </div>
-              </div>
-              
-              <p className="text-sm text-gray-600 mb-2">Slug: {template.slug}</p>
-              <p className="text-sm text-gray-800 font-medium">Subject: {template.subject}</p>
-              
-              {template.variables && template.variables.length > 0 && (
-                <div className="mt-3">
-                  <p className="text-xs text-gray-500 mb-1">Variables:</p>
-                  <div className="flex flex-wrap gap-1">
-                    {template.variables.map((variable) => (
-                      <Badge key={variable} variant="outline" className="text-xs">
-                        {variable}
-                      </Badge>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </Card>
-          ))}
-        </div>
-
-        {/* Template Editor/Preview */}
-        {selectedTemplate && (
-          <div className="space-y-4">
-            <Card className="p-4">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold">
-                  {isEditing ? 'Edit Template' : 'Preview Template'}
-                </h3>
-                <div className="flex items-center space-x-2">
-                  {!isEditing ? (
-                    <>
+      <Card className="p-6">
+        <TooltipProvider>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="w-[250px]">Template</TableHead>
+                <TableHead className="w-[120px]">Slug</TableHead>
+                <TableHead className="w-[300px]">Subject</TableHead>
+                <TableHead className="w-[100px]">Status</TableHead>
+                <TableHead className="w-[100px]">Variables</TableHead>
+                <TableHead className="w-[150px]">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {templates.map((template) => (
+                <TableRow key={template.id}>
+                  <TableCell>
+                    <div className="flex items-center space-x-3">
+                      <Mail className="w-4 h-4 text-primary flex-shrink-0" />
+                      <div>
+                        <div className="font-medium">{template.name}</div>
+                        <div className="text-xs text-gray-500">
+                          {new Date(template.created_at).toLocaleDateString()}
+                        </div>
+                      </div>
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <span className="text-sm text-gray-600 font-mono">
+                      {template.slug}
+                    </span>
+                  </TableCell>
+                  <TableCell>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <span className="text-sm cursor-help">
+                          {truncateText(template.subject, 50)}
+                        </span>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p className="max-w-xs">{template.subject}</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TableCell>
+                  <TableCell>
+                    <Badge variant={template.is_active ? "default" : "secondary"}>
+                      {template.is_active ? "Active" : "Inactive"}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>
+                    {template.variables && template.variables.length > 0 ? (
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Badge variant="outline" className="cursor-help">
+                            {template.variables.length} vars
+                          </Badge>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <div className="space-y-1">
+                            {template.variables.map((variable) => (
+                              <div key={variable} className="text-xs">
+                                {`{{${variable}}}`}
+                              </div>
+                            ))}
+                          </div>
+                        </TooltipContent>
+                      </Tooltip>
+                    ) : (
+                      <span className="text-gray-400 text-sm">None</span>
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center space-x-2">
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => setIsEditing(true)}
+                        onClick={() => handleEditClick(template)}
                       >
-                        <Edit className="w-4 h-4 mr-2" />
-                        Edit
+                        <Edit className="w-4 h-4" />
                       </Button>
                       <Dialog>
                         <DialogTrigger asChild>
-                          <Button variant="outline" size="sm">
-                            <Eye className="w-4 h-4 mr-2" />
-                            Full Preview
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handlePreviewClick(template)}
+                          >
+                            <Eye className="w-4 h-4" />
                           </Button>
                         </DialogTrigger>
                         <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
                           <DialogHeader>
-                            <DialogTitle>Email Preview: {selectedTemplate.name}</DialogTitle>
+                            <DialogTitle>Email Preview: {template.name}</DialogTitle>
                           </DialogHeader>
-                          <div 
-                            className="border rounded-lg p-4 bg-white"
-                            dangerouslySetInnerHTML={{ __html: previewHtml }}
-                          />
+                          <div className="space-y-4">
+                            <div>
+                              <h4 className="font-medium mb-2">Subject</h4>
+                              <p className="text-sm bg-gray-50 p-3 rounded border">
+                                {template.subject.replace(/\{\{(\w+)\}\}/g, '[Sample $1]')}
+                              </p>
+                            </div>
+                            <div>
+                              <h4 className="font-medium mb-2">Content</h4>
+                              <div 
+                                className="border rounded-lg p-4 bg-white"
+                                dangerouslySetInnerHTML={{ __html: generatePreview(template) }}
+                              />
+                            </div>
+                          </div>
                         </DialogContent>
                       </Dialog>
-                    </>
-                  ) : (
-                    <>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setIsEditing(false)}
-                      >
-                        <X className="w-4 h-4 mr-2" />
-                        Cancel
-                      </Button>
-                      <Button
-                        size="sm"
-                        onClick={() => handleSaveTemplate(selectedTemplate)}
-                      >
-                        <Save className="w-4 h-4 mr-2" />
-                        Save
-                      </Button>
-                    </>
-                  )}
-                </div>
-              </div>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </TooltipProvider>
+      </Card>
 
-              {isEditing ? (
-                <div className="space-y-4">
-                  <div>
-                    <Label htmlFor="template-name">Template Name</Label>
-                    <Input
-                      id="template-name"
-                      value={selectedTemplate.name}
-                      onChange={(e) => setSelectedTemplate({
-                        ...selectedTemplate,
-                        name: e.target.value
-                      })}
-                    />
-                  </div>
-
-                  <div>
-                    <Label htmlFor="template-subject">Subject</Label>
-                    <Input
-                      id="template-subject"
-                      value={selectedTemplate.subject}
-                      onChange={(e) => setSelectedTemplate({
-                        ...selectedTemplate,
-                        subject: e.target.value
-                      })}
-                    />
-                  </div>
-
-                  <div>
-                    <Label htmlFor="template-html">HTML Content</Label>
-                    <Textarea
-                      id="template-html"
-                      value={selectedTemplate.html_body}
-                      onChange={(e) => setSelectedTemplate({
-                        ...selectedTemplate,
-                        html_body: e.target.value
-                      })}
-                      rows={20}
-                      className="font-mono text-sm"
-                    />
-                  </div>
-
-                  <div className="flex items-center space-x-2">
-                    <Switch
-                      checked={selectedTemplate.is_active}
-                      onCheckedChange={(checked) => setSelectedTemplate({
-                        ...selectedTemplate,
-                        is_active: checked
-                      })}
-                    />
-                    <Label>Active</Label>
-                  </div>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  <div>
-                    <h4 className="font-medium mb-2">Subject Preview</h4>
-                    <p className="text-sm bg-gray-50 p-2 rounded border">
-                      {selectedTemplate.subject.replace(/\{\{(\w+)\}\}/g, '[Sample $1]')}
-                    </p>
-                  </div>
-                  
-                  <div>
-                    <h4 className="font-medium mb-2">Content Preview</h4>
-                    <div 
-                      className="border rounded-lg p-4 bg-white max-h-96 overflow-y-auto text-sm"
-                      dangerouslySetInnerHTML={{ __html: previewHtml }}
-                    />
-                  </div>
-                </div>
-              )}
-            </Card>
-          </div>
-        )}
-      </div>
+      <EditTemplateModal
+        template={selectedTemplate}
+        isOpen={isEditModalOpen}
+        onClose={() => {
+          setIsEditModalOpen(false);
+          setSelectedTemplate(null);
+        }}
+        onSave={handleSaveTemplate}
+      />
     </div>
   );
 };
