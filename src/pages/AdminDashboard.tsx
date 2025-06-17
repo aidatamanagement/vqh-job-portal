@@ -25,11 +25,6 @@ const AdminDashboard: React.FC = () => {
     }
   }, [navigate]);
 
-  const handleLogout = () => {
-    localStorage.removeItem('adminAuth');
-    navigate('/admin/login');
-  };
-
   const renderCurrentView = () => {
     switch (currentView) {
       case 'post-job':
@@ -55,7 +50,7 @@ const AdminDashboard: React.FC = () => {
     <div className="min-h-screen bg-gray-50 flex">
       <AdminSidebar currentView={currentView} onViewChange={setCurrentView} />
       <div className="flex-1 flex flex-col">
-        <AdminHeader onLogout={handleLogout} />
+        <AdminHeader />
         <main className="flex-1 overflow-auto">
           {renderCurrentView()}
         </main>
