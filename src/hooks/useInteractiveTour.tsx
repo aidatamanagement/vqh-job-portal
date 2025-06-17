@@ -1,6 +1,6 @@
 
 import { useState, useCallback } from 'react';
-import Joyride, { CallBackProps, STATUS, Step } from 'react-joyride';
+import Joyride, { CallBackProps, STATUS, Step, EVENTS, ACTIONS } from 'react-joyride';
 
 export interface TourStep extends Step {
   target: string;
@@ -30,11 +30,11 @@ export const useInteractiveTour = (steps: TourStep[]) => {
   }, []);
 
   const handleJoyrideCallback = useCallback((data: CallBackProps) => {
-    const { status, type, index } = data;
+    const { status, type, index, action } = data;
 
-    if ([STATUS.FINISHED, STATUS.SKIPPED].includes(status)) {
+    if (status === STATUS.FINISHED || status === STATUS.SKIPPED) {
       setTourState(prev => ({ ...prev, run: false }));
-    } else if (type === 'step:after') {
+    } else if (type === EVENTS.STEP_AFTER) {
       setTourState(prev => ({ ...prev, stepIndex: index + 1 }));
     }
   }, []);
