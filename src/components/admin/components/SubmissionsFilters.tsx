@@ -3,6 +3,7 @@ import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Skeleton } from '@/components/ui/skeleton';
 import { Search, X } from 'lucide-react';
 
 interface SubmissionsFiltersProps {
@@ -11,6 +12,7 @@ interface SubmissionsFiltersProps {
   positionFilter: string;
   setPositionFilter: (filter: string) => void;
   uniquePositions: string[];
+  isLoading?: boolean;
 }
 
 const SubmissionsFilters: React.FC<SubmissionsFiltersProps> = ({
@@ -18,7 +20,8 @@ const SubmissionsFilters: React.FC<SubmissionsFiltersProps> = ({
   setSearchTerm,
   positionFilter,
   setPositionFilter,
-  uniquePositions
+  uniquePositions,
+  isLoading = false
 }) => {
   const hasActiveFilters = searchTerm !== '' || positionFilter !== 'all';
 
@@ -26,6 +29,19 @@ const SubmissionsFilters: React.FC<SubmissionsFiltersProps> = ({
     setSearchTerm('');
     setPositionFilter('all');
   };
+
+  if (isLoading) {
+    return (
+      <div className="bg-white p-4 sm:p-6 rounded-lg border border-gray-200 shadow-sm animate-slide-up-delayed">
+        <div className="flex flex-col space-y-4 sm:space-y-0 sm:flex-row sm:gap-4">
+          <div className="flex-1">
+            <Skeleton className="h-10 w-full" />
+          </div>
+          <Skeleton className="h-10 w-full sm:w-48" />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-white p-4 sm:p-6 rounded-lg border border-gray-200 shadow-sm animate-slide-up-delayed">

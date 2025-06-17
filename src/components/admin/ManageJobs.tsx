@@ -1,6 +1,9 @@
+
 import React, { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Briefcase } from 'lucide-react';
+import LoadingSpinner from '@/components/ui/loading-spinner';
+import NoDataState from '@/components/ui/no-data-state';
 import { useAppContext } from '@/contexts/AppContext';
 import { Job } from '@/types';
 import { toast } from '@/hooks/use-toast';
@@ -9,7 +12,7 @@ import ManageJobCard from './ManageJobCard';
 import EditJobModal from './EditJobModal';
 
 const ManageJobs: React.FC = () => {
-  const { jobs, applications, positions, locations, updateJob, deleteJob } = useAppContext();
+  const { jobs, applications, positions, locations, updateJob, deleteJob, jobsLoading } = useAppContext();
   const [searchTerm, setSearchTerm] = useState('');
   const [filterPosition, setFilterPosition] = useState('all');
   const [filterLocation, setFilterLocation] = useState('all');
@@ -180,51 +183,59 @@ const ManageJobs: React.FC = () => {
         </div>
       </div>
 
-      {/* Filters */}
-      <JobFilters
-        searchTerm={searchTerm}
-        setSearchTerm={setSearchTerm}
-        filterPosition={filterPosition}
-        setFilterPosition={setFilterPosition}
-        filterLocation={filterLocation}
-        setFilterLocation={setFilterLocation}
-        filterStatus={filterStatus}
-        setFilterStatus={setFilterStatus}
-        positions={positions}
-        locations={locations}
-        hasActiveFilters={hasActiveFilters}
-        onClearFilters={clearAllFilters}
-      />
+      {/* Show loading state while jobs are being fetched */}
+      {jobsLoading ? (
+        <Card className="p-8">
+          <LoadingSpinner text="Loading jobs..." />
+        </Card>
+      ) : (
+        <>
+          {/* Filters */}
+          <JobFilters
+            searchTerm={searchTerm}
+            setSearchTerm={setSearchTerm}
+            filterPosition={filterPosition}
+            setFilterPosition={setFilterPosition}
+            filterLocation={filterLocation}
+            setFilterLocation={setFilterLocation}
+            filterStatus={filterStatus}
+            setFilterStatus={setFilterStatus}
+            positions={positions}
+            locations={locations}
+            hasActiveFilters={hasActiveFilters}
+            onClearFilters={clearAllFilters}
+          />
 
-      {/* Jobs List */}
-      <div className="space-y-3 sm:space-y-4">
-        {filteredJobs.length === 0 ? (
-          <Card className="p-6 sm:p-8 text-center animate-fade-in">
-            <div className="w-12 h-12 sm:w-16 sm:h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <Briefcase className="w-6 h-6 sm:w-8 sm:h-8 text-gray-400" />
-            </div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">No jobs found</h3>
-            <p className="text-sm sm:text-base text-gray-600">
-              {searchTerm || filterPosition !== 'all' || filterLocation !== 'all' || filterStatus !== 'all'
-                ? "Try adjusting your search criteria" 
-                : "No jobs have been posted yet"
-              }
-            </p>
-          </Card>
-        ) : (
-          filteredJobs.map((job, index) => (
-            <ManageJobCard
-              key={job.id}
-              job={job}
-              applicationCount={getApplicationCount(job.id)}
-              index={index}
-              onToggleStatus={toggleJobStatus}
-              onEdit={openEditModal}
-              onDelete={handleDeleteJob}
-            />
-          ))
-        )}
-      </div>
+          {/* Jobs List */}
+          <div className="space-y-3 sm:space-y-4">
+            {filteredJobs.length === 0 ? (
+              <Card className="p-6 sm:p-8 animate-fade-in">
+                <NoDataState
+                  icon={Briefcase}
+                  title="No jobs found"
+                  description={
+                    hasActiveFilters
+                      ? "Try adjusting your search criteria"
+                      : "No jobs have been posted yet"
+                  }
+                />
+              </Card>
+            ) : (
+              filteredJobs.map((job, index) => (
+                <ManageJobCard
+                  key={job.id}
+                  job={job}
+                  applicationCount={getApplicationCount(job.id)}
+                  index={index}
+                  onToggleStatus={toggleJobStatus}
+                  onEdit={openEditModal}
+                  onDelete={handleDeleteJob}
+                />
+              ))
+            )}
+          </div>
+        </>
+      )}
 
       {/* Edit Job Modal */}
       <EditJobModal

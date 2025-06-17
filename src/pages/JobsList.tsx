@@ -4,11 +4,13 @@ import { Button } from '@/components/ui/button';
 import { Search } from 'lucide-react';
 import JobCard from '@/components/JobCard';
 import JobFilters from '@/components/JobFilters';
+import LoadingSpinner from '@/components/ui/loading-spinner';
+import NoDataState from '@/components/ui/no-data-state';
 import { useAppContext } from '@/contexts/AppContext';
 import { FilterState } from '@/types';
 
 const JobsList: React.FC = () => {
-  const { jobs } = useAppContext();
+  const { jobs, jobsLoading } = useAppContext();
   const [displayCount, setDisplayCount] = useState(12);
   const [filters, setFilters] = useState<FilterState>({
     search: '',
@@ -55,10 +57,37 @@ const JobsList: React.FC = () => {
 
   const displayedJobs = filteredJobs.slice(0, displayCount);
   const hasMore = displayCount < filteredJobs.length;
+  const hasActiveFilters = filters.search || filters.positions.length > 0 || filters.location;
 
   const handleLoadMore = () => {
     setDisplayCount(prev => prev + 12);
   };
+
+  // Show loading state while jobs are being fetched
+  if (jobsLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 animate-slide-up">
+        <div className="container mx-auto px-4 py-8">
+          <div className="space-y-8">
+            {/* Page Header */}
+            <div className="text-center space-y-4 animate-slide-up">
+              <h1 className="text-4xl font-bold text-gray-900">
+                Join Our Mission of Compassionate Care
+              </h1>
+              <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+                Discover meaningful career opportunities in hospice care where you can make a real difference in patients' and families' lives.
+              </p>
+            </div>
+
+            {/* Loading State */}
+            <div className="flex justify-center py-16">
+              <LoadingSpinner size="lg" text="Loading available positions..." />
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 animate-slide-up">
@@ -83,9 +112,22 @@ const JobsList: React.FC = () => {
             />
           </div>
 
-          {/* Jobs Grid */}
-          {displayedJobs.length > 0 ? (
+          {/* Content based on state */}
+          {filteredJobs.length === 0 && !jobsLoading ? (
+            <div className="animate-slide-up-delayed-2">
+              <NoDataState
+                icon={Search}
+                title={hasActiveFilters ? "No jobs match your criteria" : "No jobs available"}
+                description={
+                  hasActiveFilters 
+                    ? "Try adjusting your search criteria or browse all available positions." 
+                    : "We don't have any open positions at the moment. Please check back later."
+                }
+              />
+            </div>
+          ) : (
             <>
+              {/* Jobs Grid */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-slide-up-delayed-2">
                 {displayedJobs.map((job, index) => (
                   <div 
@@ -115,20 +157,6 @@ const JobsList: React.FC = () => {
                 </div>
               )}
             </>
-          ) : (
-            <div className="text-center py-12 animate-slide-up-delayed-2">
-              <div className="max-w-md mx-auto">
-                <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Search className="w-8 h-8 text-gray-400" />
-                </div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                  No jobs found
-                </h3>
-                <p className="text-gray-600">
-                  Try adjusting your search criteria or browse all available positions.
-                </p>
-              </div>
-            </div>
           )}
         </div>
       </div>
