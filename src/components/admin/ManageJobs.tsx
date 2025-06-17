@@ -106,7 +106,7 @@ const ManageJobs: React.FC = () => {
   };
 
   const handleFacilityToggle = (facility: string) => {
-    const currentF acilities = jobForm.facilities || [];
+    const currentFacilities = jobForm.facilities || [];
     const newFacilities = currentFacilities.includes(facility)
       ? currentFacilities.filter(f => f !== facility)
       : [...currentFacilities, facility];
