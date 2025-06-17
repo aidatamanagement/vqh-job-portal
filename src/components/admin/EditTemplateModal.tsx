@@ -94,18 +94,8 @@ const EditTemplateModal: React.FC<EditTemplateModalProps> = ({
     <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="flex items-center justify-between">
-            <span>Edit Email Template: {editedTemplate.name}</span>
-            <div className="flex items-center space-x-2">
-              <Button variant="outline" onClick={handleClose}>
-                <X className="w-4 h-4 mr-2" />
-                Cancel
-              </Button>
-              <Button onClick={handleSave}>
-                <Save className="w-4 h-4 mr-2" />
-                Save Changes
-              </Button>
-            </div>
+          <DialogTitle>
+            Edit Email Template: {editedTemplate.name}
           </DialogTitle>
         </DialogHeader>
 
@@ -206,6 +196,17 @@ const EditTemplateModal: React.FC<EditTemplateModalProps> = ({
             </div>
           </TabsContent>
         </Tabs>
+
+        <div className="flex items-center justify-end space-x-2 pt-4 border-t mt-6">
+          <Button variant="outline" onClick={handleClose}>
+            <X className="w-4 h-4 mr-2" />
+            Cancel
+          </Button>
+          <Button onClick={handleSave}>
+            <Save className="w-4 h-4 mr-2" />
+            Save Changes
+          </Button>
+        </div>
       </DialogContent>
     </Dialog>
   );
