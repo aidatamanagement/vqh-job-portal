@@ -7,19 +7,7 @@ import { Input } from '@/components/ui/input';
 import { supabase } from '@/integrations/supabase/client';
 import { Mail, Search, Calendar, User, AlertCircle, CheckCircle, Clock } from 'lucide-react';
 import { format } from 'date-fns';
-
-interface EmailLog {
-  id: string;
-  recipient_email: string;
-  template_slug: string;
-  subject: string;
-  status: string;
-  brevo_message_id?: string;
-  error_message?: string;
-  variables_used: Record<string, any>;
-  sent_at?: string;
-  created_at: string;
-}
+import { EmailLog } from '@/types';
 
 const EmailLogs: React.FC = () => {
   const [logs, setLogs] = useState<EmailLog[]>([]);
@@ -45,7 +33,22 @@ const EmailLogs: React.FC = () => {
         .limit(100);
 
       if (error) throw error;
-      setLogs(data || []);
+      
+      // Transform the data to match our EmailLog interface
+      const transformedLogs: EmailLog[] = (data || []).map(log => ({
+        id: log.id,
+        recipient_email: log.recipient_email,
+        template_slug: log.template_slug,
+        subject: log.subject,
+        status: log.status,
+        brevo_message_id: log.brevo_message_id,
+        error_message: log.error_message,
+        variables_used: (log.variables_used as Record<string, any>) || {},
+        sent_at: log.sent_at,
+        created_at: log.created_at
+      }));
+      
+      setLogs(transformedLogs);
     } catch (error) {
       console.error('Error fetching email logs:', error);
     } finally {

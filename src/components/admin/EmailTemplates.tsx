@@ -9,7 +9,8 @@ import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
-import { Mail, Eye, Edit, Save, X, Plus } from 'lucide-react';
+import { Mail, Eye, Edit, Save, X } from 'lucide-react';
+import { EmailTemplate } from '@/types';
 import {
   Dialog,
   DialogContent,
@@ -17,18 +18,6 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
-
-interface EmailTemplate {
-  id: string;
-  slug: string;
-  name: string;
-  subject: string;
-  html_body: string;
-  variables: string[];
-  is_active: boolean;
-  created_at: string;
-  updated_at: string;
-}
 
 const EmailTemplates: React.FC = () => {
   const [templates, setTemplates] = useState<EmailTemplate[]>([]);
@@ -49,7 +38,21 @@ const EmailTemplates: React.FC = () => {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setTemplates(data || []);
+      
+      // Transform the data to match our EmailTemplate interface
+      const transformedTemplates: EmailTemplate[] = (data || []).map(template => ({
+        id: template.id,
+        slug: template.slug,
+        name: template.name,
+        subject: template.subject,
+        html_body: template.html_body,
+        variables: (template.variables as string[]) || [],
+        is_active: template.is_active,
+        created_at: template.created_at,
+        updated_at: template.updated_at
+      }));
+      
+      setTemplates(transformedTemplates);
     } catch (error) {
       console.error('Error fetching templates:', error);
       toast({
