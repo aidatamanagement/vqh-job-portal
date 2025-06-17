@@ -12,8 +12,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
-import { Save, X, Eye, Edit } from 'lucide-react';
+import { Save, X, Eye, Edit, Code, Palette } from 'lucide-react';
 import { EmailTemplate } from '@/types';
+import RichTextEditor from '@/components/ui/rich-text-editor';
 
 interface EditTemplateModalProps {
   template: EmailTemplate | null;
@@ -31,13 +32,83 @@ const EditTemplateModal: React.FC<EditTemplateModalProps> = ({
   const [editedTemplate, setEditedTemplate] = useState<EmailTemplate | null>(null);
   const [activeTab, setActiveTab] = useState('edit');
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [editorMode, setEditorMode] = useState<'visual' | 'code'>('visual');
+  const [extractedContent, setExtractedContent] = useState('');
 
   useEffect(() => {
     if (template) {
       setEditedTemplate({ ...template });
       setHasUnsavedChanges(false);
+      // Extract content from HTML for visual editing
+      extractContentFromHtml(template.html_body);
     }
   }, [template]);
+
+  const extractContentFromHtml = (html: string) => {
+    // Look for content between common email content markers
+    const contentPatterns = [
+      /<div[^>]*id=["']?email-content["']?[^>]*>(.*?)<\/div>/is,
+      /<div[^>]*class=["'][^"']*content[^"']*["'][^>]*>(.*?)<\/div>/is,
+      /<main[^>]*>(.*?)<\/main>/is,
+      /<body[^>]*>(.*?)<\/body>/is
+    ];
+
+    for (const pattern of contentPatterns) {
+      const match = html.match(pattern);
+      if (match && match[1]) {
+        setExtractedContent(match[1].trim());
+        return;
+      }
+    }
+
+    // If no specific content area found, extract everything between body tags or use full HTML
+    const bodyMatch = html.match(/<body[^>]*>(.*?)<\/body>/is);
+    if (bodyMatch && bodyMatch[1]) {
+      setExtractedContent(bodyMatch[1].trim());
+    } else {
+      // Fallback: use the full HTML but warn that structure might be affected
+      setExtractedContent(html);
+    }
+  };
+
+  const rebuildHtmlWithNewContent = (newContent: string): string => {
+    if (!editedTemplate) return '';
+
+    const originalHtml = editedTemplate.html_body;
+
+    // Try to replace content in the original structure
+    const contentPatterns = [
+      {
+        pattern: /(<div[^>]*id=["']?email-content["']?[^>]*>)(.*?)(<\/div>)/is,
+        replacement: `$1${newContent}$3`
+      },
+      {
+        pattern: /(<div[^>]*class=["'][^"']*content[^"']*["'][^>]*>)(.*?)(<\/div>)/is,
+        replacement: `$1${newContent}$3`
+      },
+      {
+        pattern: /(<main[^>]*>)(.*?)(<\/main>)/is,
+        replacement: `$1${newContent}$3`
+      },
+      {
+        pattern: /(<body[^>]*>)(.*?)(<\/body>)/is,
+        replacement: `$1${newContent}$3`
+      }
+    ];
+
+    for (const { pattern, replacement } of contentPatterns) {
+      if (pattern.test(originalHtml)) {
+        return originalHtml.replace(pattern, replacement);
+      }
+    }
+
+    // If no pattern matches, return the new content wrapped in a basic structure
+    if (originalHtml.includes('<html>') || originalHtml.includes('<body>')) {
+      return originalHtml.replace(/(<body[^>]*>).*?(<\/body>)/is, `$1${newContent}$2`);
+    }
+
+    return newContent;
+  };
 
   const generatePreview = (template: EmailTemplate) => {
     let html = template.html_body;
@@ -70,6 +141,29 @@ const EditTemplateModal: React.FC<EditTemplateModalProps> = ({
     }
   };
 
+  const handleContentChange = (content: string) => {
+    if (editedTemplate) {
+      if (editorMode === 'visual') {
+        setExtractedContent(content);
+        const newHtml = rebuildHtmlWithNewContent(content);
+        setEditedTemplate({ ...editedTemplate, html_body: newHtml });
+      } else {
+        setEditedTemplate({ ...editedTemplate, html_body: content });
+      }
+      setHasUnsavedChanges(true);
+    }
+  };
+
+  const handleEditorModeChange = (mode: 'visual' | 'code') => {
+    if (editedTemplate) {
+      if (mode === 'visual' && editorMode === 'code') {
+        // Switching from code to visual - extract content again
+        extractContentFromHtml(editedTemplate.html_body);
+      }
+      setEditorMode(mode);
+    }
+  };
+
   const handleSave = () => {
     if (editedTemplate) {
       onSave(editedTemplate);
@@ -92,7 +186,7 @@ const EditTemplateModal: React.FC<EditTemplateModalProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center justify-between">
             <span>Edit Email Template: {editedTemplate.name}</span>
@@ -153,15 +247,48 @@ const EditTemplateModal: React.FC<EditTemplateModalProps> = ({
             </div>
 
             <div>
-              <Label htmlFor="template-html">HTML Content</Label>
-              <Textarea
-                id="template-html"
-                value={editedTemplate.html_body}
-                onChange={(e) => handleInputChange('html_body', e.target.value)}
-                rows={20}
-                className="font-mono text-sm"
-                placeholder="Enter HTML content..."
-              />
+              <div className="flex items-center justify-between mb-2">
+                <Label>Email Body</Label>
+                <div className="flex items-center space-x-2">
+                  <Button
+                    type="button"
+                    variant={editorMode === 'visual' ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => handleEditorModeChange('visual')}
+                  >
+                    <Palette className="w-4 h-4 mr-1" />
+                    Visual
+                  </Button>
+                  <Button
+                    type="button"
+                    variant={editorMode === 'code' ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => handleEditorModeChange('code')}
+                  >
+                    <Code className="w-4 h-4 mr-1" />
+                    Code
+                  </Button>
+                </div>
+              </div>
+              
+              {editorMode === 'visual' ? (
+                <div className="border rounded-lg overflow-hidden">
+                  <RichTextEditor
+                    value={extractedContent}
+                    onChange={handleContentChange}
+                    placeholder="Enter email content..."
+                    className="min-h-[300px]"
+                  />
+                </div>
+              ) : (
+                <Textarea
+                  value={editedTemplate.html_body}
+                  onChange={(e) => handleContentChange(e.target.value)}
+                  rows={20}
+                  className="font-mono text-sm"
+                  placeholder="Enter HTML content..."
+                />
+              )}
             </div>
 
             <div className="flex items-center space-x-2">
@@ -179,12 +306,19 @@ const EditTemplateModal: React.FC<EditTemplateModalProps> = ({
                   {editedTemplate.variables.map((variable) => (
                     <span
                       key={variable}
-                      className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-md"
+                      className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-md cursor-pointer hover:bg-blue-200"
+                      title="Click to copy"
+                      onClick={() => {
+                        navigator.clipboard.writeText(`{{${variable}}}`);
+                      }}
                     >
                       {`{{${variable}}}`}
                     </span>
                   ))}
                 </div>
+                <p className="text-xs text-gray-500 mt-1">
+                  Click on variables to copy them to clipboard
+                </p>
               </div>
             )}
           </TabsContent>
