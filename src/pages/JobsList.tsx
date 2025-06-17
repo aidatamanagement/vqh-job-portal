@@ -8,7 +8,7 @@ import { useAppContext } from '@/contexts/AppContext';
 import { FilterState } from '@/types';
 
 const JobsList: React.FC = () => {
-  const { jobs } = useAppContext();
+  const { jobs, jobsLoading } = useAppContext();
   const [displayCount, setDisplayCount] = useState(12);
   const [filters, setFilters] = useState<FilterState>({
     search: '',
@@ -19,6 +19,8 @@ const JobsList: React.FC = () => {
 
   // Filter and sort jobs
   const filteredJobs = useMemo(() => {
+    if (jobsLoading) return [];
+    
     let filtered = jobs.filter(job => job.isActive);
 
     // Search filter
@@ -51,7 +53,7 @@ const JobsList: React.FC = () => {
     });
 
     return filtered;
-  }, [jobs, filters]);
+  }, [jobs, filters, jobsLoading]);
 
   const displayedJobs = filteredJobs.slice(0, displayCount);
   const hasMore = displayCount < filteredJobs.length;
@@ -59,6 +61,33 @@ const JobsList: React.FC = () => {
   const handleLoadMore = () => {
     setDisplayCount(prev => prev + 12);
   };
+
+  // Show loading state
+  if (jobsLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 animate-slide-up">
+        <div className="container mx-auto px-4 py-8">
+          <div className="space-y-8">
+            {/* Page Header */}
+            <div className="text-center space-y-4 animate-slide-up">
+              <h1 className="text-4xl font-bold text-gray-900">
+                Join Our Mission of Compassionate Care
+              </h1>
+              <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+                Discover meaningful career opportunities in hospice care where you can make a real difference in patients' and families' lives.
+              </p>
+            </div>
+
+            {/* Loading State */}
+            <div className="flex justify-center items-center py-20">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+              <span className="ml-4 text-lg text-gray-600">Loading jobs...</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 animate-slide-up">
@@ -125,7 +154,10 @@ const JobsList: React.FC = () => {
                   No jobs found
                 </h3>
                 <p className="text-gray-600">
-                  Try adjusting your search criteria or browse all available positions.
+                  {filters.search || filters.positions.length > 0 || filters.location 
+                    ? "Try adjusting your search criteria or browse all available positions."
+                    : "No job opportunities are currently available. Please check back later."
+                  }
                 </p>
               </div>
             </div>
