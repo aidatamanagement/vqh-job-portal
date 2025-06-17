@@ -13,8 +13,11 @@ import PostJob from '@/components/admin/PostJob';
 import ManageJobs from '@/components/admin/ManageJobs';
 import Submissions from '@/components/admin/Submissions';
 import Settings from '@/components/admin/Settings';
+import EmailTemplates from '@/components/admin/EmailTemplates';
+import EmailLogs from '@/components/admin/EmailLogs';
+import EmailSettings from '@/components/admin/EmailSettings';
 
-type AdminView = 'post-job' | 'manage-jobs' | 'submissions' | 'settings';
+type AdminView = 'post-job' | 'manage-jobs' | 'submissions' | 'settings' | 'email-templates' | 'email-logs' | 'email-settings';
 
 const AdminDashboard: React.FC = () => {
   const { isAuthenticated, login, isLoading } = useAppContext();
@@ -151,6 +154,12 @@ const AdminDashboard: React.FC = () => {
         return <ManageJobs />;
       case 'submissions':
         return <Submissions />;
+      case 'email-templates':
+        return <EmailTemplates />;
+      case 'email-logs':
+        return <EmailLogs />;
+      case 'email-settings':
+        return <EmailSettings />;
       case 'settings':
         return <Settings />;
       default:

@@ -1,0 +1,177 @@
+
+import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+};
+
+interface EmailRequest {
+  templateSlug: string;
+  recipientEmail: string;
+  variables: Record<string, any>;
+  adminEmails?: string[];
+}
+
+interface BrevoEmailData {
+  sender: {
+    name: string;
+    email: string;
+  };
+  to: Array<{
+    email: string;
+    name?: string;
+  }>;
+  subject: string;
+  htmlContent: string;
+}
+
+const handler = async (req: Request): Promise<Response> => {
+  // Handle CORS preflight requests
+  if (req.method === 'OPTIONS') {
+    return new Response(null, { headers: corsHeaders });
+  }
+
+  try {
+    const supabaseClient = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+    );
+
+    const { templateSlug, recipientEmail, variables, adminEmails }: EmailRequest = await req.json();
+
+    console.log('Processing email request:', { templateSlug, recipientEmail, variables });
+
+    // Get email template from database
+    const { data: template, error: templateError } = await supabaseClient
+      .from('email_templates')
+      .select('*')
+      .eq('slug', templateSlug)
+      .eq('is_active', true)
+      .single();
+
+    if (templateError || !template) {
+      console.error('Template not found:', templateError);
+      return new Response(
+        JSON.stringify({ error: 'Email template not found' }),
+        { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Replace template variables
+    let subject = template.subject;
+    let htmlContent = template.html_body;
+
+    Object.entries(variables).forEach(([key, value]) => {
+      const placeholder = `{{${key}}}`;
+      subject = subject.replace(new RegExp(placeholder, 'g'), String(value));
+      htmlContent = htmlContent.replace(new RegExp(placeholder, 'g'), String(value));
+    });
+
+    // Prepare Brevo email data
+    const emailData: BrevoEmailData = {
+      sender: {
+        name: "HospiceCare",
+        email: "noreply@hospicecare.com"
+      },
+      to: [{ email: recipientEmail }],
+      subject,
+      htmlContent
+    };
+
+    // Log email attempt
+    const { data: logEntry } = await supabaseClient
+      .from('email_logs')
+      .insert({
+        recipient_email: recipientEmail,
+        template_slug: templateSlug,
+        subject,
+        variables_used: variables,
+        status: 'pending'
+      })
+      .select()
+      .single();
+
+    try {
+      // Send email via Brevo
+      const brevoResponse = await fetch('https://api.brevo.com/v3/smtp/email', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'api-key': Deno.env.get('BREVO_API_KEY') || ''
+        },
+        body: JSON.stringify(emailData)
+      });
+
+      const brevoResult = await brevoResponse.json();
+      
+      if (brevoResponse.ok) {
+        // Update log with success
+        await supabaseClient
+          .from('email_logs')
+          .update({
+            status: 'sent',
+            brevo_message_id: brevoResult.messageId,
+            sent_at: new Date().toISOString()
+          })
+          .eq('id', logEntry?.id);
+
+        console.log('Email sent successfully:', brevoResult);
+
+        // Send admin notification if this is an application submission
+        if (templateSlug === 'application_submitted' && adminEmails && adminEmails.length > 0) {
+          for (const adminEmail of adminEmails) {
+            await fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/send-email`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${Deno.env.get('SUPABASE_ANON_KEY')}`
+              },
+              body: JSON.stringify({
+                templateSlug: 'admin_notification',
+                recipientEmail: adminEmail,
+                variables: {
+                  ...variables,
+                  adminUrl: `${Deno.env.get('SUPABASE_URL')?.replace('supabase.co', 'lovable.app')}/admin`
+                }
+              })
+            });
+          }
+        }
+
+        return new Response(
+          JSON.stringify({ success: true, messageId: brevoResult.messageId }),
+          { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      } else {
+        throw new Error(`Brevo API error: ${brevoResult.message || 'Unknown error'}`);
+      }
+    } catch (sendError) {
+      console.error('Failed to send email:', sendError);
+      
+      // Update log with error
+      await supabaseClient
+        .from('email_logs')
+        .update({
+          status: 'failed',
+          error_message: String(sendError)
+        })
+        .eq('id', logEntry?.id);
+
+      return new Response(
+        JSON.stringify({ error: 'Failed to send email', details: String(sendError) }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+  } catch (error) {
+    console.error('Error in send-email function:', error);
+    return new Response(
+      JSON.stringify({ error: 'Internal server error', details: String(error) }),
+      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+  }
+};
+
+serve(handler);

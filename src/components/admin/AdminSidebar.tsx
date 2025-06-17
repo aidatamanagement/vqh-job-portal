@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -10,11 +11,14 @@ import {
   BarChart3,
   Clock,
   CheckCircle,
-  XCircle
+  XCircle,
+  Mail,
+  MailCheck,
+  MailX
 } from 'lucide-react';
 import { useAppContext } from '@/contexts/AppContext';
 
-type AdminView = 'post-job' | 'manage-jobs' | 'submissions' | 'settings';
+type AdminView = 'post-job' | 'manage-jobs' | 'submissions' | 'settings' | 'email-templates' | 'email-logs' | 'email-settings';
 
 interface AdminSidebarProps {
   currentView: AdminView;
@@ -47,6 +51,22 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({ currentView, onViewChange }
       label: 'Submissions',
       icon: FileText,
       badge: waitingApplications > 0 ? waitingApplications.toString() : undefined,
+    },
+    // Email Management Section
+    {
+      id: 'email-templates' as AdminView,
+      label: 'Email Templates',
+      icon: Mail,
+    },
+    {
+      id: 'email-logs' as AdminView,
+      label: 'Email Logs',
+      icon: MailCheck,
+    },
+    {
+      id: 'email-settings' as AdminView,
+      label: 'Email Settings',
+      icon: MailX,
     },
     {
       id: 'settings' as AdminView,
@@ -102,42 +122,56 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({ currentView, onViewChange }
 
         {/* Navigation Menu */}
         <nav className="space-y-1 lg:space-y-2">
-          {menuItems.map((item) => {
+          {menuItems.map((item, index) => {
             const Icon = item.icon;
             const isActive = currentView === item.id;
+            const isEmailSection = ['email-templates', 'email-logs', 'email-settings'].includes(item.id);
             
             return (
-              <Button
-                key={item.id}
-                variant={isActive ? "default" : "ghost"}
-                onClick={() => onViewChange(item.id)}
-                className={`w-full justify-start p-3 lg:p-4 h-auto ${
-                  isActive 
-                    ? 'bg-primary text-white hover:bg-primary/90' 
-                    : 'text-gray-700 hover:bg-gray-100'
-                }`}
-              >
-                <div className="flex items-center justify-between w-full">
-                  <div className="flex items-center space-x-2 lg:space-x-3">
-                    <Icon className={`w-4 h-4 lg:w-5 lg:h-5 ${isActive ? 'text-white' : 'text-gray-500'}`} />
-                    <div className={`font-medium text-sm lg:text-base ${isActive ? 'text-white' : 'text-gray-900'}`}>
-                      {item.label}
+              <div key={item.id}>
+                {/* Email section divider */}
+                {index === 3 && (
+                  <div className="py-2">
+                    <div className="flex items-center space-x-2 px-2 py-1">
+                      <Mail className="w-4 h-4 text-gray-400" />
+                      <span className="text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Email Management
+                      </span>
                     </div>
                   </div>
-                  {item.badge && (
-                    <Badge 
-                      variant={isActive ? "secondary" : "outline"}
-                      className={`text-xs ${
-                        isActive 
-                          ? 'bg-white/20 text-white border-white/30' 
-                          : 'bg-primary/10 text-primary border-primary/20'
-                      }`}
-                    >
-                      {item.badge}
-                    </Badge>
-                  )}
-                </div>
-              </Button>
+                )}
+                
+                <Button
+                  variant={isActive ? "default" : "ghost"}
+                  onClick={() => onViewChange(item.id)}
+                  className={`w-full justify-start p-3 lg:p-4 h-auto ${
+                    isActive 
+                      ? 'bg-primary text-white hover:bg-primary/90' 
+                      : 'text-gray-700 hover:bg-gray-100'
+                  } ${isEmailSection ? 'ml-4' : ''}`}
+                >
+                  <div className="flex items-center justify-between w-full">
+                    <div className="flex items-center space-x-2 lg:space-x-3">
+                      <Icon className={`w-4 h-4 lg:w-5 lg:h-5 ${isActive ? 'text-white' : 'text-gray-500'}`} />
+                      <div className={`font-medium text-sm lg:text-base ${isActive ? 'text-white' : 'text-gray-900'}`}>
+                        {item.label}
+                      </div>
+                    </div>
+                    {item.badge && (
+                      <Badge 
+                        variant={isActive ? "secondary" : "outline"}
+                        className={`text-xs ${
+                          isActive 
+                            ? 'bg-white/20 text-white border-white/30' 
+                            : 'bg-primary/10 text-primary border-primary/20'
+                        }`}
+                      >
+                        {item.badge}
+                      </Badge>
+                    )}
+                  </div>
+                </Button>
+              </div>
             );
           })}
         </nav>

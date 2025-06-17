@@ -64,3 +64,28 @@ export interface FilterState {
   location: string;
   sortBy: 'newest' | 'oldest';
 }
+
+export interface EmailTemplate {
+  id: string;
+  slug: string;
+  name: string;
+  subject: string;
+  html_body: string;
+  variables: string[];
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface EmailLog {
+  id: string;
+  recipient_email: string;
+  template_slug: string;
+  subject: string;
+  status: 'pending' | 'sent' | 'failed' | 'bounced';
+  brevo_message_id?: string;
+  error_message?: string;
+  variables_used: Record<string, any>;
+  sent_at?: string;
+  created_at: string;
+}
