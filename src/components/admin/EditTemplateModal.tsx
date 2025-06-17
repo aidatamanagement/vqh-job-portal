@@ -12,8 +12,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
-import { Save, X, Eye, Edit } from 'lucide-react';
+import { Save, X, Eye, Edit, Code, Type } from 'lucide-react';
 import { EmailTemplate } from '@/types';
+import RichTextEditor from '@/components/ui/rich-text-editor';
 
 interface EditTemplateModalProps {
   template: EmailTemplate | null;
@@ -31,6 +32,7 @@ const EditTemplateModal: React.FC<EditTemplateModalProps> = ({
   const [editedTemplate, setEditedTemplate] = useState<EmailTemplate | null>(null);
   const [activeTab, setActiveTab] = useState('edit');
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [editorMode, setEditorMode] = useState<'visual' | 'html'>('visual');
 
   useEffect(() => {
     if (template) {
@@ -153,15 +155,38 @@ const EditTemplateModal: React.FC<EditTemplateModalProps> = ({
             </div>
 
             <div>
-              <Label htmlFor="template-html">HTML Content</Label>
-              <Textarea
-                id="template-html"
-                value={editedTemplate.html_body}
-                onChange={(e) => handleInputChange('html_body', e.target.value)}
-                rows={20}
-                className="font-mono text-sm"
-                placeholder="Enter HTML content..."
-              />
+              <div className="flex items-center justify-between mb-2">
+                <Label htmlFor="template-html">Email Body</Label>
+                <div className="flex items-center space-x-2">
+                  <Type className="w-4 h-4" />
+                  <Switch
+                    checked={editorMode === 'html'}
+                    onCheckedChange={(checked) => setEditorMode(checked ? 'html' : 'visual')}
+                  />
+                  <Code className="w-4 h-4" />
+                  <span className="text-sm text-gray-600">
+                    {editorMode === 'visual' ? 'Visual' : 'HTML'} Editor
+                  </span>
+                </div>
+              </div>
+              
+              {editorMode === 'visual' ? (
+                <RichTextEditor
+                  value={editedTemplate.html_body}
+                  onChange={(value) => handleInputChange('html_body', value)}
+                  placeholder="Enter email content..."
+                  className="min-h-[300px]"
+                />
+              ) : (
+                <Textarea
+                  id="template-html"
+                  value={editedTemplate.html_body}
+                  onChange={(e) => handleInputChange('html_body', e.target.value)}
+                  rows={20}
+                  className="font-mono text-sm"
+                  placeholder="Enter HTML content..."
+                />
+              )}
             </div>
 
             <div className="flex items-center space-x-2">
