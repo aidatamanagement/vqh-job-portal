@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import {
   Dialog,
@@ -12,8 +11,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
-import { Save, X, Eye, Edit } from 'lucide-react';
+import { Save, X, Eye, Edit, Code, Type } from 'lucide-react';
 import { EmailTemplate } from '@/types';
+import RichTextEditor from '@/components/ui/rich-text-editor';
 
 interface EditTemplateModalProps {
   template: EmailTemplate | null;
@@ -31,6 +31,7 @@ const EditTemplateModal: React.FC<EditTemplateModalProps> = ({
   const [editedTemplate, setEditedTemplate] = useState<EmailTemplate | null>(null);
   const [activeTab, setActiveTab] = useState('edit');
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [editorMode, setEditorMode] = useState<'visual' | 'html'>('visual');
 
   useEffect(() => {
     if (template) {
@@ -85,6 +86,13 @@ const EditTemplateModal: React.FC<EditTemplateModalProps> = ({
       }
     } else {
       onClose();
+    }
+  };
+
+  const handleBodyChange = (value: string) => {
+    if (editedTemplate) {
+      setEditedTemplate({ ...editedTemplate, html_body: value });
+      setHasUnsavedChanges(true);
     }
   };
 
@@ -153,15 +161,48 @@ const EditTemplateModal: React.FC<EditTemplateModalProps> = ({
             </div>
 
             <div>
-              <Label htmlFor="template-html">HTML Content</Label>
-              <Textarea
-                id="template-html"
-                value={editedTemplate.html_body}
-                onChange={(e) => handleInputChange('html_body', e.target.value)}
-                rows={20}
-                className="font-mono text-sm"
-                placeholder="Enter HTML content..."
-              />
+              <div className="flex items-center justify-between mb-2">
+                <Label>Email Body</Label>
+                <div className="flex items-center space-x-2">
+                  <Button
+                    type="button"
+                    variant={editorMode === 'visual' ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setEditorMode('visual')}
+                    className="flex items-center space-x-1"
+                  >
+                    <Type className="w-3 h-3" />
+                    <span className="text-xs">Visual</span>
+                  </Button>
+                  <Button
+                    type="button"
+                    variant={editorMode === 'html' ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setEditorMode('html')}
+                    className="flex items-center space-x-1"
+                  >
+                    <Code className="w-3 h-3" />
+                    <span className="text-xs">HTML</span>
+                  </Button>
+                </div>
+              </div>
+              
+              {editorMode === 'visual' ? (
+                <RichTextEditor
+                  value={editedTemplate.html_body}
+                  onChange={handleBodyChange}
+                  placeholder="Enter email content..."
+                  className="min-h-[400px]"
+                />
+              ) : (
+                <Textarea
+                  value={editedTemplate.html_body}
+                  onChange={(e) => handleBodyChange(e.target.value)}
+                  rows={20}
+                  className="font-mono text-sm"
+                  placeholder="Enter HTML content..."
+                />
+              )}
             </div>
 
             <div className="flex items-center space-x-2">
