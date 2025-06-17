@@ -12,9 +12,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
-import { Save, X, Eye, Edit, Code, FileText } from 'lucide-react';
+import { Save, X, Eye, Edit } from 'lucide-react';
 import { EmailTemplate } from '@/types';
-import RichTextEditor from '@/components/ui/rich-text-editor';
 
 interface EditTemplateModalProps {
   template: EmailTemplate | null;
@@ -32,7 +31,6 @@ const EditTemplateModal: React.FC<EditTemplateModalProps> = ({
   const [editedTemplate, setEditedTemplate] = useState<EmailTemplate | null>(null);
   const [activeTab, setActiveTab] = useState('edit');
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
-  const [editorMode, setEditorMode] = useState<'visual' | 'html'>('visual');
 
   useEffect(() => {
     if (template) {
@@ -155,51 +153,15 @@ const EditTemplateModal: React.FC<EditTemplateModalProps> = ({
             </div>
 
             <div>
-              <div className="flex items-center justify-between mb-2">
-                <Label htmlFor="template-body">Email Body</Label>
-                <div className="flex items-center space-x-2">
-                  <Button
-                    type="button"
-                    variant={editorMode === 'visual' ? 'default' : 'outline'}
-                    size="sm"
-                    onClick={() => setEditorMode('visual')}
-                    className="flex items-center space-x-1"
-                  >
-                    <FileText className="w-3 h-3" />
-                    <span>Visual</span>
-                  </Button>
-                  <Button
-                    type="button"
-                    variant={editorMode === 'html' ? 'default' : 'outline'}
-                    size="sm"
-                    onClick={() => setEditorMode('html')}
-                    className="flex items-center space-x-1"
-                  >
-                    <Code className="w-3 h-3" />
-                    <span>HTML</span>
-                  </Button>
-                </div>
-              </div>
-              
-              {editorMode === 'visual' ? (
-                <div className="border rounded-lg">
-                  <RichTextEditor
-                    value={editedTemplate.html_body}
-                    onChange={(value) => handleInputChange('html_body', value)}
-                    placeholder="Enter email content..."
-                    className="min-h-[400px]"
-                  />
-                </div>
-              ) : (
-                <Textarea
-                  id="template-body"
-                  value={editedTemplate.html_body}
-                  onChange={(e) => handleInputChange('html_body', e.target.value)}
-                  rows={20}
-                  className="font-mono text-sm"
-                  placeholder="Enter HTML content..."
-                />
-              )}
+              <Label htmlFor="template-html">HTML Content</Label>
+              <Textarea
+                id="template-html"
+                value={editedTemplate.html_body}
+                onChange={(e) => handleInputChange('html_body', e.target.value)}
+                rows={20}
+                className="font-mono text-sm"
+                placeholder="Enter HTML content..."
+              />
             </div>
 
             <div className="flex items-center space-x-2">
