@@ -1,11 +1,10 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
-import { Mail, Eye, Edit } from 'lucide-react';
+import { Eye, Edit } from 'lucide-react';
 import { EmailTemplate } from '@/types';
 import {
   Table,
@@ -159,15 +158,7 @@ const EmailTemplates: React.FC = () => {
             {templates.map((template) => (
               <TableRow key={template.id}>
                 <TableCell>
-                  <div className="flex items-center space-x-3">
-                    <Mail className="w-4 h-4 text-primary flex-shrink-0" />
-                    <div>
-                      <div className="font-medium">{template.name}</div>
-                      <div className="text-xs text-gray-500">
-                        {new Date(template.created_at).toLocaleDateString()}
-                      </div>
-                    </div>
-                  </div>
+                  <div className="font-medium">{template.name}</div>
                 </TableCell>
                 <TableCell>
                   <div className="flex items-center space-x-2">
