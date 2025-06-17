@@ -22,12 +22,6 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@/components/ui/tooltip';
 import EditTemplateModal from './EditTemplateModal';
 
 const EmailTemplates: React.FC = () => {
@@ -35,7 +29,6 @@ const EmailTemplates: React.FC = () => {
   const [selectedTemplate, setSelectedTemplate] = useState<EmailTemplate | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  const [previewTemplate, setPreviewTemplate] = useState<EmailTemplate | null>(null);
 
   useEffect(() => {
     fetchTemplates();
@@ -132,17 +125,9 @@ const EmailTemplates: React.FC = () => {
     return html;
   };
 
-  const truncateText = (text: string, maxLength: number) => {
-    return text.length > maxLength ? text.substring(0, maxLength) + '...' : text;
-  };
-
   const handleEditClick = (template: EmailTemplate) => {
     setSelectedTemplate(template);
     setIsEditModalOpen(true);
-  };
-
-  const handlePreviewClick = (template: EmailTemplate) => {
-    setPreviewTemplate(template);
   };
 
   if (isLoading) {
@@ -163,123 +148,74 @@ const EmailTemplates: React.FC = () => {
       </div>
 
       <Card className="p-6">
-        <TooltipProvider>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-[250px]">Template</TableHead>
-                <TableHead className="w-[120px]">Slug</TableHead>
-                <TableHead className="w-[300px]">Subject</TableHead>
-                <TableHead className="w-[100px]">Status</TableHead>
-                <TableHead className="w-[100px]">Variables</TableHead>
-                <TableHead className="w-[150px]">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {templates.map((template) => (
-                <TableRow key={template.id}>
-                  <TableCell>
-                    <div className="flex items-center space-x-3">
-                      <Mail className="w-4 h-4 text-primary flex-shrink-0" />
-                      <div>
-                        <div className="font-medium">{template.name}</div>
-                        <div className="text-xs text-gray-500">
-                          {new Date(template.created_at).toLocaleDateString()}
-                        </div>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Template Name</TableHead>
+              <TableHead className="w-[200px]">Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {templates.map((template) => (
+              <TableRow key={template.id}>
+                <TableCell>
+                  <div className="flex items-center space-x-3">
+                    <Mail className="w-4 h-4 text-primary flex-shrink-0" />
+                    <div>
+                      <div className="font-medium">{template.name}</div>
+                      <div className="text-xs text-gray-500">
+                        {new Date(template.created_at).toLocaleDateString()}
                       </div>
                     </div>
-                  </TableCell>
-                  <TableCell>
-                    <span className="text-sm text-gray-600 font-mono">
-                      {template.slug}
-                    </span>
-                  </TableCell>
-                  <TableCell>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <span className="text-sm cursor-help">
-                          {truncateText(template.subject, 50)}
-                        </span>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p className="max-w-xs">{template.subject}</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant={template.is_active ? "default" : "secondary"}>
-                      {template.is_active ? "Active" : "Inactive"}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    {template.variables && template.variables.length > 0 ? (
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Badge variant="outline" className="cursor-help">
-                            {template.variables.length} vars
-                          </Badge>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <div className="space-y-1">
-                            {template.variables.map((variable) => (
-                              <div key={variable} className="text-xs">
-                                {`{{${variable}}}`}
-                              </div>
-                            ))}
+                  </div>
+                </TableCell>
+                <TableCell>
+                  <div className="flex items-center space-x-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleEditClick(template)}
+                    >
+                      <Edit className="w-4 h-4 mr-1" />
+                      Edit
+                    </Button>
+                    <Dialog>
+                      <DialogTrigger asChild>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                        >
+                          <Eye className="w-4 h-4 mr-1" />
+                          Preview
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+                        <DialogHeader>
+                          <DialogTitle>Email Preview: {template.name}</DialogTitle>
+                        </DialogHeader>
+                        <div className="space-y-4">
+                          <div>
+                            <h4 className="font-medium mb-2">Subject</h4>
+                            <p className="text-sm bg-gray-50 p-3 rounded border">
+                              {template.subject.replace(/\{\{(\w+)\}\}/g, '[Sample $1]')}
+                            </p>
                           </div>
-                        </TooltipContent>
-                      </Tooltip>
-                    ) : (
-                      <span className="text-gray-400 text-sm">None</span>
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center space-x-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleEditClick(template)}
-                      >
-                        <Edit className="w-4 h-4" />
-                      </Button>
-                      <Dialog>
-                        <DialogTrigger asChild>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handlePreviewClick(template)}
-                          >
-                            <Eye className="w-4 h-4" />
-                          </Button>
-                        </DialogTrigger>
-                        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
-                          <DialogHeader>
-                            <DialogTitle>Email Preview: {template.name}</DialogTitle>
-                          </DialogHeader>
-                          <div className="space-y-4">
-                            <div>
-                              <h4 className="font-medium mb-2">Subject</h4>
-                              <p className="text-sm bg-gray-50 p-3 rounded border">
-                                {template.subject.replace(/\{\{(\w+)\}\}/g, '[Sample $1]')}
-                              </p>
-                            </div>
-                            <div>
-                              <h4 className="font-medium mb-2">Content</h4>
-                              <div 
-                                className="border rounded-lg p-4 bg-white"
-                                dangerouslySetInnerHTML={{ __html: generatePreview(template) }}
-                              />
-                            </div>
+                          <div>
+                            <h4 className="font-medium mb-2">Content</h4>
+                            <div 
+                              className="border rounded-lg p-4 bg-white"
+                              dangerouslySetInnerHTML={{ __html: generatePreview(template) }}
+                            />
                           </div>
-                        </DialogContent>
-                      </Dialog>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </TooltipProvider>
+                        </div>
+                      </DialogContent>
+                    </Dialog>
+                  </div>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
       </Card>
 
       <EditTemplateModal
