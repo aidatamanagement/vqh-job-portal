@@ -40,7 +40,7 @@ const EmailLogs: React.FC = () => {
         recipient_email: log.recipient_email,
         template_slug: log.template_slug,
         subject: log.subject,
-        status: log.status,
+        status: log.status as 'pending' | 'sent' | 'failed' | 'bounced',
         brevo_message_id: log.brevo_message_id,
         error_message: log.error_message,
         variables_used: (log.variables_used as Record<string, any>) || {},
