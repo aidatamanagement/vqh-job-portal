@@ -12,15 +12,11 @@ import {
   Clock,
   CheckCircle,
   XCircle,
-  Mail,
-  MailCheck,
-  MailX,
-  ChevronDown,
-  ChevronRight
+  Mail
 } from 'lucide-react';
 import { useAppContext } from '@/contexts/AppContext';
 
-type AdminView = 'post-job' | 'manage-jobs' | 'submissions' | 'settings' | 'email-templates' | 'email-logs' | 'email-settings';
+type AdminView = 'post-job' | 'manage-jobs' | 'submissions' | 'settings' | 'email-management';
 
 interface AdminSidebarProps {
   currentView: AdminView;
@@ -29,7 +25,6 @@ interface AdminSidebarProps {
 
 const AdminSidebar: React.FC<AdminSidebarProps> = ({ currentView, onViewChange }) => {
   const { jobs, applications } = useAppContext();
-  const [isEmailSectionOpen, setIsEmailSectionOpen] = useState(true);
 
   const activeJobs = jobs.filter(job => job.isActive).length;
   const totalJobs = jobs.length;
@@ -37,7 +32,7 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({ currentView, onViewChange }
   const approvedApplications = applications.filter(app => app.status === 'approved').length;
   const rejectedApplications = applications.filter(app => app.status === 'rejected').length;
 
-  const mainMenuItems = [
+  const menuItems = [
     {
       id: 'post-job' as AdminView,
       label: 'Post Job',
@@ -55,27 +50,17 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({ currentView, onViewChange }
       icon: FileText,
       badge: waitingApplications > 0 ? waitingApplications.toString() : undefined,
     },
-  ];
-
-  const emailMenuItems = [
     {
-      id: 'email-templates' as AdminView,
-      label: 'Email Templates',
+      id: 'email-management' as AdminView,
+      label: 'Email Management',
       icon: Mail,
     },
     {
-      id: 'email-logs' as AdminView,
-      label: 'Email Logs',
-      icon: MailCheck,
-    },
-    {
-      id: 'email-settings' as AdminView,
-      label: 'Email Settings',
-      icon: MailX,
+      id: 'settings' as AdminView,
+      label: 'Settings',
+      icon: SettingsIcon,
     },
   ];
-
-  const isEmailViewActive = ['email-templates', 'email-logs', 'email-settings'].includes(currentView);
 
   return (
     <div className="w-80 lg:w-80 w-72 bg-white border-r border-gray-200 min-h-screen">
@@ -124,8 +109,7 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({ currentView, onViewChange }
 
         {/* Navigation Menu */}
         <nav className="space-y-1 lg:space-y-2">
-          {/* Main Menu Items */}
-          {mainMenuItems.map((item) => {
+          {menuItems.map((item) => {
             const Icon = item.icon;
             const isActive = currentView === item.id;
             
@@ -163,75 +147,6 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({ currentView, onViewChange }
               </Button>
             );
           })}
-
-          {/* Email Management Section */}
-          <div className="py-2">
-            <Button
-              variant="ghost"
-              onClick={() => setIsEmailSectionOpen(!isEmailSectionOpen)}
-              className={`w-full justify-start p-3 lg:p-4 h-auto ${
-                isEmailViewActive ? 'bg-primary/10 hover:bg-primary/20' : 'hover:bg-gray-100'
-              }`}
-            >
-              <div className="flex items-center space-x-2 lg:space-x-3">
-                {isEmailSectionOpen ? (
-                  <ChevronDown className="w-4 h-4 text-gray-500" />
-                ) : (
-                  <ChevronRight className="w-4 h-4 text-gray-500" />
-                )}
-                <Mail className="w-4 h-4 text-gray-500" />
-                <span className="text-sm font-medium text-gray-700">Email Management</span>
-              </div>
-            </Button>
-
-            {/* Email Sub-menu */}
-            {isEmailSectionOpen && (
-              <div className="ml-4 mt-1 space-y-1">
-                {emailMenuItems.map((item) => {
-                  const Icon = item.icon;
-                  const isActive = currentView === item.id;
-                  
-                  return (
-                    <Button
-                      key={item.id}
-                      variant={isActive ? "default" : "ghost"}
-                      onClick={() => onViewChange(item.id)}
-                      className={`w-full justify-start p-2 lg:p-3 h-auto text-sm ${
-                        isActive 
-                          ? 'bg-primary text-white hover:bg-primary/90' 
-                          : 'text-gray-600 hover:bg-gray-100'
-                      }`}
-                    >
-                      <div className="flex items-center space-x-2">
-                        <Icon className={`w-4 h-4 ${isActive ? 'text-white' : 'text-gray-500'}`} />
-                        <span className={`${isActive ? 'text-white' : 'text-gray-700'}`}>
-                          {item.label}
-                        </span>
-                      </div>
-                    </Button>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-
-          {/* Settings */}
-          <Button
-            variant={currentView === 'settings' ? "default" : "ghost"}
-            onClick={() => onViewChange('settings')}
-            className={`w-full justify-start p-3 lg:p-4 h-auto ${
-              currentView === 'settings'
-                ? 'bg-primary text-white hover:bg-primary/90' 
-                : 'text-gray-700 hover:bg-gray-100'
-            }`}
-          >
-            <div className="flex items-center space-x-2 lg:space-x-3">
-              <SettingsIcon className={`w-4 h-4 lg:w-5 lg:h-5 ${currentView === 'settings' ? 'text-white' : 'text-gray-500'}`} />
-              <div className={`font-medium text-sm lg:text-base ${currentView === 'settings' ? 'text-white' : 'text-gray-900'}`}>
-                Settings
-              </div>
-            </div>
-          </Button>
         </nav>
       </div>
     </div>
