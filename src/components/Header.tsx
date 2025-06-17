@@ -11,7 +11,6 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import HelpSystem from '@/components/admin/HelpSystem';
 
 const Header: React.FC = () => {
   const navigate = useNavigate();
@@ -43,7 +42,7 @@ const Header: React.FC = () => {
     <header className="bg-white border-b border-gray-200 px-4 py-4 animate-slide-down">
       <div className="container mx-auto flex items-center justify-between">
         {/* Logo and Title */}
-        <div className="flex items-center space-x-3 cursor-pointer group admin-logo" onClick={handleLogoClick}>
+        <div className="flex items-center space-x-3 cursor-pointer group" onClick={handleLogoClick}>
           <div className="w-8 h-8 md:w-10 md:h-10 bg-primary rounded-lg flex items-center justify-center group-hover:scale-105 transition-transform duration-200">
             <span className="text-white font-bold text-sm md:text-lg">HC</span>
           </div>
@@ -60,13 +59,6 @@ const Header: React.FC = () => {
         <div className="flex items-center space-x-2 md:space-x-4">
           {isAuthenticated ? (
             <>
-              {/* Help System - Show for authenticated admin users */}
-              {userProfile?.role === 'admin' && (
-                <div className="hidden md:block">
-                  <HelpSystem />
-                </div>
-              )}
-
               {/* Mobile Menu for Authenticated Users */}
               <div className="md:hidden">
                 <DropdownMenu>
@@ -77,15 +69,10 @@ const Header: React.FC = () => {
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="w-48">
                     {userProfile?.role === 'admin' && (
-                      <>
-                        <DropdownMenuItem onClick={handleAdminClick}>
-                          <Settings className="w-4 h-4 mr-2" />
-                          Admin Panel
-                        </DropdownMenuItem>
-                        <DropdownMenuItem>
-                          <HelpSystem />
-                        </DropdownMenuItem>
-                      </>
+                      <DropdownMenuItem onClick={handleAdminClick}>
+                        <Settings className="w-4 h-4 mr-2" />
+                        Admin Panel
+                      </DropdownMenuItem>
                     )}
                     <DropdownMenuItem onClick={handleLogout}>
                       <LogOut className="w-4 h-4 mr-2" />

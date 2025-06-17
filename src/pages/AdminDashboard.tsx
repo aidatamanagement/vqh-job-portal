@@ -13,10 +13,8 @@ import PostJob from '@/components/admin/PostJob';
 import ManageJobs from '@/components/admin/ManageJobs';
 import Submissions from '@/components/admin/Submissions';
 import Settings from '@/components/admin/Settings';
-import UserGuide from '@/components/admin/UserGuide';
-import OnboardingManagement from '@/components/admin/OnboardingManagement';
 
-type AdminView = 'post-job' | 'manage-jobs' | 'submissions' | 'settings' | 'user-guide' | 'onboarding';
+type AdminView = 'post-job' | 'manage-jobs' | 'submissions' | 'settings';
 
 const AdminDashboard: React.FC = () => {
   const { isAuthenticated, login, isLoading } = useAppContext();
@@ -155,10 +153,6 @@ const AdminDashboard: React.FC = () => {
         return <Submissions />;
       case 'settings':
         return <Settings />;
-      case 'user-guide':
-        return <UserGuide />;
-      case 'onboarding':
-        return <OnboardingManagement />;
       default:
         return <PostJob />;
     }

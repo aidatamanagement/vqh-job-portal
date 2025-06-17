@@ -9,99 +9,6 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      communication_templates: {
-        Row: {
-          content: string
-          created_at: string
-          id: string
-          is_active: boolean | null
-          name: string
-          subject: string | null
-          template_variables: Json | null
-          type: string
-          updated_at: string
-        }
-        Insert: {
-          content: string
-          created_at?: string
-          id?: string
-          is_active?: boolean | null
-          name: string
-          subject?: string | null
-          template_variables?: Json | null
-          type: string
-          updated_at?: string
-        }
-        Update: {
-          content?: string
-          created_at?: string
-          id?: string
-          is_active?: boolean | null
-          name?: string
-          subject?: string | null
-          template_variables?: Json | null
-          type?: string
-          updated_at?: string
-        }
-        Relationships: []
-      }
-      hiring_pipeline: {
-        Row: {
-          application_id: string | null
-          created_at: string
-          hiring_date: string | null
-          id: string
-          interview_date: string | null
-          notes: string | null
-          onboarding_completion_date: string | null
-          onboarding_start_date: string | null
-          status: Database["public"]["Enums"]["application_status_extended"]
-          supervisor_id: string | null
-          updated_at: string
-        }
-        Insert: {
-          application_id?: string | null
-          created_at?: string
-          hiring_date?: string | null
-          id?: string
-          interview_date?: string | null
-          notes?: string | null
-          onboarding_completion_date?: string | null
-          onboarding_start_date?: string | null
-          status?: Database["public"]["Enums"]["application_status_extended"]
-          supervisor_id?: string | null
-          updated_at?: string
-        }
-        Update: {
-          application_id?: string | null
-          created_at?: string
-          hiring_date?: string | null
-          id?: string
-          interview_date?: string | null
-          notes?: string | null
-          onboarding_completion_date?: string | null
-          onboarding_start_date?: string | null
-          status?: Database["public"]["Enums"]["application_status_extended"]
-          supervisor_id?: string | null
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "hiring_pipeline_application_id_fkey"
-            columns: ["application_id"]
-            isOneToOne: false
-            referencedRelation: "job_applications"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "hiring_pipeline_supervisor_id_fkey"
-            columns: ["supervisor_id"]
-            isOneToOne: false
-            referencedRelation: "supervisors"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       job_applications: {
         Row: {
           additional_docs_urls: string[] | null
@@ -271,36 +178,6 @@ export type Database = {
           },
         ]
       }
-      onboarding_steps: {
-        Row: {
-          created_at: string
-          description: string | null
-          estimated_duration_hours: number | null
-          id: string
-          is_required: boolean | null
-          order_index: number
-          title: string
-        }
-        Insert: {
-          created_at?: string
-          description?: string | null
-          estimated_duration_hours?: number | null
-          id?: string
-          is_required?: boolean | null
-          order_index: number
-          title: string
-        }
-        Update: {
-          created_at?: string
-          description?: string | null
-          estimated_duration_hours?: number | null
-          id?: string
-          is_required?: boolean | null
-          order_index?: number
-          title?: string
-        }
-        Relationships: []
-      }
       profiles: {
         Row: {
           admin_name: string | null
@@ -337,36 +214,6 @@ export type Database = {
         }
         Relationships: []
       }
-      supervisors: {
-        Row: {
-          created_at: string
-          department: string | null
-          email: string
-          id: string
-          name: string
-          phone: string | null
-          updated_at: string
-        }
-        Insert: {
-          created_at?: string
-          department?: string | null
-          email: string
-          id?: string
-          name: string
-          phone?: string | null
-          updated_at?: string
-        }
-        Update: {
-          created_at?: string
-          department?: string | null
-          email?: string
-          id?: string
-          name?: string
-          phone?: string | null
-          updated_at?: string
-        }
-        Relationships: []
-      }
     }
     Views: {
       [_ in never]: never
@@ -392,14 +239,7 @@ export type Database = {
       }
     }
     Enums: {
-      application_status_extended:
-        | "waiting"
-        | "approved"
-        | "interview_scheduled"
-        | "hired"
-        | "onboarding"
-        | "completed"
-        | "rejected"
+      [_ in never]: never
     }
     CompositeTypes: {
       [_ in never]: never
@@ -514,16 +354,6 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {
-      application_status_extended: [
-        "waiting",
-        "approved",
-        "interview_scheduled",
-        "hired",
-        "onboarding",
-        "completed",
-        "rejected",
-      ],
-    },
+    Enums: {},
   },
 } as const
