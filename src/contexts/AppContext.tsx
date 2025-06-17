@@ -30,12 +30,9 @@ interface AppContextType {
   facilities: JobFacility[];
   setFacilities: React.Dispatch<React.SetStateAction<JobFacility[]>>;
   
-  // Granular loading states
+  // UI state
   isLoading: boolean;
   setIsLoading: React.Dispatch<React.SetStateAction<boolean>>;
-  jobsLoading: boolean;
-  masterDataLoading: boolean;
-  applicationsLoading: boolean;
   
   // Data fetching functions
   fetchJobs: () => Promise<void>;
@@ -73,12 +70,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [positions, setPositions] = useState<JobPosition[]>([]);
   const [locations, setLocations] = useState<JobLocation[]>([]);
   const [facilities, setFacilities] = useState<JobFacility[]>([]);
-  
-  // Granular loading states
   const [isLoading, setIsLoading] = useState(false);
-  const [jobsLoading, setJobsLoading] = useState(true);
-  const [masterDataLoading, setMasterDataLoading] = useState(true);
-  const [applicationsLoading, setApplicationsLoading] = useState(false);
 
   const isAuthenticated = !!user;
 
@@ -136,7 +128,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   // Fetch jobs from database
   const fetchJobs = async () => {
-    setJobsLoading(true);
     try {
       const { data, error } = await supabase
         .from('jobs')
@@ -167,8 +158,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       setJobs(transformedJobs);
     } catch (error) {
       console.error('Error fetching jobs:', error);
-    } finally {
-      setJobsLoading(false);
     }
   };
 
@@ -176,7 +165,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const fetchApplications = async () => {
     if (!user) return;
     
-    setApplicationsLoading(true);
     try {
       let query = supabase.from('job_applications').select('*');
       
@@ -213,14 +201,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       setApplications(transformedApplications);
     } catch (error) {
       console.error('Error fetching applications:', error);
-    } finally {
-      setApplicationsLoading(false);
     }
   };
 
   // Fetch master data - Modified to work for all users including anonymous
   const fetchMasterData = async () => {
-    setMasterDataLoading(true);
     try {
       console.log('Fetching master data...');
       
@@ -283,8 +268,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       setPositions([]);
       setLocations([]);
       setFacilities([]);
-    } finally {
-      setMasterDataLoading(false);
     }
   };
 
@@ -599,9 +582,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setFacilities,
     isLoading,
     setIsLoading,
-    jobsLoading,
-    masterDataLoading,
-    applicationsLoading,
     fetchJobs,
     fetchApplications,
     fetchMasterData,
