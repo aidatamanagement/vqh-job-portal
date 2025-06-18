@@ -1,4 +1,5 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { Job, JobApplication, JobPosition, JobLocation, JobFacility, FilterState } from '@/types';
@@ -33,6 +34,7 @@ interface AppContextType {
   // UI state
   isLoading: boolean;
   setIsLoading: React.Dispatch<React.SetStateAction<boolean>>;
+  isDataLoading: boolean;
   
   // Data fetching functions
   fetchJobs: () => Promise<void>;
@@ -71,43 +73,17 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [locations, setLocations] = useState<JobLocation[]>([]);
   const [facilities, setFacilities] = useState<JobFacility[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [isDataLoading, setIsDataLoading] = useState(true);
+  
+  // Loading state guards to prevent concurrent requests
+  const [isFetchingJobs, setIsFetchingJobs] = useState(false);
+  const [isFetchingApplications, setIsFetchingApplications] = useState(false);
+  const [isFetchingMasterData, setIsFetchingMasterData] = useState(false);
 
   const isAuthenticated = !!user;
 
-  // Initialize auth state
-  useEffect(() => {
-    // Set up auth state listener
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        console.log('Auth state changed:', event, session?.user?.email);
-        setSession(session);
-        setUser(session?.user ?? null);
-        
-        if (session?.user) {
-          // Fetch user profile when user logs in
-          setTimeout(() => {
-            fetchUserProfile(session.user.id);
-          }, 0);
-        } else {
-          setUserProfile(null);
-        }
-      }
-    );
-
-    // Check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        fetchUserProfile(session.user.id);
-      }
-    });
-
-    return () => subscription.unsubscribe();
-  }, []);
-
   // Fetch user profile
-  const fetchUserProfile = async (userId: string) => {
+  const fetchUserProfile = useCallback(async (userId: string) => {
     try {
       const { data, error } = await supabase
         .from('profiles')
@@ -124,10 +100,43 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     } catch (error) {
       console.error('Error fetching user profile:', error);
     }
-  };
+  }, []);
 
-  // Fetch jobs from database
-  const fetchJobs = async () => {
+  // Initialize auth state
+  useEffect(() => {
+    // Set up auth state listener
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        console.log('Auth state changed:', event, session?.user?.email);
+        setSession(session);
+        setUser(session?.user ?? null);
+        
+        if (session?.user) {
+          // Fetch user profile when user logs in
+          fetchUserProfile(session.user.id);
+        } else {
+          setUserProfile(null);
+        }
+      }
+    );
+
+    // Check for existing session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      setUser(session?.user ?? null);
+      if (session?.user) {
+        fetchUserProfile(session.user.id);
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, [fetchUserProfile]);
+
+  // Fetch jobs from database with loading guard
+  const fetchJobs = useCallback(async () => {
+    if (isFetchingJobs) return;
+    
+    setIsFetchingJobs(true);
     try {
       const { data, error } = await supabase
         .from('jobs')
@@ -158,13 +167,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       setJobs(transformedJobs);
     } catch (error) {
       console.error('Error fetching jobs:', error);
+    } finally {
+      setIsFetchingJobs(false);
     }
-  };
+  }, [isFetchingJobs]);
 
-  // Fetch applications from database
-  const fetchApplications = async () => {
-    if (!user) return;
+  // Fetch applications from database with loading guard
+  const fetchApplications = useCallback(async () => {
+    if (!user || isFetchingApplications) return;
     
+    setIsFetchingApplications(true);
     try {
       let query = supabase.from('job_applications').select('*');
       
@@ -201,11 +213,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       setApplications(transformedApplications);
     } catch (error) {
       console.error('Error fetching applications:', error);
+    } finally {
+      setIsFetchingApplications(false);
     }
-  };
+  }, [user, userProfile?.role, isFetchingApplications]);
 
-  // Fetch master data - Modified to work for all users including anonymous
-  const fetchMasterData = async () => {
+  // Fetch master data with loading guard - Modified to work for all users including anonymous
+  const fetchMasterData = useCallback(async () => {
+    if (isFetchingMasterData) return;
+    
+    setIsFetchingMasterData(true);
     try {
       console.log('Fetching master data...');
       
@@ -221,7 +238,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           name: p.name,
           createdAt: p.created_at,
         })));
-        console.log('Fetched positions:', positionsData);
+        console.log('Fetched positions:', positionsData.length, 'items');
       } else {
         console.log('Could not fetch positions from database, will extract from jobs');
         setPositions([]);
@@ -239,7 +256,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           name: l.name,
           createdAt: l.created_at,
         })));
-        console.log('Fetched locations:', locationsData);
+        console.log('Fetched locations:', locationsData.length, 'items');
       } else {
         console.log('Could not fetch locations from database, will extract from jobs');
         setLocations([]);
@@ -257,7 +274,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           name: f.name,
           createdAt: f.created_at,
         })));
-        console.log('Fetched facilities:', facilitiesData);
+        console.log('Fetched facilities:', facilitiesData.length, 'items');
       } else {
         console.log('Could not fetch facilities from database');
         setFacilities([]);
@@ -268,21 +285,35 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       setPositions([]);
       setLocations([]);
       setFacilities([]);
+    } finally {
+      setIsFetchingMasterData(false);
+      setIsDataLoading(false);
     }
-  };
+  }, [isFetchingMasterData]);
 
-  // Initialize data on mount - fetch jobs and master data for all users
+  // Initialize data on mount - fetch jobs and master data for all users ONLY ONCE
   useEffect(() => {
-    fetchJobs();
-    fetchMasterData();
-  }, []);
+    let mounted = true;
+    
+    const initializeData = async () => {
+      if (mounted) {
+        await Promise.all([fetchJobs(), fetchMasterData()]);
+      }
+    };
+    
+    initializeData();
+    
+    return () => {
+      mounted = false;
+    };
+  }, []); // Empty dependency array - only run once on mount
 
-  // Fetch applications when user changes
+  // Fetch applications when user AND userProfile changes
   useEffect(() => {
     if (user && userProfile) {
       fetchApplications();
     }
-  }, [user, userProfile]);
+  }, [user, userProfile, fetchApplications]);
 
   const login = async (email: string, password: string): Promise<boolean> => {
     setIsLoading(true);
@@ -582,6 +613,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setFacilities,
     isLoading,
     setIsLoading,
+    isDataLoading,
     fetchJobs,
     fetchApplications,
     fetchMasterData,

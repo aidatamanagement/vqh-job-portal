@@ -2,13 +2,14 @@
 import React, { useState, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Search } from 'lucide-react';
+import { Skeleton } from '@/components/ui/skeleton';
 import JobCard from '@/components/JobCard';
 import JobFilters from '@/components/JobFilters';
 import { useAppContext } from '@/contexts/AppContext';
 import { FilterState } from '@/types';
 
 const JobsList: React.FC = () => {
-  const { jobs } = useAppContext();
+  const { jobs, isDataLoading } = useAppContext();
   const [displayCount, setDisplayCount] = useState(12);
   const [filters, setFilters] = useState<FilterState>({
     search: '',
@@ -59,6 +60,39 @@ const JobsList: React.FC = () => {
   const handleLoadMore = () => {
     setDisplayCount(prev => prev + 12);
   };
+
+  // Show loading state while data is being fetched
+  if (isDataLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 animate-slide-up">
+        <div className="container mx-auto px-4 py-8">
+          <div className="space-y-8">
+            {/* Page Header */}
+            <div className="text-center space-y-4 animate-slide-up">
+              <h1 className="text-4xl font-bold text-gray-900">
+                Join Our Mission of Compassionate Care
+              </h1>
+              <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+                Discover meaningful career opportunities in hospice care where you can make a real difference in patients' and families' lives.
+              </p>
+            </div>
+
+            {/* Loading skeleton for filters */}
+            <div className="animate-slide-up-delayed">
+              <Skeleton className="h-20 w-full" />
+            </div>
+
+            {/* Loading skeleton for jobs grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-slide-up-delayed-2">
+              {Array.from({ length: 6 }).map((_, index) => (
+                <Skeleton key={index} className="h-64 w-full" />
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 animate-slide-up">

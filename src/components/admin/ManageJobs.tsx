@@ -1,5 +1,7 @@
+
 import React, { useState } from 'react';
 import { Card } from '@/components/ui/card';
+import { Skeleton } from '@/components/ui/skeleton';
 import { Briefcase } from 'lucide-react';
 import { useAppContext } from '@/contexts/AppContext';
 import { Job } from '@/types';
@@ -9,7 +11,7 @@ import ManageJobCard from './ManageJobCard';
 import EditJobModal from './EditJobModal';
 
 const ManageJobs: React.FC = () => {
-  const { jobs, applications, positions, locations, updateJob, deleteJob } = useAppContext();
+  const { jobs, applications, positions, locations, updateJob, deleteJob, isDataLoading } = useAppContext();
   const [searchTerm, setSearchTerm] = useState('');
   const [filterPosition, setFilterPosition] = useState('all');
   const [filterLocation, setFilterLocation] = useState('all');
@@ -167,6 +169,33 @@ const ManageJobs: React.FC = () => {
       });
     }
   };
+
+  // Show loading state while data is being fetched
+  if (isDataLoading) {
+    return (
+      <div className="space-y-4 lg:space-y-6 p-2 sm:p-0">
+        {/* Header */}
+        <div className="flex items-center space-x-3 animate-fade-in-up">
+          <div className="w-8 h-8 lg:w-10 lg:h-10 bg-primary rounded-lg flex items-center justify-center">
+            <Briefcase className="w-4 h-4 lg:w-6 lg:h-6 text-white" />
+          </div>
+          <div>
+            <h1 className="font-bold text-gray-900" style={{ fontSize: '1.3rem' }}>Manage Jobs</h1>
+          </div>
+        </div>
+
+        {/* Loading skeleton for filters */}
+        <Skeleton className="h-20 w-full" />
+
+        {/* Loading skeleton for jobs */}
+        <div className="space-y-3 sm:space-y-4">
+          {Array.from({ length: 5 }).map((_, index) => (
+            <Skeleton key={index} className="h-32 w-full" />
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4 lg:space-y-6 p-2 sm:p-0">
