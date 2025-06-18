@@ -1,5 +1,4 @@
-
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { Job, JobApplication, JobPosition, JobLocation, JobFacility, FilterState } from '@/types';
@@ -75,10 +74,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [isLoading, setIsLoading] = useState(false);
   const [isDataLoading, setIsDataLoading] = useState(true);
   
-  // Loading state guards to prevent concurrent requests
-  const [isFetchingJobs, setIsFetchingJobs] = useState(false);
-  const [isFetchingApplications, setIsFetchingApplications] = useState(false);
-  const [isFetchingMasterData, setIsFetchingMasterData] = useState(false);
+  // Use refs for loading states to prevent infinite loops
+  const isFetchingJobs = useRef(false);
+  const isFetchingApplications = useRef(false);
+  const isFetchingMasterData = useRef(false);
+  const isMounted = useRef(true);
 
   const isAuthenticated = !!user;
 
@@ -96,7 +96,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         return;
       }
       
-      setUserProfile(data);
+      if (isMounted.current) {
+        setUserProfile(data);
+      }
     } catch (error) {
       console.error('Error fetching user profile:', error);
     }
@@ -108,35 +110,39 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         console.log('Auth state changed:', event, session?.user?.email);
-        setSession(session);
-        setUser(session?.user ?? null);
-        
-        if (session?.user) {
-          // Fetch user profile when user logs in
-          fetchUserProfile(session.user.id);
-        } else {
-          setUserProfile(null);
+        if (isMounted.current) {
+          setSession(session);
+          setUser(session?.user ?? null);
+          
+          if (session?.user) {
+            // Fetch user profile when user logs in
+            fetchUserProfile(session.user.id);
+          } else {
+            setUserProfile(null);
+          }
         }
       }
     );
 
     // Check for existing session
     supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        fetchUserProfile(session.user.id);
+      if (isMounted.current) {
+        setSession(session);
+        setUser(session?.user ?? null);
+        if (session?.user) {
+          fetchUserProfile(session.user.id);
+        }
       }
     });
 
     return () => subscription.unsubscribe();
   }, [fetchUserProfile]);
 
-  // Fetch jobs from database with loading guard
+  // Fetch jobs from database - removed problematic loading state from dependencies
   const fetchJobs = useCallback(async () => {
-    if (isFetchingJobs) return;
+    if (isFetchingJobs.current) return;
     
-    setIsFetchingJobs(true);
+    isFetchingJobs.current = true;
     try {
       const { data, error } = await supabase
         .from('jobs')
@@ -164,19 +170,21 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       }));
 
       console.log('Fetched jobs:', transformedJobs);
-      setJobs(transformedJobs);
+      if (isMounted.current) {
+        setJobs(transformedJobs);
+      }
     } catch (error) {
       console.error('Error fetching jobs:', error);
     } finally {
-      setIsFetchingJobs(false);
+      isFetchingJobs.current = false;
     }
-  }, [isFetchingJobs]);
+  }, []);
 
-  // Fetch applications from database with loading guard
+  // Fetch applications from database - removed problematic dependencies
   const fetchApplications = useCallback(async () => {
-    if (!user || isFetchingApplications) return;
+    if (!user || isFetchingApplications.current) return;
     
-    setIsFetchingApplications(true);
+    isFetchingApplications.current = true;
     try {
       let query = supabase.from('job_applications').select('*');
       
@@ -210,19 +218,21 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         updatedAt: app.updated_at,
       }));
 
-      setApplications(transformedApplications);
+      if (isMounted.current) {
+        setApplications(transformedApplications);
+      }
     } catch (error) {
       console.error('Error fetching applications:', error);
     } finally {
-      setIsFetchingApplications(false);
+      isFetchingApplications.current = false;
     }
-  }, [user, userProfile?.role, isFetchingApplications]);
+  }, [user, userProfile?.role]);
 
-  // Fetch master data with loading guard - Modified to work for all users including anonymous
+  // Fetch master data - removed problematic loading state from dependencies
   const fetchMasterData = useCallback(async () => {
-    if (isFetchingMasterData) return;
+    if (isFetchingMasterData.current) return;
     
-    setIsFetchingMasterData(true);
+    isFetchingMasterData.current = true;
     try {
       console.log('Fetching master data...');
       
@@ -233,15 +243,20 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       const { data: positionsData, error: positionsError } = await positionsQuery;
 
       if (positionsData && !positionsError) {
-        setPositions(positionsData.map(p => ({
+        const transformedPositions = positionsData.map(p => ({
           id: p.id,
           name: p.name,
           createdAt: p.created_at,
-        })));
+        }));
+        if (isMounted.current) {
+          setPositions(transformedPositions);
+        }
         console.log('Fetched positions:', positionsData.length, 'items');
       } else {
         console.log('Could not fetch positions from database, will extract from jobs');
-        setPositions([]);
+        if (isMounted.current) {
+          setPositions([]);
+        }
       }
 
       // Try to fetch locations
@@ -251,15 +266,20 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         .order('name');
 
       if (locationsData && !locationsError) {
-        setLocations(locationsData.map(l => ({
+        const transformedLocations = locationsData.map(l => ({
           id: l.id,
           name: l.name,
           createdAt: l.created_at,
-        })));
+        }));
+        if (isMounted.current) {
+          setLocations(transformedLocations);
+        }
         console.log('Fetched locations:', locationsData.length, 'items');
       } else {
         console.log('Could not fetch locations from database, will extract from jobs');
-        setLocations([]);
+        if (isMounted.current) {
+          setLocations([]);
+        }
       }
 
       // Try to fetch facilities
@@ -269,43 +289,44 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         .order('name');
 
       if (facilitiesData && !facilitiesError) {
-        setFacilities(facilitiesData.map(f => ({
+        const transformedFacilities = facilitiesData.map(f => ({
           id: f.id,
           name: f.name,
           createdAt: f.created_at,
-        })));
+        }));
+        if (isMounted.current) {
+          setFacilities(transformedFacilities);
+        }
         console.log('Fetched facilities:', facilitiesData.length, 'items');
       } else {
         console.log('Could not fetch facilities from database');
-        setFacilities([]);
+        if (isMounted.current) {
+          setFacilities([]);
+        }
       }
     } catch (error) {
       console.error('Error fetching master data:', error);
       // Set empty arrays so the fallback logic in JobFilters can work
-      setPositions([]);
-      setLocations([]);
-      setFacilities([]);
+      if (isMounted.current) {
+        setPositions([]);
+        setLocations([]);
+        setFacilities([]);
+      }
     } finally {
-      setIsFetchingMasterData(false);
-      setIsDataLoading(false);
+      isFetchingMasterData.current = false;
+      if (isMounted.current) {
+        setIsDataLoading(false);
+      }
     }
-  }, [isFetchingMasterData]);
+  }, []);
 
   // Initialize data on mount - fetch jobs and master data for all users ONLY ONCE
   useEffect(() => {
-    let mounted = true;
-    
     const initializeData = async () => {
-      if (mounted) {
-        await Promise.all([fetchJobs(), fetchMasterData()]);
-      }
+      await Promise.all([fetchJobs(), fetchMasterData()]);
     };
     
     initializeData();
-    
-    return () => {
-      mounted = false;
-    };
   }, []); // Empty dependency array - only run once on mount
 
   // Fetch applications when user AND userProfile changes
@@ -314,6 +335,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       fetchApplications();
     }
   }, [user, userProfile, fetchApplications]);
+
+  // Cleanup function to prevent state updates after unmount
+  useEffect(() => {
+    return () => {
+      isMounted.current = false;
+    };
+  }, []);
 
   const login = async (email: string, password: string): Promise<boolean> => {
     setIsLoading(true);
