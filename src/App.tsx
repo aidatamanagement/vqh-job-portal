@@ -9,6 +9,7 @@ import Index from "./pages/Index";
 import JobDetails from "./pages/JobDetails";
 import AdminLogin from "./pages/AdminLogin";
 import AdminDashboard from "./pages/AdminDashboard";
+import ApplicationTracker from "./pages/ApplicationTracker";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -23,6 +24,8 @@ const App = () => (
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/job/:id" element={<JobDetails />} />
+            <Route path="/track/:token" element={<ApplicationTracker />} />
+            <Route path="/track" element={<ApplicationTracker />} />
             <Route path="/admin/login" element={<AdminLogin />} />
             <Route path="/admin" element={<AdminDashboard />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

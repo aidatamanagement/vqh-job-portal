@@ -10,6 +10,8 @@ interface EmailVariables {
   phone?: string;
   earliestStartDate?: string;
   applicationDate?: string;
+  trackingToken?: string;
+  trackingUrl?: string;
 }
 
 export const useEmailAutomation = () => {
@@ -55,8 +57,11 @@ export const useEmailAutomation = () => {
     },
     job: {
       location: string;
-    }
+    },
+    trackingToken?: string
   ) => {
+    const trackingUrl = trackingToken ? `${window.location.origin}/track/${trackingToken}` : '';
+    
     const variables: EmailVariables = {
       firstName: application.firstName,
       lastName: application.lastName,
@@ -65,7 +70,9 @@ export const useEmailAutomation = () => {
       email: application.email,
       phone: application.phone || '',
       earliestStartDate: application.earliestStartDate || '',
-      applicationDate: new Date().toLocaleDateString()
+      applicationDate: new Date().toLocaleDateString(),
+      trackingToken: trackingToken || '',
+      trackingUrl: trackingUrl
     };
 
     // Get admin emails for notifications

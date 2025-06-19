@@ -69,6 +69,7 @@ const Submissions: React.FC = () => {
         additionalDocsUrls: item.additional_docs_urls || [],
         status: item.status as 'waiting' | 'approved' | 'rejected',
         notes: '',
+        trackingToken: item.tracking_token,
         createdAt: item.created_at,
         updatedAt: item.updated_at,
       }));

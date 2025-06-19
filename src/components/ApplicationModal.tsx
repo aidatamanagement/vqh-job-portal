@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -5,12 +6,13 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Card } from '@/components/ui/card';
-import { Upload, X, FileText, Calendar, MapPin } from 'lucide-react';
+import { Upload, X, FileText, Calendar, MapPin, Copy, ExternalLink } from 'lucide-react';
 import { Job } from '@/types';
 import { useAppContext } from '@/contexts/AppContext';
 import { toast } from '@/hooks/use-toast';
 import RichTextEditor from '@/components/ui/rich-text-editor';
 import { supabase } from '@/integrations/supabase/client';
+import { useEmailAutomation } from '@/hooks/useEmailAutomation';
 
 interface ApplicationModalProps {
   isOpen: boolean;
@@ -20,8 +22,10 @@ interface ApplicationModalProps {
 
 const ApplicationModal: React.FC<ApplicationModalProps> = ({ isOpen, onClose, job }) => {
   const { applications, setApplications } = useAppContext();
+  const { sendApplicationSubmittedEmail } = useEmailAutomation();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showThankYou, setShowThankYou] = useState(false);
+  const [trackingToken, setTrackingToken] = useState<string>('');
   
   const [formData, setFormData] = useState({
     firstName: '',
@@ -183,6 +187,9 @@ const ApplicationModal: React.FC<ApplicationModalProps> = ({ isOpen, onClose, jo
 
       console.log('Application submitted successfully:', data);
 
+      // Store tracking token for display
+      setTrackingToken(data.tracking_token);
+
       // Update local state for immediate UI update
       const newApplication = {
         id: data.id,
@@ -199,16 +206,40 @@ const ApplicationModal: React.FC<ApplicationModalProps> = ({ isOpen, onClose, jo
         resumeUrl: resumeUrl,
         additionalDocsUrls: additionalDocsUrls,
         notes: '',
+        trackingToken: data.tracking_token,
         createdAt: data.created_at,
         updatedAt: data.updated_at,
       };
 
       setApplications(prev => [...prev, newApplication]);
+
+      // Send confirmation email with tracking information
+      try {
+        await sendApplicationSubmittedEmail(
+          {
+            email: formData.email,
+            firstName: formData.firstName,
+            lastName: formData.lastName,
+            appliedPosition: job.position,
+            earliestStartDate: formData.earliestStartDate,
+            phone: formData.phone,
+          },
+          {
+            location: job.location,
+          },
+          data.tracking_token
+        );
+        console.log('Confirmation email sent successfully');
+      } catch (emailError) {
+        console.error('Failed to send confirmation email:', emailError);
+        // Don't fail the application submission if email fails
+      }
+
       setShowThankYou(true);
 
       toast({
         title: "Application Submitted!",
-        description: "Your application has been successfully submitted. We'll be in touch soon.",
+        description: "Your application has been successfully submitted. Check your email for tracking information.",
       });
 
     } catch (error) {
@@ -239,11 +270,32 @@ const ApplicationModal: React.FC<ApplicationModalProps> = ({ isOpen, onClose, jo
       additionalDocs: [],
     });
     setShowThankYou(false);
+    setTrackingToken('');
   };
 
   const handleClose = () => {
     resetForm();
     onClose();
+  };
+
+  const copyTrackingToken = () => {
+    navigator.clipboard.writeText(trackingToken);
+    toast({
+      title: "Copied!",
+      description: "Tracking token copied to clipboard",
+    });
+  };
+
+  const getTrackingUrl = () => {
+    return `${window.location.origin}/track/${trackingToken}`;
+  };
+
+  const copyTrackingUrl = () => {
+    navigator.clipboard.writeText(getTrackingUrl());
+    toast({
+      title: "Copied!",
+      description: "Tracking URL copied to clipboard",
+    });
   };
 
   if (showThankYou) {
@@ -262,9 +314,52 @@ const ApplicationModal: React.FC<ApplicationModalProps> = ({ isOpen, onClose, jo
             <p className="text-gray-600 mb-6">
               Thank you for your interest in the {job.position} position. We've received your application and will be in touch soon.
             </p>
+            
+            {/* Tracking Information */}
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+              <h4 className="font-semibold text-blue-900 mb-3">Track Your Application</h4>
+              
+              <div className="space-y-3">
+                <div>
+                  <Label className="text-xs text-blue-700">Tracking Token</Label>
+                  <div className="flex items-center gap-2 mt-1">
+                    <Input 
+                      value={trackingToken} 
+                      readOnly 
+                      className="text-xs bg-white border-blue-200" 
+                    />
+                    <Button 
+                      size="sm" 
+                      variant="outline" 
+                      onClick={copyTrackingToken}
+                      className="shrink-0"
+                    >
+                      <Copy className="w-3 h-3" />
+                    </Button>
+                  </div>
+                </div>
+
+                <div>
+                  <Label className="text-xs text-blue-700">Tracking URL</Label>
+                  <div className="flex items-center gap-2 mt-1">
+                    <Button 
+                      size="sm" 
+                      variant="outline" 
+                      onClick={copyTrackingUrl}
+                      className="flex-1 text-xs"
+                    >
+                      <ExternalLink className="w-3 h-3 mr-1" />
+                      Copy Tracking Link
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
             <p className="text-sm text-gray-500 mb-6">
-              You should receive a confirmation email shortly.
+              You should receive a confirmation email with tracking information shortly. Save your tracking token to check your application status anytime.
             </p>
+            
             <Button onClick={handleClose} className="w-full bg-primary hover:bg-primary/90">
               Close
             </Button>
