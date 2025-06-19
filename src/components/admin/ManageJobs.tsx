@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -9,6 +8,7 @@ import { toast } from '@/hooks/use-toast';
 import JobFilters from './JobFilters';
 import ManageJobCard from './ManageJobCard';
 import EditJobModal from './EditJobModal';
+import JobPreviewModal from './JobPreviewModal';
 
 const ManageJobs: React.FC = () => {
   const { jobs, applications, positions, locations, updateJob, deleteJob, isDataLoading } = useAppContext();
@@ -17,6 +17,7 @@ const ManageJobs: React.FC = () => {
   const [filterLocation, setFilterLocation] = useState('all');
   const [filterStatus, setFilterStatus] = useState('all');
   const [editingJob, setEditingJob] = useState<Job | null>(null);
+  const [previewingJob, setPreviewingJob] = useState<Job | null>(null);
   const [jobForm, setJobForm] = useState<Partial<Job>>({});
 
   // Check if any filters are active
@@ -100,6 +101,14 @@ const ManageJobs: React.FC = () => {
       applicationDeadline: job.applicationDeadline ? 
         new Date(job.applicationDeadline).toISOString().slice(0, 16) : '',
     });
+  };
+
+  const openPreviewModal = (job: Job) => {
+    setPreviewingJob(job);
+  };
+
+  const closePreviewModal = () => {
+    setPreviewingJob(null);
   };
 
   const handleJobInputChange = (field: string, value: string | string[] | boolean) => {
@@ -250,6 +259,7 @@ const ManageJobs: React.FC = () => {
               onToggleStatus={toggleJobStatus}
               onEdit={openEditModal}
               onDelete={handleDeleteJob}
+              onPreview={openPreviewModal}
             />
           ))
         )}
@@ -265,6 +275,13 @@ const ManageJobs: React.FC = () => {
         onInputChange={handleJobInputChange}
         onFacilityToggle={handleFacilityToggle}
         onSave={saveJobChanges}
+      />
+
+      {/* Job Preview Modal */}
+      <JobPreviewModal
+        job={previewingJob}
+        isOpen={!!previewingJob}
+        onClose={closePreviewModal}
       />
     </div>
   );

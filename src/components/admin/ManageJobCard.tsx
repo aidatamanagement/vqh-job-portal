@@ -24,6 +24,7 @@ interface ManageJobCardProps {
   onToggleStatus: (jobId: string) => void;
   onEdit: (job: Job) => void;
   onDelete: (jobId: string) => void;
+  onPreview: (job: Job) => void;
 }
 
 const ManageJobCard: React.FC<ManageJobCardProps> = ({
@@ -33,6 +34,7 @@ const ManageJobCard: React.FC<ManageJobCardProps> = ({
   onToggleStatus,
   onEdit,
   onDelete,
+  onPreview,
 }) => {
   const isDeadlineApproaching = (deadline: string) => {
     const deadlineDate = new Date(deadline);
@@ -121,7 +123,7 @@ const ManageJobCard: React.FC<ManageJobCardProps> = ({
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => window.open(`/job/${job.id}`, '_blank')}>
+              <DropdownMenuItem onClick={() => onPreview(job)}>
                 <Eye className="w-4 h-4 mr-2" />
                 View Job
               </DropdownMenuItem>
@@ -145,7 +147,7 @@ const ManageJobCard: React.FC<ManageJobCardProps> = ({
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => window.open(`/job/${job.id}`, '_blank')}
+            onClick={() => onPreview(job)}
             className="text-gray-600 hover:text-gray-900"
           >
             <Eye className="w-4 h-4" />
