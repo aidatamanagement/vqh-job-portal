@@ -8,7 +8,7 @@ import JobDetails from '@/pages/JobDetails';
 import AdminDashboard from '@/pages/AdminDashboard';
 import ApplicationTracker from '@/pages/ApplicationTracker';
 import NotFound from '@/pages/NotFound';
-import { AppContextProvider } from '@/contexts/AppContext';
+import { AppProvider } from '@/contexts/AppContext';
 import CursorGlow from '@/components/CursorGlow';
 import './App.css';
 
@@ -17,7 +17,7 @@ const queryClient = new QueryClient();
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <AppContextProvider>
+      <AppProvider>
         <Router>
           <div className="App relative">
             <CursorGlow />
@@ -32,7 +32,7 @@ function App() {
             <Toaster />
           </div>
         </Router>
-      </AppContextProvider>
+      </AppProvider>
     </QueryClientProvider>
   );
 }
