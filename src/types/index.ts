@@ -44,9 +44,8 @@ export interface JobApplication {
   coverLetter: string;
   resumeUrl?: string;
   additionalDocsUrls: string[];
-  status: 'waiting' | 'approved' | 'rejected';
+  status: 'waiting' | 'approved' | 'rejected'; // Changed from 'declined' to 'rejected' to match database
   notes?: string;
-  trackingToken?: string; // Added tracking token field
   createdAt: string;
   updatedAt: string;
 }

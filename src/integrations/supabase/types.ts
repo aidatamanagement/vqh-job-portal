@@ -99,7 +99,6 @@ export type Database = {
           last_name: string
           phone: string | null
           status: string | null
-          tracking_token: string
           updated_at: string | null
           user_id: string | null
         }
@@ -117,7 +116,6 @@ export type Database = {
           last_name: string
           phone?: string | null
           status?: string | null
-          tracking_token?: string
           updated_at?: string | null
           user_id?: string | null
         }
@@ -135,7 +133,6 @@ export type Database = {
           last_name?: string
           phone?: string | null
           status?: string | null
-          tracking_token?: string
           updated_at?: string | null
           user_id?: string | null
         }

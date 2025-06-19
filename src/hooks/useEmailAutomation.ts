@@ -10,7 +10,6 @@ interface EmailVariables {
   phone?: string;
   earliestStartDate?: string;
   applicationDate?: string;
-  trackingUrl?: string;
 }
 
 export const useEmailAutomation = () => {
@@ -58,25 +57,6 @@ export const useEmailAutomation = () => {
       location: string;
     }
   ) => {
-    // First, get the tracking token for this application
-    const { data: applicationData, error } = await supabase
-      .from('job_applications')
-      .select('tracking_token')
-      .eq('email', application.email)
-      .eq('applied_position', application.appliedPosition)
-      .order('created_at', { ascending: false })
-      .limit(1)
-      .single();
-
-    if (error) {
-      console.error('Failed to get tracking token:', error);
-      // Continue without tracking link if we can't fetch it
-    }
-
-    const trackingUrl = applicationData?.tracking_token 
-      ? `${window.location.origin}/track/${applicationData.tracking_token}`
-      : undefined;
-
     const variables: EmailVariables = {
       firstName: application.firstName,
       lastName: application.lastName,
@@ -85,8 +65,7 @@ export const useEmailAutomation = () => {
       email: application.email,
       phone: application.phone || '',
       earliestStartDate: application.earliestStartDate || '',
-      applicationDate: new Date().toLocaleDateString(),
-      trackingUrl: trackingUrl
+      applicationDate: new Date().toLocaleDateString()
     };
 
     // Get admin emails for notifications

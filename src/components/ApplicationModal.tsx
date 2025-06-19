@@ -11,7 +11,6 @@ import { useAppContext } from '@/contexts/AppContext';
 import { toast } from '@/hooks/use-toast';
 import RichTextEditor from '@/components/ui/rich-text-editor';
 import { supabase } from '@/integrations/supabase/client';
-import { useEmailAutomation } from '@/hooks/useEmailAutomation';
 
 interface ApplicationModalProps {
   isOpen: boolean;
@@ -21,10 +20,8 @@ interface ApplicationModalProps {
 
 const ApplicationModal: React.FC<ApplicationModalProps> = ({ isOpen, onClose, job }) => {
   const { applications, setApplications } = useAppContext();
-  const { sendApplicationSubmittedEmail } = useEmailAutomation();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showThankYou, setShowThankYou] = useState(false);
-  const [trackingToken, setTrackingToken] = useState<string>('');
   
   const [formData, setFormData] = useState({
     firstName: '',
@@ -83,6 +80,7 @@ const ApplicationModal: React.FC<ApplicationModalProps> = ({ isOpen, onClose, jo
       throw new Error(`Failed to upload ${fileType}: ${error.message}`);
     }
 
+    // Get the public URL for the uploaded file
     const { data: { publicUrl } } = supabase.storage
       .from('job-applications')
       .getPublicUrl(fileName);
@@ -166,8 +164,7 @@ const ApplicationModal: React.FC<ApplicationModalProps> = ({ isOpen, onClose, jo
         cover_letter: formData.coverLetter,
         additional_docs_urls: additionalDocsUrls,
         status: 'waiting',
-        user_id: null, // Anonymous application
-        tracking_token: crypto.randomUUID(),
+        user_id: null // Anonymous application
       };
 
       console.log('Submitting application data:', applicationData);
@@ -185,9 +182,6 @@ const ApplicationModal: React.FC<ApplicationModalProps> = ({ isOpen, onClose, jo
       }
 
       console.log('Application submitted successfully:', data);
-
-      // Store the tracking token for the thank you page
-      setTrackingToken(data.tracking_token);
 
       // Update local state for immediate UI update
       const newApplication = {
@@ -210,33 +204,11 @@ const ApplicationModal: React.FC<ApplicationModalProps> = ({ isOpen, onClose, jo
       };
 
       setApplications(prev => [...prev, newApplication]);
-
-      // Send confirmation email with tracking link
-      try {
-        await sendApplicationSubmittedEmail(
-          {
-            email: formData.email,
-            firstName: formData.firstName,
-            lastName: formData.lastName,
-            appliedPosition: job.position,
-            earliestStartDate: formData.earliestStartDate,
-            phone: formData.phone,
-          },
-          {
-            location: job.location,
-          }
-        );
-        console.log('Confirmation email sent successfully');
-      } catch (emailError) {
-        console.error('Failed to send confirmation email:', emailError);
-        // Don't fail the application submission if email fails
-      }
-
       setShowThankYou(true);
 
       toast({
         title: "Application Submitted!",
-        description: "Your application has been successfully submitted. Check your email for tracking information.",
+        description: "Your application has been successfully submitted. We'll be in touch soon.",
       });
 
     } catch (error) {
@@ -267,7 +239,6 @@ const ApplicationModal: React.FC<ApplicationModalProps> = ({ isOpen, onClose, jo
       additionalDocs: [],
     });
     setShowThankYou(false);
-    setTrackingToken('');
   };
 
   const handleClose = () => {
@@ -276,8 +247,6 @@ const ApplicationModal: React.FC<ApplicationModalProps> = ({ isOpen, onClose, jo
   };
 
   if (showThankYou) {
-    const trackingUrl = `${window.location.origin}/track/${trackingToken}`;
-    
     return (
       <Dialog open={isOpen} onOpenChange={handleClose}>
         <DialogContent className="max-w-md">
@@ -293,17 +262,8 @@ const ApplicationModal: React.FC<ApplicationModalProps> = ({ isOpen, onClose, jo
             <p className="text-gray-600 mb-6">
               Thank you for your interest in the {job.position} position. We've received your application and will be in touch soon.
             </p>
-            <div className="bg-gray-50 rounded-lg p-4 mb-6">
-              <p className="text-sm font-medium text-gray-900 mb-2">Track Your Application:</p>
-              <p className="text-xs text-gray-600 mb-3">
-                Use this link to check your application status anytime:
-              </p>
-              <div className="bg-white border rounded p-2 text-xs font-mono text-gray-800 break-all">
-                {trackingUrl}
-              </div>
-            </div>
             <p className="text-sm text-gray-500 mb-6">
-              You should receive a confirmation email with your tracking link shortly.
+              You should receive a confirmation email shortly.
             </p>
             <Button onClick={handleClose} className="w-full bg-primary hover:bg-primary/90">
               Close
