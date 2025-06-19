@@ -12,11 +12,12 @@ import {
   Clock,
   CheckCircle,
   XCircle,
-  Mail
+  Mail,
+  BookOpen
 } from 'lucide-react';
 import { useAppContext } from '@/contexts/AppContext';
 
-type AdminView = 'post-job' | 'manage-jobs' | 'submissions' | 'settings' | 'email-management';
+type AdminView = 'post-job' | 'manage-jobs' | 'submissions' | 'settings' | 'email-management' | 'guide-training';
 
 interface AdminSidebarProps {
   currentView: AdminView;
@@ -54,6 +55,11 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({ currentView, onViewChange }
       id: 'email-management' as AdminView,
       label: 'Email Management',
       icon: Mail,
+    },
+    {
+      id: 'guide-training' as AdminView,
+      label: 'Guide & Training',
+      icon: BookOpen,
     },
     {
       id: 'settings' as AdminView,

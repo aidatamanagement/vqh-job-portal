@@ -14,8 +14,9 @@ import ManageJobs from '@/components/admin/ManageJobs';
 import Submissions from '@/components/admin/Submissions';
 import Settings from '@/components/admin/Settings';
 import EmailManagement from '@/components/admin/EmailManagement';
+import GuideTraining from '@/components/admin/GuideTraining';
 
-type AdminView = 'post-job' | 'manage-jobs' | 'submissions' | 'settings' | 'email-management';
+type AdminView = 'post-job' | 'manage-jobs' | 'submissions' | 'settings' | 'email-management' | 'guide-training';
 
 const AdminDashboard: React.FC = () => {
   const { isAuthenticated, login, isLoading } = useAppContext();
@@ -154,6 +155,8 @@ const AdminDashboard: React.FC = () => {
         return <Submissions />;
       case 'email-management':
         return <EmailManagement />;
+      case 'guide-training':
+        return <GuideTraining />;
       case 'settings':
         return <Settings />;
       default:
