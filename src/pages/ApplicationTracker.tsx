@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -67,7 +66,22 @@ const ApplicationTracker: React.FC = () => {
         setApplication(null);
       } else {
         console.log('Application found:', data);
-        setApplication(data);
+        // Transform the data to match ApplicationData interface with proper type casting
+        const transformedApplication: ApplicationData = {
+          id: data.id,
+          first_name: data.first_name,
+          last_name: data.last_name,
+          email: data.email,
+          phone: data.phone,
+          applied_position: data.applied_position,
+          earliest_start_date: data.earliest_start_date,
+          city_state: data.city_state,
+          status: data.status as 'waiting' | 'approved' | 'rejected',
+          created_at: data.created_at,
+          updated_at: data.updated_at,
+          job_id: data.job_id,
+        };
+        setApplication(transformedApplication);
       }
       setSearched(true);
     } catch (error) {

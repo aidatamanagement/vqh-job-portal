@@ -94,6 +94,7 @@ export const useDataFetching = (user: User | null, userProfile: any | null) => {
         coverLetter: app.cover_letter,
         status: app.status as 'waiting' | 'approved' | 'rejected',
         additionalDocsUrls: app.additional_docs_urls || [],
+        trackingToken: app.tracking_token,
         createdAt: app.created_at,
         updatedAt: app.updated_at,
       }));
