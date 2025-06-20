@@ -228,7 +228,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
       </div>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {summaryCards.map((card, index) => {
           const Icon = card.icon;
           const TrendIcon = card.trendUp ? ArrowUpRight : ArrowDownRight;
