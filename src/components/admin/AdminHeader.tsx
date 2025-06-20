@@ -46,7 +46,7 @@ const AdminHeader: React.FC<AdminHeaderProps> = ({ onMenuClick }) => {
               <span className="text-white font-bold text-sm lg:text-lg">HC</span>
             </div>
             <div className="hidden sm:block">
-              <h1 className="text-base lg:text-lg font-bold text-gray-900">HospiceCare Admin</h1>
+              <h1 className="text-base lg:text-lg font-bold text-gray-900">ViaQuest Hospice</h1>
               <p className="text-xs text-gray-600">Administrative Dashboard</p>
             </div>
           </div>
