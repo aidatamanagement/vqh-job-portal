@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -22,7 +21,8 @@ import {
   Building,
   Award,
   Target,
-  Activity
+  Activity,
+  BarChart3
 } from 'lucide-react';
 import { useAppContext } from '@/contexts/AppContext';
 
@@ -218,25 +218,12 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
-          <p className="text-gray-600 mt-1">Welcome back! Here's your complete overview.</p>
+      <div className="flex items-center space-x-3 mb-8">
+        <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
+          <BarChart3 className="w-5 h-5 text-white" />
         </div>
-        <div className="flex items-center space-x-4">
-          <Button onClick={() => onNavigate('crm-reports')} variant="outline" className="flex items-center">
-            <Activity className="w-4 h-4 mr-2" />
-            View CRM Reports
-          </Button>
-          <div className="flex items-center space-x-2 text-sm text-gray-500">
-            <Calendar className="w-4 h-4" />
-            <span>{new Date().toLocaleDateString('en-US', { 
-              weekday: 'long', 
-              year: 'numeric', 
-              month: 'long', 
-              day: 'numeric' 
-            })}</span>
-          </div>
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
         </div>
       </div>
 

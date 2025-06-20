@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -163,24 +162,12 @@ const CrmReports: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">CRM Reports</h1>
-          <p className="text-gray-600 mt-1">Sales performance and customer relationship analytics</p>
+      <div className="flex items-center space-x-3 mb-8">
+        <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
+          <BarChart3 className="w-5 h-5 text-white" />
         </div>
-        <div className="flex items-center space-x-3">
-          <Button variant="outline" className="flex items-center">
-            <Filter className="w-4 h-4 mr-2" />
-            Filter
-          </Button>
-          <Button variant="outline" className="flex items-center">
-            <Download className="w-4 h-4 mr-2" />
-            Export
-          </Button>
-          <div className="flex items-center space-x-2 text-sm text-gray-500">
-            <Calendar className="w-4 h-4" />
-            <span>Last 30 days</span>
-          </div>
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">CRM Reports</h1>
         </div>
       </div>
 
