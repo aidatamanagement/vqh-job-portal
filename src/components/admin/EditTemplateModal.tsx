@@ -14,6 +14,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { Save, X, Eye, Edit } from 'lucide-react';
 import { EmailTemplate } from '@/types';
+import { generateEmailPreview, generateSubjectPreview } from '@/utils/emailPreviewUtils';
 
 interface EditTemplateModalProps {
   template: EmailTemplate | null;
@@ -38,30 +39,6 @@ const EditTemplateModal: React.FC<EditTemplateModalProps> = ({
       setHasUnsavedChanges(false);
     }
   }, [template]);
-
-  const generatePreview = (template: EmailTemplate) => {
-    let html = template.html_body;
-    
-    // Replace variables with sample data
-    const sampleData: Record<string, string> = {
-      firstName: 'John',
-      lastName: 'Doe',
-      position: 'Registered Nurse',
-      location: 'New York, NY',
-      email: 'john.doe@example.com',
-      phone: '(555) 123-4567',
-      earliestStartDate: 'January 15, 2024',
-      applicationDate: new Date().toLocaleDateString(),
-      adminUrl: '#'
-    };
-
-    Object.entries(sampleData).forEach(([key, value]) => {
-      const placeholder = `{{${key}}}`;
-      html = html.replace(new RegExp(placeholder, 'g'), value);
-    });
-
-    return html;
-  };
 
   const handleInputChange = (field: keyof EmailTemplate, value: string | boolean) => {
     if (editedTemplate) {
@@ -183,7 +160,7 @@ const EditTemplateModal: React.FC<EditTemplateModalProps> = ({
             <div>
               <h4 className="font-medium mb-2">Subject Preview</h4>
               <p className="text-sm bg-gray-50 p-3 rounded border">
-                {editedTemplate.subject.replace(/\{\{(\w+)\}\}/g, '[Sample $1]')}
+                {generateSubjectPreview(editedTemplate.subject)}
               </p>
             </div>
             
@@ -191,7 +168,7 @@ const EditTemplateModal: React.FC<EditTemplateModalProps> = ({
               <h4 className="font-medium mb-2">Content Preview</h4>
               <div 
                 className="border rounded-lg p-4 bg-white max-h-96 overflow-y-auto text-sm"
-                dangerouslySetInnerHTML={{ __html: generatePreview(editedTemplate) }}
+                dangerouslySetInnerHTML={{ __html: generateEmailPreview(editedTemplate) }}
               />
             </div>
           </TabsContent>
