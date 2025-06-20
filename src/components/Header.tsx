@@ -47,11 +47,11 @@ const Header: React.FC = () => {
             <span className="text-white font-bold text-sm md:text-lg">HC</span>
           </div>
           <div className="hidden sm:block">
-            <h1 className="text-xl md:text-2xl font-bold text-gray-900">HospiceCare</h1>
+            <h1 className="text-xl md:text-2xl font-bold text-gray-900">ViaQuest Hospice</h1>
             <p className="text-xs md:text-sm text-gray-600">Compassionate Career Opportunities</p>
           </div>
           <div className="sm:hidden">
-            <h1 className="text-lg font-bold text-gray-900">HospiceCare</h1>
+            <h1 className="text-lg font-bold text-gray-900">ViaQuest Hospice</h1>
           </div>
         </div>
 
