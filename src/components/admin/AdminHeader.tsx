@@ -43,7 +43,7 @@ const AdminHeader: React.FC<AdminHeaderProps> = ({ onMenuClick }) => {
             onClick={handleLogoClick}
           >
             <div className="w-8 h-8 lg:w-10 lg:h-10 bg-primary rounded-lg flex items-center justify-center group-hover:scale-105 transition-transform duration-200">
-              <span className="text-white font-bold text-sm lg:text-lg">HC</span>
+              <span className="text-white font-bold text-sm lg:text-lg">VQH</span>
             </div>
             <div className="hidden sm:block">
               <h1 className="text-base lg:text-lg font-bold text-gray-900">ViaQuest Hospice</h1>
