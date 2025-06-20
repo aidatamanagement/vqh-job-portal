@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -203,14 +202,6 @@ const EmailTemplates: React.FC = () => {
         </Button>
       </div>
 
-      {/* Debug Information Card */}
-      <Card className="p-4 bg-gray-50">
-        <h3 className="font-medium text-sm text-gray-700 mb-2">Debug Information:</h3>
-        <pre className="text-xs text-gray-600 overflow-auto">
-          {JSON.stringify(debugInfo, null, 2)}
-        </pre>
-      </Card>
-
       {error && (
         <Card className="p-4 border-red-200 bg-red-50">
           <h3 className="font-medium text-red-800 mb-2">Error Details:</h3>
@@ -227,7 +218,7 @@ const EmailTemplates: React.FC = () => {
             <h3 className="text-lg font-medium text-gray-900 mb-2">No Email Templates Found</h3>
             <p className="text-gray-600 mb-4">
               {error 
-                ? "There was an error loading templates. Check the debug information above."
+                ? "There was an error loading templates. Check the error message above."
                 : "Either no templates exist in the database, or there may be a permissions issue."
               }
             </p>
