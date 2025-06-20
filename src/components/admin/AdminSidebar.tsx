@@ -44,7 +44,7 @@ interface AdminSidebarProps {
 
 const AdminSidebar: React.FC<AdminSidebarProps> = ({ currentView, onViewChange }) => {
   const { jobs, applications } = useAppContext();
-  const [expandedMenus, setExpandedMenus] = useState<string[]>(['job-portal']);
+  const [expandedMenu, setExpandedMenu] = useState<string | null>('job-portal');
 
   const activeJobs = jobs.filter(job => job.isActive).length;
   const totalJobs = jobs.length;
@@ -52,11 +52,7 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({ currentView, onViewChange }
   const approvedApplications = applications.filter(app => app.status === 'approved').length;
 
   const toggleMenu = (menuId: string) => {
-    setExpandedMenus(prev => 
-      prev.includes(menuId) 
-        ? prev.filter(id => id !== menuId)
-        : [...prev, menuId]
-    );
+    setExpandedMenu(prev => prev === menuId ? null : menuId);
   };
 
   const menuItems = [
@@ -232,7 +228,7 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({ currentView, onViewChange }
 
             // Group menu
             const Icon = item.icon;
-            const isExpanded = expandedMenus.includes(item.id);
+            const isExpanded = expandedMenu === item.id;
             
             return (
               <div key={item.id} className="space-y-1">
