@@ -19,64 +19,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Plus, Video, Play, Filter, Upload, ExternalLink } from 'lucide-react';
-
-interface TrainingVideo {
-  id: string;
-  title: string;
-  description: string;
-  category: string;
-  role: string;
-  tag: 'mandatory' | 'optional';
-  type: 'youtube' | 'vimeo' | 'direct';
-  url: string;
-  duration: string;
-  viewCount: number;
-  uploadDate: string;
-}
+import { Plus, Video, Play, Filter, ExternalLink } from 'lucide-react';
+import { useAppContext } from '@/contexts/AppContext';
 
 const TrainingVideos: React.FC = () => {
-  const [videos, setVideos] = useState<TrainingVideo[]>([
-    {
-      id: '1',
-      title: 'Hospice Care Fundamentals',
-      description: 'Introduction to hospice care principles and patient-centered approach.',
-      category: 'Patient Care',
-      role: 'All Staff',
-      tag: 'mandatory',
-      type: 'youtube',
-      url: 'https://youtube.com/watch?v=example1',
-      duration: '15:30',
-      viewCount: 245,
-      uploadDate: '2024-01-10',
-    },
-    {
-      id: '2',
-      title: 'Pain Management Techniques',
-      description: 'Advanced pain management strategies for hospice patients.',
-      category: 'Clinical',
-      role: 'Nurses',
-      tag: 'mandatory',
-      type: 'vimeo',
-      url: 'https://vimeo.com/example2',
-      duration: '22:45',
-      viewCount: 187,
-      uploadDate: '2024-01-08',
-    },
-    {
-      id: '3',
-      title: 'Family Communication Skills',
-      description: 'Best practices for communicating with families during difficult times.',
-      category: 'Communication',
-      role: 'All Staff',
-      tag: 'optional',
-      type: 'direct',
-      url: '/videos/family-communication.mp4',
-      duration: '18:20',
-      viewCount: 156,
-      uploadDate: '2024-01-05',
-    },
-  ]);
+  const { 
+    trainingVideos, 
+    createTrainingVideo, 
+    updateTrainingVideo, 
+    deleteTrainingVideo 
+  } = useAppContext();
 
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [filterCategory, setFilterCategory] = useState<string>('all');
@@ -110,15 +62,15 @@ const TrainingVideos: React.FC = () => {
     setIsDialogOpen(true);
   };
 
-  const handleSave = () => {
-    const newVideo: TrainingVideo = {
-      id: Date.now().toString(),
+  const handleSave = async () => {
+    const success = await createTrainingVideo({
       ...formData,
-      viewCount: 0,
-      uploadDate: new Date().toISOString().split('T')[0],
-    };
-    setVideos(prev => [newVideo, ...prev]);
-    setIsDialogOpen(false);
+      view_count: 0,
+    });
+
+    if (success) {
+      setIsDialogOpen(false);
+    }
   };
 
   const getTagBadgeColor = (tag: string) => {
@@ -134,7 +86,7 @@ const TrainingVideos: React.FC = () => {
     }
   };
 
-  const filteredVideos = videos.filter(video => {
+  const filteredVideos = trainingVideos.filter(video => {
     return (
       (filterCategory === 'all' || video.category === filterCategory) &&
       (filterRole === 'all' || video.role === filterRole) &&
@@ -143,9 +95,9 @@ const TrainingVideos: React.FC = () => {
   });
 
   const getStats = () => {
-    const mandatory = videos.filter(v => v.tag === 'mandatory').length;
-    const optional = videos.filter(v => v.tag === 'optional').length;
-    const totalViews = videos.reduce((sum, v) => sum + v.viewCount, 0);
+    const mandatory = trainingVideos.filter(v => v.tag === 'mandatory').length;
+    const optional = trainingVideos.filter(v => v.tag === 'optional').length;
+    const totalViews = trainingVideos.reduce((sum, v) => sum + v.view_count, 0);
     return { mandatory, optional, totalViews };
   };
 
@@ -175,7 +127,7 @@ const TrainingVideos: React.FC = () => {
               <Video className="w-8 h-8 text-blue-500" />
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600">Total Videos</p>
-                <p className="text-2xl font-bold text-gray-900">{videos.length}</p>
+                <p className="text-2xl font-bold text-gray-900">{trainingVideos.length}</p>
               </div>
             </div>
           </CardContent>
@@ -306,12 +258,12 @@ const TrainingVideos: React.FC = () => {
                 
                 <div className="flex justify-between text-sm text-gray-500">
                   <span>Role: {video.role}</span>
-                  <span>{video.viewCount} views</span>
+                  <span>{video.view_count} views</span>
                 </div>
                 
                 <div className="flex justify-between items-center pt-3 border-t">
                   <span className="text-xs text-gray-400">
-                    Uploaded: {new Date(video.uploadDate).toLocaleDateString()}
+                    Uploaded: {new Date(video.created_at).toLocaleDateString()}
                   </span>
                   <div className="flex space-x-2">
                     <Button size="sm" variant="outline">

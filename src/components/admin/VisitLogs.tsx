@@ -28,51 +28,17 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Plus, MapPin, Calendar, Filter, Download, Eye } from 'lucide-react';
-
-interface VisitLog {
-  id: string;
-  salesperson: string;
-  locationName: string;
-  date: string;
-  time: string;
-  notes: string;
-  status: 'initial' | 'follow_up' | 'closed';
-  strength: 'strong' | 'medium' | 'weak';
-}
+import { useAppContext } from '@/contexts/AppContext';
+import { VisitLog } from '@/types';
 
 const VisitLogs: React.FC = () => {
-  const [visitLogs, setVisitLogs] = useState<VisitLog[]>([
-    {
-      id: '1',
-      salesperson: 'Sarah Johnson',
-      locationName: 'Memorial Hospital',
-      date: '2024-01-15',
-      time: '10:30',
-      notes: 'Initial meeting with nursing director. Very interested in our services. Scheduled follow-up for next week.',
-      status: 'follow_up',
-      strength: 'strong',
-    },
-    {
-      id: '2',
-      salesperson: 'Mike Chen',
-      locationName: 'Sunset Care Center',
-      date: '2024-01-14',
-      time: '14:00',
-      notes: 'Follow-up visit. Discussed pricing and implementation timeline. Some concerns about transition process.',
-      status: 'follow_up',
-      strength: 'medium',
-    },
-    {
-      id: '3',
-      salesperson: 'Emma Davis',
-      locationName: 'Regional Medical Center',
-      date: '2024-01-13',
-      time: '09:15',
-      notes: 'Cold call. Spoke with administrator. Not interested at this time. Budget constraints.',
-      status: 'closed',
-      strength: 'weak',
-    },
-  ]);
+  const { 
+    visitLogs, 
+    salespeople,
+    createVisitLog, 
+    updateVisitLog, 
+    deleteVisitLog 
+  } = useAppContext();
 
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedLog, setSelectedLog] = useState<VisitLog | null>(null);
@@ -80,24 +46,22 @@ const VisitLogs: React.FC = () => {
   const [filterStrength, setFilterStrength] = useState<string>('all');
   const [filterSalesperson, setFilterSalesperson] = useState<string>('all');
   const [formData, setFormData] = useState({
-    salesperson: '',
-    locationName: '',
-    date: '',
-    time: '',
+    salesperson_name: '',
+    location_name: '',
+    visit_date: '',
+    visit_time: '',
     notes: '',
     status: 'initial' as 'initial' | 'follow_up' | 'closed',
     strength: 'medium' as 'strong' | 'medium' | 'weak',
   });
 
-  const salespeople = ['Sarah Johnson', 'Mike Chen', 'Emma Davis'];
-
   const handleAddVisit = () => {
     setSelectedLog(null);
     setFormData({
-      salesperson: '',
-      locationName: '',
-      date: new Date().toISOString().split('T')[0],
-      time: new Date().toTimeString().slice(0, 5),
+      salesperson_name: '',
+      location_name: '',
+      visit_date: new Date().toISOString().split('T')[0],
+      visit_time: new Date().toTimeString().slice(0, 5),
       notes: '',
       status: 'initial',
       strength: 'medium',
@@ -105,13 +69,11 @@ const VisitLogs: React.FC = () => {
     setIsDialogOpen(true);
   };
 
-  const handleSave = () => {
-    const newLog: VisitLog = {
-      id: Date.now().toString(),
-      ...formData,
-    };
-    setVisitLogs(prev => [newLog, ...prev]);
-    setIsDialogOpen(false);
+  const handleSave = async () => {
+    const success = await createVisitLog(formData);
+    if (success) {
+      setIsDialogOpen(false);
+    }
   };
 
   const handleViewDetails = (log: VisitLog) => {
@@ -140,7 +102,7 @@ const VisitLogs: React.FC = () => {
     return (
       (filterStatus === 'all' || log.status === filterStatus) &&
       (filterStrength === 'all' || log.strength === filterStrength) &&
-      (filterSalesperson === 'all' || log.salesperson === filterSalesperson)
+      (filterSalesperson === 'all' || log.salesperson_name === filterSalesperson)
     );
   });
 
@@ -277,8 +239,8 @@ const VisitLogs: React.FC = () => {
                   <SelectContent>
                     <SelectItem value="all">All</SelectItem>
                     {salespeople.map((person) => (
-                      <SelectItem key={person} value={person}>
-                        {person}
+                      <SelectItem key={person.id} value={person.name}>
+                        {person.name}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -314,13 +276,13 @@ const VisitLogs: React.FC = () => {
                     <div className="flex items-center">
                       <Calendar className="w-4 h-4 mr-2 text-gray-500" />
                       <div>
-                        <div className="font-medium">{new Date(log.date).toLocaleDateString()}</div>
-                        <div className="text-sm text-gray-500">{log.time}</div>
+                        <div className="font-medium">{new Date(log.visit_date).toLocaleDateString()}</div>
+                        <div className="text-sm text-gray-500">{log.visit_time}</div>
                       </div>
                     </div>
                   </TableCell>
-                  <TableCell className="font-medium">{log.salesperson}</TableCell>
-                  <TableCell>{log.locationName}</TableCell>
+                  <TableCell className="font-medium">{log.salesperson_name}</TableCell>
+                  <TableCell>{log.location_name}</TableCell>
                   <TableCell>
                     <Badge className={getStatusBadgeColor(log.status)}>
                       {log.status.replace('_', ' ')}
@@ -365,8 +327,8 @@ const VisitLogs: React.FC = () => {
                 <Input
                   id="date"
                   type="date"
-                  value={formData.date}
-                  onChange={(e) => setFormData(prev => ({ ...prev, date: e.target.value }))}
+                  value={formData.visit_date}
+                  onChange={(e) => setFormData(prev => ({ ...prev, visit_date: e.target.value }))}
                 />
               </div>
               <div>
@@ -374,24 +336,24 @@ const VisitLogs: React.FC = () => {
                 <Input
                   id="time"
                   type="time"
-                  value={formData.time}
-                  onChange={(e) => setFormData(prev => ({ ...prev, time: e.target.value }))}
+                  value={formData.visit_time}
+                  onChange={(e) => setFormData(prev => ({ ...prev, visit_time: e.target.value }))}
                 />
               </div>
             </div>
             <div>
               <Label htmlFor="salesperson">Salesperson</Label>
               <Select
-                value={formData.salesperson}
-                onValueChange={(value) => setFormData(prev => ({ ...prev, salesperson: value }))}
+                value={formData.salesperson_name}
+                onValueChange={(value) => setFormData(prev => ({ ...prev, salesperson_name: value }))}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Select salesperson" />
                 </SelectTrigger>
                 <SelectContent>
                   {salespeople.map((person) => (
-                    <SelectItem key={person} value={person}>
-                      {person}
+                    <SelectItem key={person.id} value={person.name}>
+                      {person.name}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -401,8 +363,8 @@ const VisitLogs: React.FC = () => {
               <Label htmlFor="location">Location Name</Label>
               <Input
                 id="location"
-                value={formData.locationName}
-                onChange={(e) => setFormData(prev => ({ ...prev, locationName: e.target.value }))}
+                value={formData.location_name}
+                onChange={(e) => setFormData(prev => ({ ...prev, location_name: e.target.value }))}
                 placeholder="Enter location name"
               />
             </div>
@@ -477,20 +439,20 @@ const VisitLogs: React.FC = () => {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label>Date</Label>
-                  <p className="text-sm font-medium">{new Date(selectedLog.date).toLocaleDateString()}</p>
+                  <p className="text-sm font-medium">{new Date(selectedLog.visit_date).toLocaleDateString()}</p>
                 </div>
                 <div>
                   <Label>Time</Label>
-                  <p className="text-sm font-medium">{selectedLog.time}</p>
+                  <p className="text-sm font-medium">{selectedLog.visit_time}</p>
                 </div>
               </div>
               <div>
                 <Label>Salesperson</Label>
-                <p className="text-sm font-medium">{selectedLog.salesperson}</p>
+                <p className="text-sm font-medium">{selectedLog.salesperson_name}</p>
               </div>
               <div>
                 <Label>Location</Label>
-                <p className="text-sm font-medium">{selectedLog.locationName}</p>
+                <p className="text-sm font-medium">{selectedLog.location_name}</p>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>

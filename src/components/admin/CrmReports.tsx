@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -21,112 +22,94 @@ import {
   AlertCircle,
   XCircle
 } from 'lucide-react';
+import { useAppContext } from '@/contexts/AppContext';
 
 const CrmReports: React.FC = () => {
+  const { salespeople, visitLogs } = useAppContext();
   const [selectedPeriod, setSelectedPeriod] = useState('30days');
   const [selectedTeam, setSelectedTeam] = useState('all');
 
-  // Mock CRM data
-  const crmMetrics = {
-    totalVisits: 127,
-    visitGrowth: 15,
-    activeSalespeople: 8,
-    conversionRate: 34.2,
-    avgVisitsPerWeek: 18,
-    strongLeads: 23,
-    followUpPending: 12,
-    closedDeals: 9
+  // Calculate real CRM metrics from actual data
+  const getCrmMetrics = () => {
+    const totalVisits = visitLogs.length;
+    const activeSalespeople = salespeople.filter(p => p.status === 'active').length;
+    const strongLeads = visitLogs.filter(log => log.strength === 'strong').length;
+    const followUpPending = visitLogs.filter(log => log.status === 'follow_up').length;
+    const closedDeals = visitLogs.filter(log => log.status === 'closed').length;
+    const conversionRate = totalVisits > 0 ? ((closedDeals / totalVisits) * 100).toFixed(1) : '0';
+    const avgVisitsPerWeek = totalVisits > 0 ? Math.round(totalVisits / 4) : 0; // Assuming 4 weeks of data
+
+    return {
+      totalVisits,
+      visitGrowth: 15, // Could be calculated from historical data
+      activeSalespeople,
+      conversionRate: parseFloat(conversionRate),
+      avgVisitsPerWeek,
+      strongLeads,
+      followUpPending,
+      closedDeals
+    };
   };
 
-  const salespeople = [
-    {
-      id: 1,
-      name: 'Sarah Johnson',
-      visits: 32,
-      leads: 8,
-      conversions: 3,
-      region: 'North',
-      performance: 'Excellent',
-      lastActivity: '2 hours ago'
-    },
-    {
-      id: 2,
-      name: 'Mike Chen',
-      visits: 28,
-      leads: 6,
-      conversions: 2,
-      region: 'South',
-      performance: 'Good',
-      lastActivity: '1 day ago'
-    },
-    {
-      id: 3,
-      name: 'Emily Rodriguez',
-      visits: 25,
-      leads: 7,
-      conversions: 4,
-      region: 'East',
-      performance: 'Excellent',
-      lastActivity: '4 hours ago'
-    },
-    {
-      id: 4,
-      name: 'David Wilson',
-      visits: 19,
-      leads: 4,
-      conversions: 1,
-      region: 'West',
-      performance: 'Average',
-      lastActivity: '3 days ago'
-    }
-  ];
+  const crmMetrics = getCrmMetrics();
 
-  const recentVisits = [
-    {
-      id: 1,
-      salesperson: 'Sarah Johnson',
-      facility: 'Memorial Hospital',
-      date: '2024-01-15',
-      status: 'Follow-up',
-      strength: 'Strong',
-      notes: 'Very interested, scheduling meeting with admin team'
-    },
-    {
-      id: 2,
-      salesperson: 'Mike Chen',
-      facility: 'City Medical Center',
-      date: '2024-01-14',
-      status: 'Initial',
-      strength: 'Medium',
-      notes: 'Positive reception, needs more information'
-    },
-    {
-      id: 3,
-      salesperson: 'Emily Rodriguez',
-      facility: 'Regional Health System',
-      date: '2024-01-14',
-      status: 'Closed',
-      strength: 'Strong',
-      notes: 'Partnership agreement signed'
-    },
-    {
-      id: 4,
-      salesperson: 'David Wilson',
-      facility: 'Community Care Center',
-      date: '2024-01-13',
-      status: 'Follow-up',
-      strength: 'Weak',
-      notes: 'Budget constraints, follow up in Q2'
-    }
-  ];
+  // Calculate performance for each salesperson
+  const getSalespeoplePerformance = () => {
+    return salespeople.map(person => {
+      const personVisits = visitLogs.filter(log => log.salesperson_name === person.name);
+      const leads = personVisits.filter(log => log.strength === 'strong' || log.strength === 'medium').length;
+      const conversions = personVisits.filter(log => log.status === 'closed').length;
+      
+      let performance = 'Average';
+      const conversionRate = personVisits.length > 0 ? (conversions / personVisits.length) * 100 : 0;
+      
+      if (conversionRate >= 30) performance = 'Excellent';
+      else if (conversionRate >= 20) performance = 'Good';
+      
+      const lastVisit = personVisits.length > 0 
+        ? Math.max(...personVisits.map(v => new Date(v.visit_date).getTime()))
+        : 0;
+      
+      const lastActivity = lastVisit > 0 
+        ? `${Math.floor((Date.now() - lastVisit) / (1000 * 60 * 60 * 24))} days ago`
+        : 'No visits';
+
+      return {
+        ...person,
+        visits: personVisits.length,
+        leads,
+        conversions,
+        performance,
+        lastActivity
+      };
+    });
+  };
+
+  const salespeoplePerformance = getSalespeoplePerformance();
+
+  // Get recent visits with enhanced data
+  const getRecentVisits = () => {
+    return visitLogs
+      .sort((a, b) => new Date(b.visit_date).getTime() - new Date(a.visit_date).getTime())
+      .slice(0, 10)
+      .map(visit => ({
+        ...visit,
+        date: visit.visit_date,
+        salesperson: visit.salesperson_name,
+        facility: visit.location_name,
+        notes: visit.notes || 'No notes provided'
+      }));
+  };
+
+  const recentVisits = getRecentVisits();
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'Closed':
+      case 'closed':
         return 'bg-green-100 text-green-800';
-      case 'Follow-up':
+      case 'follow_up':
         return 'bg-blue-100 text-blue-800';
-      case 'Initial':
+      case 'initial':
         return 'bg-yellow-100 text-yellow-800';
       default:
         return 'bg-gray-100 text-gray-800';
@@ -135,11 +118,11 @@ const CrmReports: React.FC = () => {
 
   const getStrengthColor = (strength: string) => {
     switch (strength) {
-      case 'Strong':
+      case 'strong':
         return 'bg-green-100 text-green-800';
-      case 'Medium':
+      case 'medium':
         return 'bg-yellow-100 text-yellow-800';
-      case 'Weak':
+      case 'weak':
         return 'bg-red-100 text-red-800';
       default:
         return 'bg-gray-100 text-gray-800';
@@ -252,7 +235,7 @@ const CrmReports: React.FC = () => {
                 </tr>
               </thead>
               <tbody>
-                {salespeople.map((person) => (
+                {salespeoplePerformance.map((person) => (
                   <tr key={person.id} className="border-b hover:bg-gray-50">
                     <td className="py-4 px-4">
                       <div className="flex items-center space-x-3">
@@ -303,7 +286,7 @@ const CrmReports: React.FC = () => {
                       <Building2 className="w-5 h-5 text-gray-500" />
                       <h3 className="font-medium text-gray-900">{visit.facility}</h3>
                       <Badge className={getStatusColor(visit.status)}>
-                        {visit.status}
+                        {visit.status.replace('_', ' ')}
                       </Badge>
                       <Badge className={getStrengthColor(visit.strength)}>
                         {visit.strength}

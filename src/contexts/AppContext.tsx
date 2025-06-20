@@ -1,9 +1,11 @@
 
-import React, { createContext, useContext, useState } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
 import { AppContextType } from './types';
 import { useAuth } from './hooks/useAuth';
 import { useDataFetching } from './hooks/useDataFetching';
 import { useAdminOperations } from './hooks/useAdminOperations';
+import { useCrmDataFetching } from './hooks/useCrmDataFetching';
+import { useCrmOperations } from './hooks/useCrmOperations';
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
@@ -22,6 +24,23 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const auth = useAuth();
   const dataFetching = useDataFetching(auth.user, auth.userProfile);
   const adminOperations = useAdminOperations(dataFetching.fetchJobs, dataFetching.fetchMasterData);
+  const crmDataFetching = useCrmDataFetching(auth.user, auth.userProfile);
+  const crmOperations = useCrmOperations(
+    crmDataFetching.fetchSalespeople,
+    crmDataFetching.fetchVisitLogs,
+    crmDataFetching.fetchTrainingVideos
+  );
+
+  // Fetch CRM data when user and userProfile are available
+  useEffect(() => {
+    if (auth.user && auth.userProfile) {
+      if (auth.userProfile.role === 'admin') {
+        crmDataFetching.fetchSalespeople();
+        crmDataFetching.fetchVisitLogs();
+      }
+      crmDataFetching.fetchTrainingVideos();
+    }
+  }, [auth.user, auth.userProfile, crmDataFetching.fetchSalespeople, crmDataFetching.fetchVisitLogs, crmDataFetching.fetchTrainingVideos]);
 
   const value: AppContextType = {
     // Auth state
@@ -34,6 +53,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     logout: async () => {
       await auth.logout();
       dataFetching.setApplications([]);
+      crmDataFetching.setSalespeople([]);
+      crmDataFetching.setVisitLogs([]);
+      crmDataFetching.setTrainingVideos([]);
     },
     updateUserDisplayName: auth.updateUserDisplayName,
     
@@ -52,6 +74,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setLocations: dataFetching.setLocations,
     facilities: dataFetching.facilities,
     setFacilities: dataFetching.setFacilities,
+
+    // CRM and Training data
+    salespeople: crmDataFetching.salespeople,
+    setSalespeople: crmDataFetching.setSalespeople,
+    visitLogs: crmDataFetching.visitLogs,
+    setVisitLogs: crmDataFetching.setVisitLogs,
+    trainingVideos: crmDataFetching.trainingVideos,
+    setTrainingVideos: crmDataFetching.setTrainingVideos,
     
     // UI state
     isLoading: isLoading || auth.isLoading,
@@ -62,6 +92,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     fetchJobs: dataFetching.fetchJobs,
     fetchApplications: dataFetching.fetchApplications,
     fetchMasterData: dataFetching.fetchMasterData,
+    fetchSalespeople: crmDataFetching.fetchSalespeople,
+    fetchVisitLogs: crmDataFetching.fetchVisitLogs,
+    fetchTrainingVideos: crmDataFetching.fetchTrainingVideos,
     
     // Admin operations
     createJob: adminOperations.createJob,
@@ -73,6 +106,17 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     deleteLocation: adminOperations.deleteLocation,
     createFacility: adminOperations.createFacility,
     deleteFacility: adminOperations.deleteFacility,
+
+    // CRM operations
+    createSalesperson: crmOperations.createSalesperson,
+    updateSalesperson: crmOperations.updateSalesperson,
+    deleteSalesperson: crmOperations.deleteSalesperson,
+    createVisitLog: crmOperations.createVisitLog,
+    updateVisitLog: crmOperations.updateVisitLog,
+    deleteVisitLog: crmOperations.deleteVisitLog,
+    createTrainingVideo: crmOperations.createTrainingVideo,
+    updateTrainingVideo: crmOperations.updateTrainingVideo,
+    deleteTrainingVideo: crmOperations.deleteTrainingVideo,
   };
 
   return (

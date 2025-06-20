@@ -292,6 +292,140 @@ export type Database = {
         }
         Relationships: []
       }
+      salespeople: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          name: string
+          phone: string | null
+          region: string
+          role: string
+          status: string
+          updated_at: string
+          visits_this_month: number | null
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id?: string
+          name: string
+          phone?: string | null
+          region: string
+          role: string
+          status?: string
+          updated_at?: string
+          visits_this_month?: number | null
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          name?: string
+          phone?: string | null
+          region?: string
+          role?: string
+          status?: string
+          updated_at?: string
+          visits_this_month?: number | null
+        }
+        Relationships: []
+      }
+      training_videos: {
+        Row: {
+          category: string
+          created_at: string
+          description: string | null
+          duration: string | null
+          id: string
+          role: string
+          tag: string
+          title: string
+          type: string
+          updated_at: string
+          url: string
+          view_count: number | null
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          description?: string | null
+          duration?: string | null
+          id?: string
+          role: string
+          tag: string
+          title: string
+          type: string
+          updated_at?: string
+          url: string
+          view_count?: number | null
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          description?: string | null
+          duration?: string | null
+          id?: string
+          role?: string
+          tag?: string
+          title?: string
+          type?: string
+          updated_at?: string
+          url?: string
+          view_count?: number | null
+        }
+        Relationships: []
+      }
+      visit_logs: {
+        Row: {
+          created_at: string
+          id: string
+          location_name: string
+          notes: string | null
+          salesperson_id: string | null
+          salesperson_name: string
+          status: string
+          strength: string
+          updated_at: string
+          visit_date: string
+          visit_time: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          location_name: string
+          notes?: string | null
+          salesperson_id?: string | null
+          salesperson_name: string
+          status: string
+          strength: string
+          updated_at?: string
+          visit_date: string
+          visit_time: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          location_name?: string
+          notes?: string | null
+          salesperson_id?: string | null
+          salesperson_name?: string
+          status?: string
+          strength?: string
+          updated_at?: string
+          visit_date?: string
+          visit_time?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "visit_logs_salesperson_id_fkey"
+            columns: ["salesperson_id"]
+            isOneToOne: false
+            referencedRelation: "salespeople"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never

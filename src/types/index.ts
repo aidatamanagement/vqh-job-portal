@@ -1,3 +1,4 @@
+
 export interface Job {
   id: string;
   title: string;
@@ -88,4 +89,47 @@ export interface EmailLog {
   variables_used: Record<string, any>;
   sent_at?: string;
   created_at: string;
+}
+
+// New CRM and Training types
+export interface Salesperson {
+  id: string;
+  name: string;
+  email: string;
+  phone: string;
+  region: string;
+  role: 'manager' | 'sales_rep';
+  status: 'active' | 'inactive';
+  visits_this_month: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface VisitLog {
+  id: string;
+  salesperson_id?: string;
+  salesperson_name: string;
+  location_name: string;
+  visit_date: string;
+  visit_time: string;
+  notes?: string;
+  status: 'initial' | 'follow_up' | 'closed';
+  strength: 'strong' | 'medium' | 'weak';
+  created_at: string;
+  updated_at: string;
+}
+
+export interface TrainingVideo {
+  id: string;
+  title: string;
+  description?: string;
+  category: string;
+  role: string;
+  tag: 'mandatory' | 'optional';
+  type: 'youtube' | 'vimeo' | 'direct';
+  url: string;
+  duration?: string;
+  view_count: number;
+  created_at: string;
+  updated_at: string;
 }

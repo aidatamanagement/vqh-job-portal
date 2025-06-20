@@ -1,6 +1,15 @@
 
 import { User, Session } from '@supabase/supabase-js';
-import { Job, JobApplication, JobPosition, JobLocation, JobFacility } from '@/types';
+import { 
+  Job, 
+  JobApplication, 
+  JobPosition, 
+  JobLocation, 
+  JobFacility,
+  Salesperson,
+  VisitLog,
+  TrainingVideo
+} from '@/types';
 
 export interface AppContextType {
   // Auth state
@@ -9,37 +18,48 @@ export interface AppContextType {
   isAuthenticated: boolean;
   userProfile: any | null;
   login: (email: string, password: string) => Promise<boolean>;
-  signup: (email: string, password: string, displayName?: string) => Promise<{ success: boolean; error?: string }>;
+  signup: (email: string, password: string, displayName?: string) => Promise<boolean>;
   logout: () => Promise<void>;
-  updateUserDisplayName: (displayName: string) => void;
+  updateUserDisplayName: (displayName: string) => Promise<boolean>;
   
   // Jobs state
   jobs: Job[];
-  setJobs: React.Dispatch<React.SetStateAction<Job[]>>;
+  setJobs: (jobs: Job[]) => void;
   
   // Applications state
   applications: JobApplication[];
-  setApplications: React.Dispatch<React.SetStateAction<JobApplication[]>>;
+  setApplications: (applications: JobApplication[]) => void;
   
   // Master data
   positions: JobPosition[];
-  setPositions: React.Dispatch<React.SetStateAction<JobPosition[]>>;
+  setPositions: (positions: JobPosition[]) => void;
   locations: JobLocation[];
-  setLocations: React.Dispatch<React.SetStateAction<JobLocation[]>>;
+  setLocations: (locations: JobLocation[]) => void;
   facilities: JobFacility[];
-  setFacilities: React.Dispatch<React.SetStateAction<JobFacility[]>>;
+  setFacilities: (facilities: JobFacility[]) => void;
+
+  // CRM and Training data
+  salespeople: Salesperson[];
+  setSalespeople: (salespeople: Salesperson[]) => void;
+  visitLogs: VisitLog[];
+  setVisitLogs: (visitLogs: VisitLog[]) => void;
+  trainingVideos: TrainingVideo[];
+  setTrainingVideos: (trainingVideos: TrainingVideo[]) => void;
   
   // UI state
   isLoading: boolean;
-  setIsLoading: React.Dispatch<React.SetStateAction<boolean>>;
+  setIsLoading: (loading: boolean) => void;
   isDataLoading: boolean;
   
   // Data fetching functions
   fetchJobs: () => Promise<void>;
   fetchApplications: () => Promise<void>;
   fetchMasterData: () => Promise<void>;
+  fetchSalespeople: () => Promise<void>;
+  fetchVisitLogs: () => Promise<void>;
+  fetchTrainingVideos: () => Promise<void>;
   
-  // Database operations for admin
+  // Admin operations
   createJob: (jobData: Omit<Job, 'id' | 'createdAt' | 'updatedAt'>) => Promise<boolean>;
   updateJob: (jobId: string, jobData: Partial<Job>) => Promise<boolean>;
   deleteJob: (jobId: string) => Promise<boolean>;
@@ -49,4 +69,15 @@ export interface AppContextType {
   deleteLocation: (id: string) => Promise<boolean>;
   createFacility: (name: string) => Promise<boolean>;
   deleteFacility: (id: string) => Promise<boolean>;
+
+  // CRM operations
+  createSalesperson: (data: Omit<Salesperson, 'id' | 'created_at' | 'updated_at'>) => Promise<boolean>;
+  updateSalesperson: (id: string, data: Partial<Salesperson>) => Promise<boolean>;
+  deleteSalesperson: (id: string) => Promise<boolean>;
+  createVisitLog: (data: Omit<VisitLog, 'id' | 'created_at' | 'updated_at'>) => Promise<boolean>;
+  updateVisitLog: (id: string, data: Partial<VisitLog>) => Promise<boolean>;
+  deleteVisitLog: (id: string) => Promise<boolean>;
+  createTrainingVideo: (data: Omit<TrainingVideo, 'id' | 'created_at' | 'updated_at'>) => Promise<boolean>;
+  updateTrainingVideo: (id: string, data: Partial<TrainingVideo>) => Promise<boolean>;
+  deleteTrainingVideo: (id: string) => Promise<boolean>;
 }

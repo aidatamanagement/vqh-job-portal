@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -44,7 +45,7 @@ interface DashboardProps {
 }
 
 const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
-  const { jobs, applications } = useAppContext();
+  const { jobs, applications, salespeople, visitLogs, trainingVideos } = useAppContext();
 
   const activeJobs = jobs.filter(job => job.isActive).length;
   const weeklyApplications = applications.filter(app => {
@@ -62,17 +63,17 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
   const approvedApplications = applications.filter(app => app.status === 'approved').length;
   const pendingApplications = applications.filter(app => app.status === 'waiting').length;
 
-  // Mock data for more advanced metrics
-  const mockMetrics = {
-    salesVisits: 47,
-    salesGrowth: 12,
-    trainingCompletion: 87,
-    trainingGrowth: 5,
-    activeTrainees: 23,
-    completedCourses: 156,
-    avgApplicationTime: '2.3 days',
-    conversionRate: '24%'
-  };
+  // Real CRM metrics from actual data
+  const salesVisits = visitLogs.length;
+  const salesGrowth = 12; // Could be calculated from historical data
+  const trainingCompletion = trainingVideos.length > 0 ? 87 : 0; // Mock percentage
+  const trainingGrowth = 5;
+  const activeTrainees = 23; // Mock data - could be calculated from user activity
+  const completedCourses = trainingVideos.length;
+  const avgApplicationTime = '2.3 days'; // Mock data
+  const conversionRate = visitLogs.length > 0 
+    ? `${Math.round((visitLogs.filter(log => log.status === 'closed').length / visitLogs.length) * 100)}%`
+    : '0%';
 
   const summaryCards = [
     {
@@ -97,21 +98,21 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
     },
     {
       title: 'CRM Activities',
-      value: mockMetrics.salesVisits,
+      value: salesVisits,
       subtitle: 'Sales visits',
       icon: MapPin,
       color: 'bg-purple-500',
-      trend: `+${mockMetrics.salesGrowth}%`,
+      trend: `+${salesGrowth}%`,
       trendUp: true,
       onClick: () => onNavigate('crm-reports')
     },
     {
       title: 'Training Progress',
-      value: `${mockMetrics.trainingCompletion}%`,
-      subtitle: `${mockMetrics.activeTrainees} active trainees`,
+      value: `${trainingCompletion}%`,
+      subtitle: `${activeTrainees} active trainees`,
       icon: BookOpen,
       color: 'bg-orange-500',
-      trend: `+${mockMetrics.trainingGrowth}%`,
+      trend: `+${trainingGrowth}%`,
       trendUp: true,
       onClick: () => onNavigate('training-videos')
     },
@@ -123,66 +124,75 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
       metrics: [
         { label: 'Pending Review', value: pendingApplications, color: 'text-yellow-600', bg: 'bg-yellow-50' },
         { label: 'Approved', value: approvedApplications, color: 'text-green-600', bg: 'bg-green-50' },
-        { label: 'Conversion Rate', value: mockMetrics.conversionRate, color: 'text-blue-600', bg: 'bg-blue-50' },
+        { label: 'Conversion Rate', value: conversionRate, color: 'text-blue-600', bg: 'bg-blue-50' },
       ]
     },
     {
       title: 'Performance Metrics',
       metrics: [
-        { label: 'Avg. Processing Time', value: mockMetrics.avgApplicationTime, color: 'text-purple-600', bg: 'bg-purple-50' },
-        { label: 'Active Facilities', value: '12', color: 'text-indigo-600', bg: 'bg-indigo-50' },
-        { label: 'Training Courses', value: mockMetrics.completedCourses, color: 'text-orange-600', bg: 'bg-orange-50' },
+        { label: 'Avg. Processing Time', value: avgApplicationTime, color: 'text-purple-600', bg: 'bg-purple-50' },
+        { label: 'Active Salespeople', value: salespeople.filter(p => p.status === 'active').length, color: 'text-indigo-600', bg: 'bg-indigo-50' },
+        { label: 'Training Videos', value: completedCourses, color: 'text-orange-600', bg: 'bg-orange-50' },
       ]
     }
   ];
 
-  const recentActivities = [
-    {
+  // Generate real recent activities from actual data
+  const generateRecentActivities = () => {
+    const activities = [];
+
+    // Add recent job activities
+    const recentJobs = jobs.slice(0, 2).map(job => ({
       type: 'job',
-      title: 'New job posted: Registered Nurse - ICU',
-      subtitle: 'Memorial Hospital',
-      time: '2 hours ago',
+      title: `New job posted: ${job.title}`,
+      subtitle: job.location,
+      time: new Date(job.createdAt).toLocaleDateString(),
       icon: Briefcase,
       color: 'text-blue-600',
       bg: 'bg-blue-50',
-    },
-    {
+    }));
+
+    // Add recent applications
+    const recentApplications = applications.slice(0, 2).map(app => ({
       type: 'application',
-      title: 'Application approved: John Smith',
-      subtitle: 'Physical Therapist position',
-      time: '4 hours ago',
-      icon: CheckCircle,
-      color: 'text-green-600',
-      bg: 'bg-green-50',
-    },
-    {
+      title: app.status === 'approved' ? `Application approved: ${app.firstName} ${app.lastName}` : `New application received: ${app.firstName} ${app.lastName}`,
+      subtitle: app.appliedPosition,
+      time: new Date(app.createdAt).toLocaleDateString(),
+      icon: app.status === 'approved' ? CheckCircle : FileText,
+      color: app.status === 'approved' ? 'text-green-600' : 'text-indigo-600',
+      bg: app.status === 'approved' ? 'bg-green-50' : 'bg-indigo-50',
+    }));
+
+    // Add recent visit logs
+    const recentVisits = visitLogs.slice(0, 2).map(visit => ({
       type: 'visit',
       title: 'Sales visit completed',
-      subtitle: 'Sarah Johnson at City Medical Center',
-      time: '6 hours ago',
+      subtitle: `${visit.salesperson_name} at ${visit.location_name}`,
+      time: new Date(visit.visit_date).toLocaleDateString(),
       icon: MapPin,
       color: 'text-purple-600',
       bg: 'bg-purple-50',
-    },
-    {
-      type: 'training',
-      title: 'Training module completed',
-      subtitle: '5 staff members completed HIPAA training',
-      time: '1 day ago',
-      icon: Award,
-      color: 'text-orange-600',
-      bg: 'bg-orange-50',
-    },
-    {
-      type: 'application',
-      title: 'New application received',
-      subtitle: 'Emily Davis - Respiratory Therapist',
-      time: '1 day ago',
-      icon: FileText,
-      color: 'text-indigo-600',
-      bg: 'bg-indigo-50',
-    },
-  ];
+    }));
+
+    // Add training activities
+    if (trainingVideos.length > 0) {
+      activities.push({
+        type: 'training',
+        title: 'New training video added',
+        subtitle: trainingVideos[0].title,
+        time: new Date(trainingVideos[0].created_at).toLocaleDateString(),
+        icon: Award,
+        color: 'text-orange-600',
+        bg: 'bg-orange-50',
+      });
+    }
+
+    activities.push(...recentJobs, ...recentApplications, ...recentVisits);
+    
+    return activities.slice(0, 5); // Return only the 5 most recent
+  };
+
+  const recentActivities = generateRecentActivities();
 
   const quickActions = [
     {

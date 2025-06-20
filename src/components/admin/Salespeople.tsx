@@ -10,7 +10,6 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from '@/components/ui/dialog';
 import {
   Select,
@@ -28,51 +27,16 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Plus, Edit, Trash2, Users, MapPin, Phone, Mail } from 'lucide-react';
-
-interface Salesperson {
-  id: string;
-  name: string;
-  email: string;
-  phone: string;
-  region: string;
-  role: 'manager' | 'sales_rep';
-  status: 'active' | 'inactive';
-  visitsThisMonth: number;
-}
+import { useAppContext } from '@/contexts/AppContext';
+import { Salesperson } from '@/types';
 
 const Salespeople: React.FC = () => {
-  const [salespeople, setSalespeople] = useState<Salesperson[]>([
-    {
-      id: '1',
-      name: 'Sarah Johnson',
-      email: 'sarah.johnson@company.com',
-      phone: '(555) 123-4567',
-      region: 'North Zone',
-      role: 'manager',
-      status: 'active',
-      visitsThisMonth: 15,
-    },
-    {
-      id: '2',
-      name: 'Mike Chen',
-      email: 'mike.chen@company.com',
-      phone: '(555) 234-5678',
-      region: 'South Zone',
-      role: 'sales_rep',
-      status: 'active',
-      visitsThisMonth: 12,
-    },
-    {
-      id: '3',
-      name: 'Emma Davis',
-      email: 'emma.davis@company.com',
-      phone: '(555) 345-6789',
-      region: 'East Zone',
-      role: 'sales_rep',
-      status: 'active',
-      visitsThisMonth: 8,
-    },
-  ]);
+  const { 
+    salespeople, 
+    createSalesperson, 
+    updateSalesperson, 
+    deleteSalesperson 
+  } = useAppContext();
 
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingSalesperson, setEditingSalesperson] = useState<Salesperson | null>(null);
@@ -113,26 +77,25 @@ const Salespeople: React.FC = () => {
     setIsDialogOpen(true);
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
+    let success = false;
+    
     if (editingSalesperson) {
-      setSalespeople(prev => prev.map(person => 
-        person.id === editingSalesperson.id 
-          ? { ...person, ...formData }
-          : person
-      ));
+      success = await updateSalesperson(editingSalesperson.id, formData);
     } else {
-      const newPerson: Salesperson = {
-        id: Date.now().toString(),
+      success = await createSalesperson({
         ...formData,
-        visitsThisMonth: 0,
-      };
-      setSalespeople(prev => [...prev, newPerson]);
+        visits_this_month: 0,
+      });
     }
-    setIsDialogOpen(false);
+
+    if (success) {
+      setIsDialogOpen(false);
+    }
   };
 
-  const handleDelete = (id: string) => {
-    setSalespeople(prev => prev.filter(person => person.id !== id));
+  const handleDelete = async (id: string) => {
+    await deleteSalesperson(id);
   };
 
   const getRoleBadgeColor = (role: string) => {
@@ -210,7 +173,7 @@ const Salespeople: React.FC = () => {
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600">Total Visits</p>
                 <p className="text-2xl font-bold text-gray-900">
-                  {salespeople.reduce((sum, p) => sum + p.visitsThisMonth, 0)}
+                  {salespeople.reduce((sum, p) => sum + p.visits_this_month, 0)}
                 </p>
               </div>
             </div>
@@ -266,7 +229,7 @@ const Salespeople: React.FC = () => {
                     </Badge>
                   </TableCell>
                   <TableCell>
-                    <span className="font-semibold">{person.visitsThisMonth}</span>
+                    <span className="font-semibold">{person.visits_this_month}</span>
                   </TableCell>
                   <TableCell>
                     <div className="flex space-x-2">
