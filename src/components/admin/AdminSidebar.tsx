@@ -55,11 +55,6 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({ currentView, onViewChange }
     setExpandedMenu(prev => prev === menuId ? null : menuId);
   };
 
-  // Helper function to check if any child in a group is active
-  const isGroupActive = (children: any[]) => {
-    return children.some(child => child.view === currentView);
-  };
-
   const menuItems = [
     {
       id: 'dashboard',
@@ -234,47 +229,29 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({ currentView, onViewChange }
             // Group menu
             const Icon = item.icon;
             const isExpanded = expandedMenu === item.id;
-            const hasActiveChild = item.children && isGroupActive(item.children);
             
             return (
-              <div 
-                key={item.id} 
-                className={`space-y-1 rounded-lg transition-colors duration-200 ${
-                  hasActiveChild ? 'bg-primary/5 border border-primary/20' : ''
-                }`}
-              >
+              <div key={item.id} className="space-y-1">
                 <Button
                   variant="ghost"
                   onClick={() => toggleMenu(item.id)}
-                  className={`w-full justify-between p-3 lg:p-4 h-auto transition-colors duration-200 ${
-                    hasActiveChild 
-                      ? 'text-primary hover:bg-primary/10' 
-                      : 'text-gray-700 hover:bg-gray-100'
-                  }`}
+                  className="w-full justify-between p-3 lg:p-4 h-auto text-gray-700 hover:bg-gray-100"
                 >
                   <div className="flex items-center space-x-2 lg:space-x-3">
-                    <Icon className={`w-4 h-4 lg:w-5 lg:h-5 ${
-                      hasActiveChild ? 'text-primary' : 'text-gray-500'
-                    }`} />
-                    <div className={`font-medium text-sm lg:text-base ${
-                      hasActiveChild ? 'text-primary' : 'text-gray-900'
-                    }`}>
+                    <Icon className="w-4 h-4 lg:w-5 lg:h-5 text-gray-500" />
+                    <div className="font-medium text-sm lg:text-base text-gray-900">
                       {item.label}
                     </div>
                   </div>
                   {isExpanded ? (
-                    <ChevronDown className={`w-4 h-4 ${
-                      hasActiveChild ? 'text-primary' : 'text-gray-500'
-                    }`} />
+                    <ChevronDown className="w-4 h-4 text-gray-500" />
                   ) : (
-                    <ChevronRight className={`w-4 h-4 ${
-                      hasActiveChild ? 'text-primary' : 'text-gray-500'
-                    }`} />
+                    <ChevronRight className="w-4 h-4 text-gray-500" />
                   )}
                 </Button>
                 
                 {isExpanded && (
-                  <div className="ml-4 space-y-1 pb-2">
+                  <div className="ml-4 space-y-1">
                     {item.children?.map((child) => {
                       const ChildIcon = child.icon;
                       const isChildActive = currentView === child.view;
