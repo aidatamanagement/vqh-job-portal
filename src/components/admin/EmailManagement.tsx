@@ -11,9 +11,12 @@ const EmailManagement: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-2xl font-bold text-gray-900">Email Management</h2>
-        <p className="text-gray-600">Manage email templates, logs, and delivery settings</p>
+      {/* Header */}
+      <div className="flex items-center gap-3 animate-fade-in-up">
+        <div className="p-2 rounded-lg" style={{ backgroundColor: '#005586' }}>
+          <Mail className="w-6 h-6 text-white" />
+        </div>
+        <h1 className="font-bold text-gray-900 text-lg sm:text-xl lg:text-2xl">Email & Config</h1>
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
