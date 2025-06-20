@@ -182,14 +182,14 @@ const ManageJobs: React.FC = () => {
   // Show loading state while data is being fetched
   if (isDataLoading) {
     return (
-      <div className="space-y-4 lg:space-y-6 p-2 sm:p-0">
+      <div className="space-y-6 animate-slide-up">
         {/* Header */}
-        <div className="flex items-center space-x-3 animate-fade-in-up">
-          <div className="w-8 h-8 lg:w-10 lg:h-10 bg-primary rounded-lg flex items-center justify-center">
-            <Briefcase className="w-4 h-4 lg:w-6 lg:h-6 text-white" />
-          </div>
-          <div>
-            <h1 className="font-bold text-gray-900" style={{ fontSize: '1.3rem' }}>Manage Jobs</h1>
+        <div className="flex justify-between items-center">
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-lg" style={{ backgroundColor: '#005586' }}>
+              <Briefcase className="w-6 h-6 text-white" />
+            </div>
+            <h1 className="font-bold text-gray-900 text-lg sm:text-xl lg:text-2xl">Manage Jobs</h1>
           </div>
         </div>
 
@@ -207,14 +207,14 @@ const ManageJobs: React.FC = () => {
   }
 
   return (
-    <div className="space-y-4 lg:space-y-6 p-2 sm:p-0">
+    <div className="space-y-6 animate-slide-up">
       {/* Header */}
-      <div className="flex items-center space-x-3 animate-fade-in-up">
-        <div className="w-8 h-8 lg:w-10 lg:h-10 bg-primary rounded-lg flex items-center justify-center">
-          <Briefcase className="w-4 h-4 lg:w-6 lg:h-6 text-white" />
-        </div>
-        <div>
-          <h1 className="font-bold text-gray-900" style={{ fontSize: '1.3rem' }}>Manage Jobs</h1>
+      <div className="flex justify-between items-center">
+        <div className="flex items-center gap-3">
+          <div className="p-2 rounded-lg" style={{ backgroundColor: '#005586' }}>
+            <Briefcase className="w-6 h-6 text-white" />
+          </div>
+          <h1 className="font-bold text-gray-900 text-lg sm:text-xl lg:text-2xl">Manage Jobs</h1>
         </div>
       </div>
 
