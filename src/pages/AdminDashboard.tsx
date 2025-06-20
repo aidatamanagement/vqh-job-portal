@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useAppContext } from '@/contexts/AppContext';
 import AdminHeader from '@/components/admin/AdminHeader';
@@ -12,6 +13,7 @@ import Salespeople from '@/components/admin/Salespeople';
 import VisitLogs from '@/components/admin/VisitLogs';
 import TrainingVideos from '@/components/admin/TrainingVideos';
 import CrmReports from '@/components/admin/CrmReports';
+import GuideTraining from '@/components/admin/GuideTraining';
 
 type AdminView = 
   | 'dashboard'
@@ -53,7 +55,7 @@ const AdminDashboard: React.FC = () => {
       case 'email-management':
         return <EmailManagement />;
       case 'guide-training':
-        return <TrainingVideos />;
+        return <GuideTraining />;
       case 'salespeople':
         return <Salespeople />;
       case 'visit-logs':

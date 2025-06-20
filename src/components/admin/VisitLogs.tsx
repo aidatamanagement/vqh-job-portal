@@ -156,10 +156,12 @@ const VisitLogs: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Visit Logs</h1>
-          <p className="text-gray-600 mt-1">Track and manage sales visits and follow-ups</p>
+      <div className="flex items-center space-x-3 mb-8">
+        <div className="w-10 h-10 bg-gray-900 rounded-lg flex items-center justify-center">
+          <MapPin className="w-5 h-5 text-white" />
+        </div>
+        <div className="flex-1">
+          <h1 className="text-2xl font-bold text-gray-900">Visit Logs</h1>
         </div>
         <div className="flex space-x-2">
           <Button variant="outline">

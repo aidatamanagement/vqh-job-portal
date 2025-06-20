@@ -80,12 +80,11 @@ const GuideTraining: React.FC = () => {
     <div className="space-y-6 animate-slide-up">
       {/* Page Header */}
       <div className="flex items-center space-x-3 mb-8">
-        <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
-          <BookOpen className="w-5 h-5 text-primary" />
+        <div className="w-10 h-10 bg-gray-900 rounded-lg flex items-center justify-center">
+          <BookOpen className="w-5 h-5 text-white" />
         </div>
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Guide & Training</h1>
-          <p className="text-gray-600">Learn how to effectively manage the admin portal</p>
         </div>
       </div>
 
