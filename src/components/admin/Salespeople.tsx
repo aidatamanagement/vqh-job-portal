@@ -146,15 +146,11 @@ const Salespeople: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center gap-3 animate-fade-in-up">
-        <div className="p-2 rounded-lg" style={{ backgroundColor: '#005586' }}>
-          <Users className="w-6 h-6 text-white" />
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">Salespeople Management</h1>
+          <p className="text-gray-600 mt-1">Manage your sales team and territory assignments</p>
         </div>
-        <h1 className="font-bold text-gray-900 text-lg sm:text-xl lg:text-2xl">Salespeople</h1>
-      </div>
-
-      {/* Add Button */}
-      <div className="flex justify-end">
         <Button onClick={handleAddSalesperson} className="bg-primary hover:bg-primary/90">
           <Plus className="w-4 h-4 mr-2" />
           Add Salesperson
