@@ -36,10 +36,14 @@ const AdminDashboard: React.FC = () => {
     return null;
   }
 
+  const handleNavigate = (view: AdminView) => {
+    setCurrentView(view);
+  };
+
   const renderContent = () => {
     switch (currentView) {
       case 'dashboard':
-        return <Dashboard onNavigate={setCurrentView} />;
+        return <Dashboard onNavigate={handleNavigate} />;
       case 'post-job':
         return <PostJob />;
       case 'manage-jobs':
@@ -59,7 +63,7 @@ const AdminDashboard: React.FC = () => {
       case 'settings':
         return <Settings />;
       default:
-        return <Dashboard onNavigate={setCurrentView} />;
+        return <Dashboard onNavigate={handleNavigate} />;
     }
   };
 

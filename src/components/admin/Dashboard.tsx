@@ -18,8 +18,21 @@ import {
 } from 'lucide-react';
 import { useAppContext } from '@/contexts/AppContext';
 
+type AdminView = 
+  | 'dashboard'
+  | 'post-job' 
+  | 'manage-jobs' 
+  | 'submissions' 
+  | 'settings' 
+  | 'email-management' 
+  | 'guide-training'
+  | 'salespeople'
+  | 'visit-logs'
+  | 'crm-reports'
+  | 'training-videos';
+
 interface DashboardProps {
-  onNavigate: (view: string) => void;
+  onNavigate: (view: AdminView) => void;
 }
 
 const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
@@ -29,7 +42,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
   const weeklyApplications = applications.filter(app => {
     const oneWeekAgo = new Date();
     oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
-    return new Date(app.applicationDate) > oneWeekAgo;
+    return new Date(app.createdAt) > oneWeekAgo;
   }).length;
 
   const summaryCards = [
