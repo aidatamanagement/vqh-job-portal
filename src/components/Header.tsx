@@ -44,7 +44,7 @@ const Header: React.FC = () => {
         {/* Logo and Title */}
         <div className="flex items-center space-x-3 cursor-pointer group" onClick={handleLogoClick}>
           <div className="w-8 h-8 md:w-10 md:h-10 bg-primary rounded-lg flex items-center justify-center group-hover:scale-105 transition-transform duration-200">
-            <span className="text-white font-bold text-sm md:text-lg">HC</span>
+            <span className="text-white font-bold text-sm md:text-lg">VQH</span>
           </div>
           <div className="hidden sm:block">
             <h1 className="text-xl md:text-2xl font-bold text-gray-900">ViaQuest Hospice</h1>
