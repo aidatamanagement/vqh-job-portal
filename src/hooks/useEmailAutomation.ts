@@ -83,13 +83,11 @@ export const useEmailAutomation = () => {
 
   const sendApplicationStatusEmail = async (
     application: {
-      id: string;
       email: string;
       firstName: string;
       lastName: string;
       appliedPosition: string;
       status: string;
-      trackingToken?: string;
     }
   ) => {
     try {
@@ -99,21 +97,15 @@ export const useEmailAutomation = () => {
         position: application.appliedPosition
       });
 
-      // Generate tracking URL for approved applications
-      const trackingUrl = application.trackingToken ? 
-        `${window.location.origin}/track/${application.trackingToken}` : '';
-
       const variables: EmailVariables = {
         firstName: application.firstName,
         lastName: application.lastName,
-        position: application.appliedPosition,
-        trackingToken: application.trackingToken || '',
-        trackingUrl: trackingUrl
+        position: application.appliedPosition
       };
 
       const templateSlug = application.status === 'approved' ? 'application_approved' : 'application_rejected';
       
-      console.log('Using template:', templateSlug, 'with tracking:', trackingUrl);
+      console.log('Using template:', templateSlug);
       return await sendEmail(templateSlug, application.email, variables);
     } catch (error) {
       console.error('Error in sendApplicationStatusEmail:', error);
