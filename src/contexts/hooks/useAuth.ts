@@ -138,7 +138,7 @@ export const useAuth = () => {
     setIsLoading(false);
   };
 
-  const updateUserDisplayName = async (displayName: string) => {
+  const updateUserDisplayName = async (displayName: string): Promise<void> => {
     if (!user) return;
     
     try {

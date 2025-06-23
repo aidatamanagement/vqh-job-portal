@@ -18,9 +18,9 @@ export interface AppContextType {
   isAuthenticated: boolean;
   userProfile: any | null;
   login: (email: string, password: string) => Promise<boolean>;
-  signup: (email: string, password: string, displayName?: string) => Promise<boolean>;
+  signup: (email: string, password: string, displayName?: string) => Promise<{ success: boolean; error?: string }>;
   logout: () => Promise<void>;
-  updateUserDisplayName: (displayName: string) => Promise<boolean>;
+  updateUserDisplayName: (displayName: string) => Promise<void>;
   
   // Jobs state
   jobs: Job[];
@@ -28,7 +28,7 @@ export interface AppContextType {
   
   // Applications state
   applications: JobApplication[];
-  setApplications: (applications: JobApplication[]) => void;
+  setApplications: (applications: JobApplication[] | ((prev: JobApplication[]) => JobApplication[])) => void;
   
   // Master data
   positions: JobPosition[];
