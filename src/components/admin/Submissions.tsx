@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -26,6 +27,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import { CheckCircle, XCircle } from 'lucide-react';
+import { useEmailAutomation } from '@/hooks/useEmailAutomation';
 
 interface Application {
   id: string;
@@ -50,6 +52,7 @@ const Submissions: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const queryClient = useQueryClient();
+  const { sendApplicationStatusEmail } = useEmailAutomation();
 
   const { isLoading, error, data: applications, refetch } = useQuery({
     queryKey: ['applications', searchQuery, statusFilter],
@@ -66,7 +69,7 @@ const Submissions: React.FC = () => {
         .order('created_at', { ascending: false });
 
       if (searchQuery) {
-        query = query.ilike('firstName', `%${searchQuery}%');
+        query = query.ilike('firstName', `%${searchQuery}%`);
       }
 
       if (statusFilter) {
@@ -83,8 +86,6 @@ const Submissions: React.FC = () => {
       return data as Application[];
     },
   });
-
-  const { sendApplicationStatusEmail } = useEmailAutomation();
 
   const updateApplicationStatus = async (applicationId: string, newStatus: string) => {
     try {
@@ -125,7 +126,7 @@ const Submissions: React.FC = () => {
             lastName: updatedApplication.lastName,
             appliedPosition: updatedApplication.appliedPosition,
             status: newStatus,
-            trackingToken: updatedApplication.tracking_token // Pass the tracking token
+            trackingToken: updatedApplication.tracking_token
           });
           
           toast({
@@ -134,7 +135,6 @@ const Submissions: React.FC = () => {
           });
         } catch (emailError) {
           console.error('Failed to send status email:', emailError);
-          // Don't throw here - status update was successful, just email failed
           toast({
             title: "Status Updated",
             description: `Application ${newStatus} but failed to send email notification`,
@@ -148,7 +148,6 @@ const Submissions: React.FC = () => {
         });
       }
 
-      // Refresh the applications list
       refetch();
 
     } catch (error) {
