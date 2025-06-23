@@ -5,6 +5,7 @@ import { Inbox } from 'lucide-react';
 import { JobApplication } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
+import { useEmailAutomation } from '@/hooks/useEmailAutomation';
 import SubmissionsFilters from './components/SubmissionsFilters';
 import SubmissionsTable from './components/SubmissionsTable';
 import ApplicationDetailsModal from './components/ApplicationDetailsModal';
@@ -29,6 +30,8 @@ const Submissions: React.FC = () => {
   const [selectedApplication, setSelectedApplication] = useState<JobApplication | null>(null);
   const [viewingFile, setViewingFile] = useState<{ url: string; name: string } | null>(null);
   const [deletingApplication, setDeletingApplication] = useState<string | null>(null);
+
+  const { sendApplicationStatusEmail } = useEmailAutomation();
 
   // Fetch submissions from Supabase
   const fetchSubmissions = async () => {
@@ -143,10 +146,45 @@ const Submissions: React.FC = () => {
     }
   };
 
-  // Update application status in Supabase
+  // Update application status in Supabase with email automation
   const updateApplicationStatus = async (id: string, newStatus: 'waiting' | 'approved' | 'rejected') => {
     try {
+      console.log('Updating application status:', { id, newStatus });
+
+      // Update status in database
       await updateApplicationStatusInDatabase(id, newStatus);
+
+      // Find the application to get details for email
+      const application = submissions.find(app => app.id === id);
+      
+      // Send email notification for approved/rejected status (not for waiting)
+      if (application && (newStatus === 'approved' || newStatus === 'rejected')) {
+        try {
+          console.log('Sending status update email:', { 
+            email: application.email, 
+            status: newStatus,
+            position: application.appliedPosition 
+          });
+
+          await sendApplicationStatusEmail({
+            email: application.email,
+            firstName: application.firstName,
+            lastName: application.lastName,
+            appliedPosition: application.appliedPosition,
+            status: newStatus
+          });
+
+          console.log('Status update email sent successfully');
+        } catch (emailError) {
+          console.warn('Failed to send status update email:', emailError);
+          // Don't throw error - email failure shouldn't prevent status update
+          toast({
+            title: "Status Updated",
+            description: `Application status updated to ${newStatus}. Note: Email notification may have failed to send.`,
+            variant: "destructive",
+          });
+        }
+      }
 
       // Update local state
       setSubmissions(prev => prev.map(app => 
@@ -159,10 +197,19 @@ const Submissions: React.FC = () => {
         setSelectedApplication(prev => prev ? { ...prev, status: newStatus } : null);
       }
 
-      toast({
-        title: "Status Updated",
-        description: `Application status has been updated to ${newStatus}`,
-      });
+      // Show success message (only if email didn't fail above)
+      if (!application || newStatus === 'waiting') {
+        toast({
+          title: "Status Updated",
+          description: `Application status has been updated to ${newStatus}`,
+        });
+      } else {
+        toast({
+          title: "Status Updated",
+          description: `Application status updated to ${newStatus} and notification email sent to applicant`,
+        });
+      }
+
     } catch (error) {
       console.error('Error in updateApplicationStatus:', error);
       toast({

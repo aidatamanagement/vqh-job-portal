@@ -90,15 +90,27 @@ export const useEmailAutomation = () => {
       status: string;
     }
   ) => {
-    const variables: EmailVariables = {
-      firstName: application.firstName,
-      lastName: application.lastName,
-      position: application.appliedPosition
-    };
+    try {
+      console.log('Preparing status update email for:', {
+        email: application.email,
+        status: application.status,
+        position: application.appliedPosition
+      });
 
-    const templateSlug = application.status === 'approved' ? 'application_approved' : 'application_rejected';
-    
-    return sendEmail(templateSlug, application.email, variables);
+      const variables: EmailVariables = {
+        firstName: application.firstName,
+        lastName: application.lastName,
+        position: application.appliedPosition
+      };
+
+      const templateSlug = application.status === 'approved' ? 'application_approved' : 'application_rejected';
+      
+      console.log('Using template:', templateSlug);
+      return await sendEmail(templateSlug, application.email, variables);
+    } catch (error) {
+      console.error('Error in sendApplicationStatusEmail:', error);
+      throw new Error(`Failed to send ${application.status} email: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
   };
 
   return {
