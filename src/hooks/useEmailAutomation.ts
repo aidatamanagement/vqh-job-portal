@@ -76,7 +76,7 @@ export const useEmailAutomation = () => {
     };
 
     // Get admin emails for notifications
-    const adminEmails = ['admin@hospicecare.com']; // You can make this configurable
+    const adminEmails = ['careers@viaquesthospice.com']; // Updated to ViaQuest Hospice email
 
     return sendEmail('application_submitted', application.email, variables, adminEmails);
   };

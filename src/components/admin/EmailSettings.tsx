@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -12,7 +11,7 @@ import { Mail, Send, Settings, AlertCircle, CheckCircle } from 'lucide-react';
 
 const EmailSettings: React.FC = () => {
   const [settings, setSettings] = useState({
-    adminEmail: 'admin@hospicecare.com',
+    adminEmail: 'careers@viaquesthospice.com',
     enableNotifications: true,
     enableAutoResponses: true,
     testEmail: ''
@@ -91,7 +90,7 @@ const EmailSettings: React.FC = () => {
               type="email"
               value={settings.adminEmail}
               onChange={(e) => setSettings({ ...settings, adminEmail: e.target.value })}
-              placeholder="admin@hospicecare.com"
+              placeholder="careers@viaquesthospice.com"
             />
             <p className="text-sm text-gray-500 mt-1">
               This email will receive notifications about new applications
