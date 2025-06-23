@@ -1,360 +1,299 @@
-import React, { useState, useEffect } from 'react';
-import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Inbox } from 'lucide-react';
-import { JobApplication } from '@/types';
+import React, { useState } from 'react';
+import { Card } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import { DotsHorizontalIcon } from '@radix-ui/react-icons';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
-import { useEmailAutomation } from '@/hooks/useEmailAutomation';
-import SubmissionsFilters from './components/SubmissionsFilters';
-import SubmissionsTable from './components/SubmissionsTable';
-import ApplicationDetailsModal from './components/ApplicationDetailsModal';
-import FileViewerModal from './components/FileViewerModal';
-import {
-  getResumeUrl,
-  getUniquePositions,
-  filterSubmissions,
-  getSubmissionsByStatus,
-  getStatusCount,
-  deleteApplicationFiles,
-  deleteApplicationFromDatabase,
-  updateApplicationStatusInDatabase
-} from './utils/submissionsUtils';
+import { format } from 'date-fns';
+import { CheckCircle, XCircle } from 'lucide-react';
+
+interface Application {
+  id: string;
+  created_at: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: string;
+  resume: string;
+  coverLetter: string;
+  additionalNotes: string;
+  appliedPosition: string;
+  status: string;
+  jobs: {
+    title: string;
+    location: string;
+  };
+  tracking_token: string;
+}
 
 const Submissions: React.FC = () => {
-  const [submissions, setSubmissions] = useState<JobApplication[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState<string>('all');
-  const [positionFilter, setPositionFilter] = useState<string>('all');
-  const [selectedApplication, setSelectedApplication] = useState<JobApplication | null>(null);
-  const [viewingFile, setViewingFile] = useState<{ url: string; name: string } | null>(null);
-  const [deletingApplication, setDeletingApplication] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState('');
+  const queryClient = useQueryClient();
+
+  const { isLoading, error, data: applications, refetch } = useQuery({
+    queryKey: ['applications', searchQuery, statusFilter],
+    queryFn: async () => {
+      let query = supabase
+        .from('applications')
+        .select(`
+          *,
+          jobs (
+            title,
+            location
+          )
+        `)
+        .order('created_at', { ascending: false });
+
+      if (searchQuery) {
+        query = query.ilike('firstName', `%${searchQuery}%');
+      }
+
+      if (statusFilter) {
+        query = query.eq('status', statusFilter);
+      }
+
+      const { data, error } = await query;
+
+      if (error) {
+        console.error('Supabase error:', error);
+        throw error;
+      }
+
+      return data as Application[];
+    },
+  });
 
   const { sendApplicationStatusEmail } = useEmailAutomation();
 
-  // Fetch submissions from Supabase
-  const fetchSubmissions = async () => {
+  const updateApplicationStatus = async (applicationId: string, newStatus: string) => {
     try {
-      setLoading(true);
-      console.log('Fetching submissions from Supabase...');
-
-      const { data, error } = await supabase
-        .from('job_applications')
-        .select('*')
-        .order('created_at', { ascending: false });
+      console.log(`Updating application ${applicationId} to status: ${newStatus}`);
+      
+      // First update the status in database
+      const { data: updatedApplication, error } = await supabase
+        .from('applications')
+        .update({ 
+          status: newStatus,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', applicationId)
+        .select(`
+          *,
+          jobs (
+            title,
+            location
+          )
+        `)
+        .single();
 
       if (error) {
-        console.error('Error fetching submissions:', error);
-        toast({
-          title: "Error",
-          description: "Failed to load submissions. Please try again.",
-          variant: "destructive",
-        });
-        return;
+        console.error('Error updating application status:', error);
+        throw error;
       }
 
-      console.log('Fetched submissions:', data);
+      console.log('Application updated successfully:', updatedApplication);
 
-      // Transform data to match the expected format
-      const transformedSubmissions: JobApplication[] = data.map(item => ({
-        id: item.id,
-        jobId: item.job_id,
-        firstName: item.first_name,
-        lastName: item.last_name,
-        email: item.email,
-        phone: item.phone || '',
-        appliedPosition: item.applied_position,
-        earliestStartDate: item.earliest_start_date || '',
-        cityState: item.city_state || '',
-        coverLetter: item.cover_letter || '',
-        resumeUrl: getResumeUrl(item.id),
-        additionalDocsUrls: item.additional_docs_urls || [],
-        status: item.status as 'waiting' | 'approved' | 'rejected',
-        notes: '',
-        trackingToken: item.tracking_token,
-        createdAt: item.created_at,
-        updatedAt: item.updated_at,
-      }));
-
-      setSubmissions(transformedSubmissions);
-    } catch (error) {
-      console.error('Error in fetchSubmissions:', error);
-      toast({
-        title: "Error",
-        description: "Failed to load submissions. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Delete application and associated files
-  const deleteApplication = async (applicationId: string) => {
-    if (!applicationId) {
-      toast({
-        title: "Error",
-        description: "Invalid application ID.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    try {
-      setDeletingApplication(applicationId);
-      console.log('Starting deletion process for application:', applicationId);
-
-      // Step 1: Delete the application record from the database
-      console.log('Step 1: Deleting record from database...');
-      await deleteApplicationFromDatabase(applicationId);
-      console.log('Successfully deleted application from database');
-
-      // Step 2: Delete files from storage (non-blocking)
-      console.log('Step 2: Deleting files from storage...');
-      try {
-        await deleteApplicationFiles(applicationId);
-        console.log('Files deleted from storage successfully');
-      } catch (storageError) {
-        console.warn('Storage deletion failed, but continuing since database deletion succeeded:', storageError);
-      }
-
-      // Step 3: Update local state after successful database deletion
-      console.log('Step 3: Updating local state...');
-      setSubmissions(prev => prev.filter(app => app.id !== applicationId));
-
-      // Close the details modal if the deleted application was selected
-      if (selectedApplication && selectedApplication.id === applicationId) {
-        setSelectedApplication(null);
-      }
-
-      toast({
-        title: "Success",
-        description: "Application has been successfully deleted.",
-      });
-
-    } catch (error) {
-      console.error('Error deleting application:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-      toast({
-        title: "Deletion Failed",
-        description: `Failed to delete application: ${errorMessage}`,
-        variant: "destructive",
-      });
-    } finally {
-      setDeletingApplication(null);
-    }
-  };
-
-  // Update application status in Supabase with email automation
-  const updateApplicationStatus = async (id: string, newStatus: 'waiting' | 'approved' | 'rejected') => {
-    try {
-      console.log('Updating application status:', { id, newStatus });
-
-      // Update status in database
-      await updateApplicationStatusInDatabase(id, newStatus);
-
-      // Find the application to get details for email
-      const application = submissions.find(app => app.id === id);
-      
-      // Send email notification for approved/rejected status (not for waiting)
-      if (application && (newStatus === 'approved' || newStatus === 'rejected')) {
+      // Send email notification for approved/rejected status
+      if (newStatus === 'approved' || newStatus === 'rejected') {
         try {
-          console.log('Sending status update email:', { 
-            email: application.email, 
-            status: newStatus,
-            position: application.appliedPosition 
-          });
-
+          console.log('Sending status update email...');
           await sendApplicationStatusEmail({
-            email: application.email,
-            firstName: application.firstName,
-            lastName: application.lastName,
-            appliedPosition: application.appliedPosition,
-            status: newStatus
+            id: updatedApplication.id,
+            email: updatedApplication.email,
+            firstName: updatedApplication.firstName,
+            lastName: updatedApplication.lastName,
+            appliedPosition: updatedApplication.appliedPosition,
+            status: newStatus,
+            trackingToken: updatedApplication.tracking_token // Pass the tracking token
           });
-
-          console.log('Status update email sent successfully');
-        } catch (emailError) {
-          console.warn('Failed to send status update email:', emailError);
-          // Don't throw error - email failure shouldn't prevent status update
+          
           toast({
             title: "Status Updated",
-            description: `Application status updated to ${newStatus}. Note: Email notification may have failed to send.`,
+            description: `Application ${newStatus} and notification email sent to ${updatedApplication.email}`,
+          });
+        } catch (emailError) {
+          console.error('Failed to send status email:', emailError);
+          // Don't throw here - status update was successful, just email failed
+          toast({
+            title: "Status Updated",
+            description: `Application ${newStatus} but failed to send email notification`,
             variant: "destructive",
           });
         }
-      }
-
-      // Update local state
-      setSubmissions(prev => prev.map(app => 
-        app.id === id 
-          ? { ...app, status: newStatus, updatedAt: new Date().toISOString() }
-          : app
-      ));
-
-      if (selectedApplication && selectedApplication.id === id) {
-        setSelectedApplication(prev => prev ? { ...prev, status: newStatus } : null);
-      }
-
-      // Show success message (only if email didn't fail above)
-      if (!application || newStatus === 'waiting') {
-        toast({
-          title: "Status Updated",
-          description: `Application status has been updated to ${newStatus}`,
-        });
       } else {
         toast({
           title: "Status Updated",
-          description: `Application status updated to ${newStatus} and notification email sent to applicant`,
+          description: `Application status changed to ${newStatus}`,
         });
       }
 
+      // Refresh the applications list
+      refetch();
+
     } catch (error) {
-      console.error('Error in updateApplicationStatus:', error);
+      console.error('Error updating application:', error);
       toast({
         title: "Error",
-        description: error instanceof Error ? error.message : "Failed to update application status. Please try again.",
+        description: "Failed to update application status",
         variant: "destructive",
       });
     }
   };
 
-  useEffect(() => {
-    fetchSubmissions();
-  }, []);
-
-  const filteredSubmissions = filterSubmissions(submissions, searchTerm, statusFilter, positionFilter);
-  const uniquePositions = getUniquePositions(submissions);
-
-  const openFileViewer = (url: string, name: string) => {
-    setViewingFile({ url, name });
+  const formatDate = (dateString: string) => {
+    try {
+      return format(new Date(dateString), 'MMMM dd, yyyy - hh:mm a');
+    } catch (error) {
+      console.error('Error formatting date:', error);
+      return 'Invalid Date';
+    }
   };
 
-  if (loading) {
-    return (
-      <div className="space-y-6 animate-slide-up">
-        <div className="flex justify-between items-center">
-          <div className="flex items-center gap-3">
-            <div className="p-2 rounded-lg" style={{ backgroundColor: '#005586' }}>
-              <Inbox className="w-6 h-6 text-white" />
-            </div>
-            <h1 className="font-bold text-gray-900 text-lg sm:text-xl lg:text-2xl">Submissions</h1>
-          </div>
-        </div>
-        <div className="flex justify-center items-center h-64">
-          <div className="spinner" />
-          <span className="ml-2">Loading submissions...</span>
-        </div>
-      </div>
-    );
-  }
+  if (isLoading) return <div>Loading...</div>;
+  if (error) return <div>Error: {error.message}</div>;
 
   return (
-    <div className="space-y-6 animate-slide-up">
-      <div className="flex justify-between items-center">
-        <div className="flex items-center gap-3">
-          <div className="p-2 rounded-lg" style={{ backgroundColor: '#005586' }}>
-            <Inbox className="w-6 h-6 text-white" />
-          </div>
-          <h1 className="font-bold text-gray-900 text-lg sm:text-xl lg:text-2xl">Submissions</h1>
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-bold text-gray-900">Submissions</h2>
+          <p className="text-gray-600">Manage job application submissions</p>
         </div>
       </div>
-
-      {/* Filters */}
-      <SubmissionsFilters
-        searchTerm={searchTerm}
-        setSearchTerm={setSearchTerm}
-        positionFilter={positionFilter}
-        setPositionFilter={setPositionFilter}
-        uniquePositions={uniquePositions}
-      />
-
-      {/* Status Tabs with Counts */}
-      <Tabs 
-        value={statusFilter} 
-        onValueChange={setStatusFilter}
-        className="w-full animate-slide-up-delayed-2"
-      >
-        <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 h-auto">
-          <TabsTrigger value="all" className="flex flex-col sm:flex-row items-center gap-1 sm:gap-2 p-2 text-xs sm:text-sm">
-            <span>All</span>
-            <Badge variant="secondary" className="text-xs">
-              {getStatusCount(submissions, 'all')}
-            </Badge>
-          </TabsTrigger>
-          <TabsTrigger value="waiting" className="flex flex-col sm:flex-row items-center gap-1 sm:gap-2 p-2 text-xs sm:text-sm">
-            <span>Pending</span>
-            <Badge variant="secondary" className="text-xs">
-              {getStatusCount(submissions, 'waiting')}
-            </Badge>
-          </TabsTrigger>
-          <TabsTrigger value="approved" className="flex flex-col sm:flex-row items-center gap-1 sm:gap-2 p-2 text-xs sm:text-sm">
-            <span>Approved</span>
-            <Badge variant="secondary" className="text-xs">
-              {getStatusCount(submissions, 'approved')}
-            </Badge>
-          </TabsTrigger>
-          <TabsTrigger value="rejected" className="flex flex-col sm:flex-row items-center gap-1 sm:gap-2 p-2 text-xs sm:text-sm">
-            <span>Rejected</span>
-            <Badge variant="secondary" className="text-xs">
-              {getStatusCount(submissions, 'rejected')}
-            </Badge>
-          </TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="all" className="mt-6">
-          <SubmissionsTable
-            submissions={getSubmissionsByStatus(filteredSubmissions, 'all')}
-            onViewApplication={setSelectedApplication}
-            onDeleteApplication={deleteApplication}
-            deletingApplication={deletingApplication}
-          />
-        </TabsContent>
-
-        <TabsContent value="waiting" className="mt-6">
-          <SubmissionsTable
-            submissions={getSubmissionsByStatus(filteredSubmissions, 'waiting')}
-            onViewApplication={setSelectedApplication}
-            onDeleteApplication={deleteApplication}
-            deletingApplication={deletingApplication}
-          />
-        </TabsContent>
-
-        <TabsContent value="approved" className="mt-6">
-          <SubmissionsTable
-            submissions={getSubmissionsByStatus(filteredSubmissions, 'approved')}
-            onViewApplication={setSelectedApplication}
-            onDeleteApplication={deleteApplication}
-            deletingApplication={deletingApplication}
-          />
-        </TabsContent>
-
-        <TabsContent value="rejected" className="mt-6">
-          <SubmissionsTable
-            submissions={getSubmissionsByStatus(filteredSubmissions, 'rejected')}
-            onViewApplication={setSelectedApplication}
-            onDeleteApplication={deleteApplication}
-            deletingApplication={deletingApplication}
-          />
-        </TabsContent>
-      </Tabs>
-
-      {/* Application Details Modal */}
-      <ApplicationDetailsModal
-        selectedApplication={selectedApplication}
-        onClose={() => setSelectedApplication(null)}
-        onUpdateStatus={updateApplicationStatus}
-        onDeleteApplication={deleteApplication}
-        onOpenFileViewer={openFileViewer}
-        deletingApplication={deletingApplication}
-      />
-
-      {/* File Viewer Modal */}
-      <FileViewerModal
-        viewingFile={viewingFile}
-        onClose={() => setViewingFile(null)}
-      />
+      <Card className="p-4">
+        <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+          <div className="col-span-1">
+            <Label htmlFor="search">Search</Label>
+            <Input
+              type="search"
+              id="search"
+              placeholder="Search by first name..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+          </div>
+          <div className="col-span-1">
+            <Label htmlFor="status">Filter by Status</Label>
+            <Select onValueChange={setStatusFilter}>
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="All Statuses" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="">All Statuses</SelectItem>
+                <SelectItem value="pending">Pending</SelectItem>
+                <SelectItem value="approved">Approved</SelectItem>
+                <SelectItem value="rejected">Rejected</SelectItem>
+                <SelectItem value="on-hold">On Hold</SelectItem>
+                <SelectItem value="interviewing">Interviewing</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="col-span-1">
+            <Label htmlFor="refresh">Quick Actions</Label>
+            <Button onClick={() => refetch()} className="w-full">
+              Refresh Data
+            </Button>
+          </div>
+        </div>
+      </Card>
+      <div className="md:col-span-2 lg:col-span-3">
+        <Card>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Name</TableHead>
+                <TableHead>Position</TableHead>
+                <TableHead>Applied Date</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {applications?.map((application) => (
+                <TableRow key={application.id}>
+                  <TableCell>
+                    <div className="font-medium">{application.firstName} {application.lastName}</div>
+                    <div className="text-sm text-gray-500">{application.email}</div>
+                  </TableCell>
+                  <TableCell>{application.jobs?.title || application.appliedPosition}</TableCell>
+                  <TableCell>{formatDate(application.created_at)}</TableCell>
+                  <TableCell>
+                    {application.status === 'approved' ? (
+                      <div className="flex items-center">
+                        <CheckCircle className="w-4 h-4 mr-1 text-green-500" />
+                        Approved
+                      </div>
+                    ) : application.status === 'rejected' ? (
+                      <div className="flex items-center">
+                        <XCircle className="w-4 h-4 mr-1 text-red-500" />
+                        Rejected
+                      </div>
+                    ) : (
+                      application.status
+                    )}
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" className="h-8 w-8 p-0">
+                          <span className="sr-only">Open menu</span>
+                          <DotsHorizontalIcon className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                        <DropdownMenuItem onClick={() => window.open(application.resume, '_blank')}>
+                          View Resume
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => window.open(application.coverLetter, '_blank')}>
+                          View Cover Letter
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem onClick={() => updateApplicationStatus(application.id, 'pending')}>
+                          Mark as Pending
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => updateApplicationStatus(application.id, 'approved')}>
+                          Approve
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => updateApplicationStatus(application.id, 'rejected')}>
+                          Reject
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => updateApplicationStatus(application.id, 'on-hold')}>
+                          Mark as On Hold
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => updateApplicationStatus(application.id, 'interviewing')}>
+                          Mark as Interviewing
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </Card>
+      </div>
     </div>
   );
 };
