@@ -13,7 +13,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { DotsHorizontalIcon } from '@radix-ui/react-icons';
+import { MoreHorizontal } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -32,14 +32,12 @@ import { useEmailAutomation } from '@/hooks/useEmailAutomation';
 interface Application {
   id: string;
   created_at: string;
-  firstName: string;
-  lastName: string;
+  first_name: string;
+  last_name: string;
   email: string;
   phone: string;
-  resume: string;
-  coverLetter: string;
-  additionalNotes: string;
-  appliedPosition: string;
+  cover_letter: string;
+  applied_position: string;
   status: string;
   jobs: {
     title: string;
@@ -55,10 +53,10 @@ const Submissions: React.FC = () => {
   const { sendApplicationStatusEmail } = useEmailAutomation();
 
   const { isLoading, error, data: applications, refetch } = useQuery({
-    queryKey: ['applications', searchQuery, statusFilter],
+    queryKey: ['job_applications', searchQuery, statusFilter],
     queryFn: async () => {
       let query = supabase
-        .from('applications')
+        .from('job_applications')
         .select(`
           *,
           jobs (
@@ -69,7 +67,7 @@ const Submissions: React.FC = () => {
         .order('created_at', { ascending: false });
 
       if (searchQuery) {
-        query = query.ilike('firstName', `%${searchQuery}%`);
+        query = query.ilike('first_name', `%${searchQuery}%`);
       }
 
       if (statusFilter) {
@@ -93,7 +91,7 @@ const Submissions: React.FC = () => {
       
       // First update the status in database
       const { data: updatedApplication, error } = await supabase
-        .from('applications')
+        .from('job_applications')
         .update({ 
           status: newStatus,
           updated_at: new Date().toISOString()
@@ -122,9 +120,9 @@ const Submissions: React.FC = () => {
           await sendApplicationStatusEmail({
             id: updatedApplication.id,
             email: updatedApplication.email,
-            firstName: updatedApplication.firstName,
-            lastName: updatedApplication.lastName,
-            appliedPosition: updatedApplication.appliedPosition,
+            firstName: updatedApplication.first_name,
+            lastName: updatedApplication.last_name,
+            appliedPosition: updatedApplication.applied_position,
             status: newStatus,
             trackingToken: updatedApplication.tracking_token
           });
@@ -232,10 +230,10 @@ const Submissions: React.FC = () => {
               {applications?.map((application) => (
                 <TableRow key={application.id}>
                   <TableCell>
-                    <div className="font-medium">{application.firstName} {application.lastName}</div>
+                    <div className="font-medium">{application.first_name} {application.last_name}</div>
                     <div className="text-sm text-gray-500">{application.email}</div>
                   </TableCell>
-                  <TableCell>{application.jobs?.title || application.appliedPosition}</TableCell>
+                  <TableCell>{application.jobs?.title || application.applied_position}</TableCell>
                   <TableCell>{formatDate(application.created_at)}</TableCell>
                   <TableCell>
                     {application.status === 'approved' ? (
@@ -257,18 +255,11 @@ const Submissions: React.FC = () => {
                       <DropdownMenuTrigger asChild>
                         <Button variant="ghost" className="h-8 w-8 p-0">
                           <span className="sr-only">Open menu</span>
-                          <DotsHorizontalIcon className="h-4 w-4" />
+                          <MoreHorizontal className="h-4 w-4" />
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
                         <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                        <DropdownMenuItem onClick={() => window.open(application.resume, '_blank')}>
-                          View Resume
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => window.open(application.coverLetter, '_blank')}>
-                          View Cover Letter
-                        </DropdownMenuItem>
-                        <DropdownMenuSeparator />
                         <DropdownMenuItem onClick={() => updateApplicationStatus(application.id, 'pending')}>
                           Mark as Pending
                         </DropdownMenuItem>
