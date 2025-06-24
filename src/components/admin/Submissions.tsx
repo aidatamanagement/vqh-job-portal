@@ -42,7 +42,7 @@ const Submissions: React.FC = () => {
     }
   };
 
-  const handleUpdateApplicationStatus = async (id: string, newStatus: 'waiting' | 'approved' | 'rejected') => {
+  const handleUpdateApplicationStatus = async (id: string, newStatus: 'application_submitted' | 'under_review' | 'shortlisted' | 'interview_scheduled' | 'decisioning' | 'hired' | 'rejected') => {
     await updateApplicationStatus(id, newStatus);
     // Update the selected application if it's currently being viewed
     if (selectedApplication && selectedApplication.id === id) {

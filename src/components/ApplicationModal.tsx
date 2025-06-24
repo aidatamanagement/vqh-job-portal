@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -167,7 +166,7 @@ const ApplicationModal: React.FC<ApplicationModalProps> = ({ isOpen, onClose, jo
         city_state: formData.cityState,
         cover_letter: formData.coverLetter,
         additional_docs_urls: additionalDocsUrls,
-        status: 'waiting',
+        status: 'application_submitted',
         user_id: null // Anonymous application
       };
 
@@ -202,7 +201,7 @@ const ApplicationModal: React.FC<ApplicationModalProps> = ({ isOpen, onClose, jo
         earliestStartDate: formData.earliestStartDate,
         cityState: formData.cityState,
         coverLetter: formData.coverLetter,
-        status: 'waiting' as const,
+        status: 'application_submitted' as const,
         resumeUrl: resumeUrl,
         additionalDocsUrls: additionalDocsUrls,
         notes: '',
