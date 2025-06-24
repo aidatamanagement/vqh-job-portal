@@ -23,6 +23,20 @@ interface EditTemplateModalProps {
   onSave: (template: EmailTemplate) => void;
 }
 
+const availableVariables = [
+  'firstName',
+  'lastName', 
+  'position',
+  'location',
+  'email',
+  'phone',
+  'earliestStartDate',
+  'applicationDate',
+  'trackingToken',
+  'trackingUrl',
+  'adminUrl'
+];
+
 const EditTemplateModal: React.FC<EditTemplateModalProps> = ({
   template,
   isOpen,
@@ -120,6 +134,28 @@ const EditTemplateModal: React.FC<EditTemplateModalProps> = ({
             </div>
 
             <div>
+              <Label>Available Variables</Label>
+              <div className="flex flex-wrap gap-2 mt-2 mb-3">
+                {availableVariables.map((variable) => (
+                  <span
+                    key={variable}
+                    className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-md cursor-pointer hover:bg-blue-200"
+                    onClick={() => {
+                      // Add variable to clipboard for easy copying
+                      navigator.clipboard.writeText(`{{${variable}}}`);
+                    }}
+                    title={`Click to copy {{${variable}}}`}
+                  >
+                    {`{{${variable}}}`}
+                  </span>
+                ))}
+              </div>
+              <p className="text-xs text-gray-500 mb-4">
+                Click on any variable to copy it to clipboard, then paste it in your template content or subject line
+              </p>
+            </div>
+
+            <div>
               <Label htmlFor="template-html">HTML Content</Label>
               <Textarea
                 id="template-html"
@@ -138,22 +174,6 @@ const EditTemplateModal: React.FC<EditTemplateModalProps> = ({
               />
               <Label>Active Template</Label>
             </div>
-
-            {editedTemplate.variables && editedTemplate.variables.length > 0 && (
-              <div>
-                <Label>Available Variables</Label>
-                <div className="flex flex-wrap gap-2 mt-2">
-                  {editedTemplate.variables.map((variable) => (
-                    <span
-                      key={variable}
-                      className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-md"
-                    >
-                      {`{{${variable}}}`}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            )}
           </TabsContent>
 
           <TabsContent value="preview" className="mt-6 space-y-4">

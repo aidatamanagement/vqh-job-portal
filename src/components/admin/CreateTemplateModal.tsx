@@ -23,6 +23,20 @@ interface CreateTemplateModalProps {
   onCreate: (template: Omit<EmailTemplate, 'id' | 'created_at' | 'updated_at'>) => void;
 }
 
+const availableVariables = [
+  'firstName',
+  'lastName', 
+  'position',
+  'location',
+  'email',
+  'phone',
+  'earliestStartDate',
+  'applicationDate',
+  'trackingToken',
+  'trackingUrl',
+  'adminUrl'
+];
+
 const CreateTemplateModal: React.FC<CreateTemplateModalProps> = ({
   isOpen,
   onClose,
@@ -34,22 +48,9 @@ const CreateTemplateModal: React.FC<CreateTemplateModalProps> = ({
     slug: '',
     subject: '',
     html_body: '',
-    variables: [] as string[],
+    variables: availableVariables,
     is_active: true
   });
-
-  const commonVariables = [
-    'firstName',
-    'lastName', 
-    'position',
-    'location',
-    'email',
-    'phone',
-    'earliestStartDate',
-    'applicationDate',
-    'trackingToken',
-    'trackingUrl'
-  ];
 
   const templatePresets = {
     application_submitted: {
@@ -88,7 +89,7 @@ const CreateTemplateModal: React.FC<CreateTemplateModalProps> = ({
     </div>
 </body>
 </html>`,
-      variables: commonVariables
+      variables: availableVariables
     },
     admin_notification: {
       name: 'Admin Notification - New Application',
@@ -102,6 +103,7 @@ const CreateTemplateModal: React.FC<CreateTemplateModalProps> = ({
         .header { background-color: #dc3545; color: white; padding: 20px; text-align: center; }
         .content { padding: 20px; }
         .info-box { background-color: #f8f9fa; padding: 15px; border-left: 4px solid #007bff; margin: 15px 0; }
+        .admin-link { background-color: #28a745; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block; margin: 15px 0; }
     </style>
 </head>
 <body>
@@ -122,12 +124,13 @@ const CreateTemplateModal: React.FC<CreateTemplateModalProps> = ({
                 <p><strong>Application Date:</strong> {{applicationDate}}</p>
                 <p><strong>Tracking Code:</strong> {{trackingToken}}</p>
             </div>
+            <a href="{{adminUrl}}" class="admin-link">View in Admin Dashboard</a>
             <p>Please log into the admin dashboard to review the full application and documents.</p>
         </div>
     </div>
 </body>
 </html>`,
-      variables: commonVariables
+      variables: availableVariables
     },
     application_approved: {
       name: 'Application Approved',
@@ -157,7 +160,7 @@ const CreateTemplateModal: React.FC<CreateTemplateModalProps> = ({
     </div>
 </body>
 </html>`,
-      variables: commonVariables
+      variables: availableVariables
     },
     application_rejected: {
       name: 'Application Not Selected',
@@ -187,7 +190,7 @@ const CreateTemplateModal: React.FC<CreateTemplateModalProps> = ({
     </div>
 </body>
 </html>`,
-      variables: commonVariables
+      variables: availableVariables
     }
   };
 
@@ -202,7 +205,7 @@ const CreateTemplateModal: React.FC<CreateTemplateModalProps> = ({
         slug: '',
         subject: '',
         html_body: '',
-        variables: commonVariables,
+        variables: availableVariables,
         is_active: true
       });
     } else {
@@ -229,7 +232,7 @@ const CreateTemplateModal: React.FC<CreateTemplateModalProps> = ({
       slug: '',
       subject: '',
       html_body: '',
-      variables: [],
+      variables: availableVariables,
       is_active: true
     });
   };
@@ -240,7 +243,7 @@ const CreateTemplateModal: React.FC<CreateTemplateModalProps> = ({
       slug: '',
       subject: '',
       html_body: '',
-      variables: [],
+      variables: availableVariables,
       is_active: true
     });
     onClose();
@@ -315,6 +318,28 @@ const CreateTemplateModal: React.FC<CreateTemplateModalProps> = ({
               </div>
 
               <div>
+                <Label>Available Variables</Label>
+                <div className="flex flex-wrap gap-2 mt-2 mb-3">
+                  {availableVariables.map((variable) => (
+                    <span
+                      key={variable}
+                      className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-md cursor-pointer hover:bg-blue-200"
+                      onClick={() => {
+                        // Add variable to clipboard for easy copying
+                        navigator.clipboard.writeText(`{{${variable}}}`);
+                      }}
+                      title={`Click to copy {{${variable}}}`}
+                    >
+                      {`{{${variable}}}`}
+                    </span>
+                  ))}
+                </div>
+                <p className="text-xs text-gray-500 mb-4">
+                  Click on any variable to copy it to clipboard, then paste it in your template content or subject line
+                </p>
+              </div>
+
+              <div>
                 <Label htmlFor="template-html">HTML Content *</Label>
                 <Textarea
                   id="template-html"
@@ -332,23 +357,6 @@ const CreateTemplateModal: React.FC<CreateTemplateModalProps> = ({
                   onCheckedChange={(checked) => handleInputChange('is_active', checked)}
                 />
                 <Label>Active Template</Label>
-              </div>
-
-              <div>
-                <Label>Available Variables</Label>
-                <div className="flex flex-wrap gap-2 mt-2">
-                  {commonVariables.map((variable) => (
-                    <span
-                      key={variable}
-                      className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-md"
-                    >
-                      {`{{${variable}}}`}
-                    </span>
-                  ))}
-                </div>
-                <p className="text-xs text-gray-500 mt-1">
-                  Use these variables in your template content and subject line
-                </p>
               </div>
             </TabsContent>
 
