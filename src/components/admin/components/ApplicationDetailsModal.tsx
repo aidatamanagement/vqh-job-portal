@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -49,6 +50,30 @@ const ApplicationDetailsModal: React.FC<ApplicationDetailsModalProps> = ({
       setSelectedStatus(''); // Reset selection after successful update
     } finally {
       setIsUpdating(false);
+    }
+  };
+
+  // Enhanced status badge with more vibrant colors
+  const getEnhancedStatusBadge = (status: string) => {
+    const baseClasses = "font-semibold px-4 py-2 text-sm border-2 shadow-sm";
+    
+    switch (status) {
+      case 'hired':
+        return `${baseClasses} bg-green-100 text-green-800 border-green-300`;
+      case 'rejected':
+        return `${baseClasses} bg-red-100 text-red-800 border-red-300`;
+      case 'shortlisted':
+        return `${baseClasses} bg-blue-100 text-blue-800 border-blue-300`;
+      case 'interview_scheduled':
+        return `${baseClasses} bg-purple-100 text-purple-800 border-purple-300`;
+      case 'under_review':
+        return `${baseClasses} bg-yellow-100 text-yellow-800 border-yellow-300`;
+      case 'decisioning':
+        return `${baseClasses} bg-orange-100 text-orange-800 border-orange-300`;
+      case 'application_submitted':
+        return `${baseClasses} bg-gray-100 text-gray-800 border-gray-300`;
+      default:
+        return `${baseClasses} bg-gray-100 text-gray-800 border-gray-300`;
     }
   };
 
@@ -194,15 +219,12 @@ const ApplicationDetailsModal: React.FC<ApplicationDetailsModalProps> = ({
                 <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-4">Update Application Status</h3>
                 <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-end">
                   <div className="flex-1 max-w-xs">
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Change Status From: 
-                      <Badge 
-                        variant={getStatusBadgeVariant(selectedApplication.status)} 
-                        className="ml-2 font-medium px-3 py-1 text-xs"
-                      >
-                        {getStatusText(selectedApplication.status)}
-                      </Badge>
+                    <label className="block text-sm font-medium text-gray-700 mb-3">
+                      Change Status From:
                     </label>
+                    <div className={`inline-block rounded-lg mb-3 ${getEnhancedStatusBadge(selectedApplication.status)}`}>
+                      {getStatusText(selectedApplication.status)}
+                    </div>
                     <Select value={selectedStatus} onValueChange={setSelectedStatus}>
                       <SelectTrigger className="w-full bg-white border-gray-300 focus:border-primary focus:ring-primary">
                         <SelectValue placeholder="Select new status..." />
