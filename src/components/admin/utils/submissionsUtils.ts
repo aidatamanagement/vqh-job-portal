@@ -1,3 +1,4 @@
+
 import { JobApplication } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -34,7 +35,7 @@ export const getStatusBadgeVariant = (status: string) => {
 export const getStatusText = (status: string) => {
   switch (status) {
     case 'application_submitted':
-      return 'Application Submitted';
+      return 'Submitted';
     case 'under_review':
       return 'Under Review';
     case 'shortlisted':
