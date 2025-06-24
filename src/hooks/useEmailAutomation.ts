@@ -1,5 +1,6 @@
 
 import { supabase } from '@/integrations/supabase/client';
+import { useEmailSettings } from './useEmailSettings';
 
 interface EmailVariables {
   firstName: string;
@@ -16,21 +17,21 @@ interface EmailVariables {
 }
 
 export const useEmailAutomation = () => {
+  const { getAdminEmails } = useEmailSettings();
+
   const sendEmail = async (
     templateSlug: string,
     recipientEmail: string,
-    variables: EmailVariables,
-    adminEmails?: string[]
+    variables: EmailVariables
   ) => {
     try {
-      console.log('Sending email:', { templateSlug, recipientEmail, variables, adminEmails });
+      console.log('Sending email:', { templateSlug, recipientEmail, variables });
       
       const { data, error } = await supabase.functions.invoke('send-email', {
         body: {
           templateSlug,
           recipientEmail,
-          variables,
-          adminEmails
+          variables
         }
       });
 
@@ -84,8 +85,8 @@ export const useEmailAutomation = () => {
       await sendEmail('application_submitted', application.email, variables);
 
       console.log('Sending admin notification...');
-      // Send admin notification - using a separate call
-      const adminEmails = ['admin@viaquesthospice.com', 'careers@viaquesthospice.com'];
+      // Get admin emails from settings
+      const adminEmails = getAdminEmails();
       
       // Send to each admin email individually to ensure delivery
       for (const adminEmail of adminEmails) {

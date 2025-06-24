@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+
+import React, { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -7,20 +8,85 @@ import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { Mail, Send, Settings, AlertCircle, CheckCircle } from 'lucide-react';
+import { useEmailSettings } from '@/hooks/useEmailSettings';
+import { Mail, Send, Settings, AlertCircle, CheckCircle, Plus, X } from 'lucide-react';
 
 const EmailSettings: React.FC = () => {
-  const [settings, setSettings] = useState({
-    adminEmail: 'careers@viaquesthospice.com',
-    enableNotifications: true,
-    enableAutoResponses: true,
-    testEmail: ''
-  });
+  const { settings, saveSettings } = useEmailSettings();
+  const [localSettings, setLocalSettings] = useState(settings);
+  const [newAdminEmail, setNewAdminEmail] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
   const [isTesting, setIsTesting] = useState(false);
+  const [testEmail, setTestEmail] = useState('');
   const [lastTestResult, setLastTestResult] = useState<{ success: boolean; message: string } | null>(null);
 
+  const addAdminEmail = () => {
+    if (!newAdminEmail || !newAdminEmail.includes('@')) {
+      toast({
+        title: "Invalid Email",
+        description: "Please enter a valid email address",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (localSettings.adminEmails.includes(newAdminEmail)) {
+      toast({
+        title: "Email Already Added",
+        description: "This email is already in the admin list",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setLocalSettings(prev => ({
+      ...prev,
+      adminEmails: [...prev.adminEmails, newAdminEmail]
+    }));
+    setNewAdminEmail('');
+  };
+
+  const removeAdminEmail = (emailToRemove: string) => {
+    if (localSettings.adminEmails.length === 1) {
+      toast({
+        title: "Cannot Remove",
+        description: "At least one admin email is required",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setLocalSettings(prev => ({
+      ...prev,
+      adminEmails: prev.adminEmails.filter(email => email !== emailToRemove)
+    }));
+  };
+
+  const handleSaveSettings = async () => {
+    setIsSaving(true);
+    try {
+      const success = await saveSettings(localSettings);
+      if (success) {
+        toast({
+          title: "Settings Saved",
+          description: "Email settings have been saved successfully",
+        });
+      } else {
+        throw new Error('Failed to save settings');
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to save settings",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   const handleTestEmail = async () => {
-    if (!settings.testEmail) {
+    if (!testEmail) {
       toast({
         title: "Error",
         description: "Please enter a test email address",
@@ -34,16 +100,19 @@ const EmailSettings: React.FC = () => {
       const { data, error } = await supabase.functions.invoke('send-email', {
         body: {
           templateSlug: 'application_submitted',
-          recipientEmail: settings.testEmail,
+          recipientEmail: testEmail,
           variables: {
             firstName: 'Test',
             lastName: 'User',
             position: 'Registered Nurse',
             location: 'Test Location',
-            email: settings.testEmail,
+            email: testEmail,
             phone: '(555) 123-4567',
             earliestStartDate: 'January 15, 2024',
-            applicationDate: new Date().toLocaleDateString()
+            applicationDate: new Date().toLocaleDateString(),
+            trackingToken: 'TEST-123-456',
+            trackingUrl: 'https://yourapp.com/track/TEST-123-456',
+            adminUrl: window.location.origin + '/admin'
           }
         }
       });
@@ -82,19 +151,44 @@ const EmailSettings: React.FC = () => {
           <h3 className="text-lg font-semibold">Email Configuration</h3>
         </div>
 
-        <div className="space-y-4">
+        <div className="space-y-6">
           <div>
-            <Label htmlFor="admin-email">Admin Email Address</Label>
-            <Input
-              id="admin-email"
-              type="email"
-              value={settings.adminEmail}
-              onChange={(e) => setSettings({ ...settings, adminEmail: e.target.value })}
-              placeholder="careers@viaquesthospice.com"
-            />
-            <p className="text-sm text-gray-500 mt-1">
-              This email will receive notifications about new applications
+            <Label>Admin Email Addresses</Label>
+            <p className="text-sm text-gray-500 mb-3">
+              These emails will receive notifications about new applications
             </p>
+            
+            {/* Current Admin Emails */}
+            <div className="space-y-2 mb-3">
+              {localSettings.adminEmails.map((email, index) => (
+                <div key={index} className="flex items-center justify-between p-2 bg-gray-50 rounded-md">
+                  <span className="text-sm">{email}</span>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => removeAdminEmail(email)}
+                    className="text-red-600 hover:text-red-700"
+                    disabled={localSettings.adminEmails.length === 1}
+                  >
+                    <X className="w-4 h-4" />
+                  </Button>
+                </div>
+              ))}
+            </div>
+
+            {/* Add New Admin Email */}
+            <div className="flex space-x-2">
+              <Input
+                type="email"
+                value={newAdminEmail}
+                onChange={(e) => setNewAdminEmail(e.target.value)}
+                placeholder="admin@viaquesthospice.com"
+                onKeyPress={(e) => e.key === 'Enter' && addAdminEmail()}
+              />
+              <Button onClick={addAdminEmail} variant="outline">
+                <Plus className="w-4 h-4" />
+              </Button>
+            </div>
           </div>
 
           <div className="flex items-center justify-between">
@@ -105,8 +199,8 @@ const EmailSettings: React.FC = () => {
               </p>
             </div>
             <Switch
-              checked={settings.enableNotifications}
-              onCheckedChange={(checked) => setSettings({ ...settings, enableNotifications: checked })}
+              checked={localSettings.enableNotifications}
+              onCheckedChange={(checked) => setLocalSettings({ ...localSettings, enableNotifications: checked })}
             />
           </div>
 
@@ -118,9 +212,20 @@ const EmailSettings: React.FC = () => {
               </p>
             </div>
             <Switch
-              checked={settings.enableAutoResponses}
-              onCheckedChange={(checked) => setSettings({ ...settings, enableAutoResponses: checked })}
+              checked={localSettings.enableAutoResponses}
+              onCheckedChange={(checked) => setLocalSettings({ ...localSettings, enableAutoResponses: checked })}
             />
+          </div>
+
+          {/* Save Button */}
+          <div className="pt-4 border-t">
+            <Button 
+              onClick={handleSaveSettings} 
+              disabled={isSaving}
+              className="w-full bg-primary hover:bg-primary/90"
+            >
+              {isSaving ? 'Saving...' : 'Save Email Settings'}
+            </Button>
           </div>
         </div>
       </Card>
@@ -138,8 +243,8 @@ const EmailSettings: React.FC = () => {
             <Input
               id="test-email"
               type="email"
-              value={settings.testEmail}
-              onChange={(e) => setSettings({ ...settings, testEmail: e.target.value })}
+              value={testEmail}
+              onChange={(e) => setTestEmail(e.target.value)}
               placeholder="test@example.com"
             />
             <p className="text-sm text-gray-500 mt-1">
@@ -149,7 +254,7 @@ const EmailSettings: React.FC = () => {
 
           <Button 
             onClick={handleTestEmail} 
-            disabled={isTesting || !settings.testEmail}
+            disabled={isTesting || !testEmail}
             className="w-full sm:w-auto"
           >
             {isTesting ? (
