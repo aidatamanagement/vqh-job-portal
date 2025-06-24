@@ -75,10 +75,8 @@ export const useEmailAutomation = () => {
       trackingUrl: trackingUrl
     };
 
-    // Get admin emails for notifications
-    const adminEmails = ['careers@viaquesthospice.com']; // Updated to ViaQuest Hospice email
-
-    return sendEmail('application_submitted', application.email, variables, adminEmails);
+    // Only send confirmation email to the candidate - no admin notifications
+    return sendEmail('application_submitted', application.email, variables);
   };
 
   const sendApplicationStatusEmail = async (

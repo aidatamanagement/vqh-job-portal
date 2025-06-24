@@ -40,7 +40,7 @@ const handler = async (req: Request): Promise<Response> => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
     );
 
-    const { templateSlug, recipientEmail, variables, adminEmails }: EmailRequest = await req.json();
+    const { templateSlug, recipientEmail, variables }: EmailRequest = await req.json();
 
     console.log('Processing email request:', { templateSlug, recipientEmail, variables });
 
@@ -128,31 +128,6 @@ const handler = async (req: Request): Promise<Response> => {
         }
 
         console.log('Email sent successfully:', brevoResult);
-
-        // Send admin notification if this is an application submission
-        if (templateSlug === 'application_submitted' && adminEmails && adminEmails.length > 0) {
-          for (const adminEmail of adminEmails) {
-            try {
-              await fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/send-email`, {
-                method: 'POST',
-                headers: {
-                  'Content-Type': 'application/json',
-                  'Authorization': `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`
-                },
-                body: JSON.stringify({
-                  templateSlug: 'admin_notification',
-                  recipientEmail: adminEmail,
-                  variables: {
-                    ...variables,
-                    adminUrl: `${Deno.env.get('SUPABASE_URL')?.replace('supabase.co', 'lovable.app')}/admin`
-                  }
-                })
-              });
-            } catch (adminError) {
-              console.warn('Failed to send admin notification:', adminError);
-            }
-          }
-        }
 
         return new Response(
           JSON.stringify({ success: true, messageId: brevoResult.messageId }),

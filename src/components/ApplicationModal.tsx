@@ -24,7 +24,6 @@ const ApplicationModal: React.FC<ApplicationModalProps> = ({ isOpen, onClose, jo
   const { sendApplicationSubmittedEmail } = useEmailAutomation();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showThankYou, setShowThankYou] = useState(false);
-  const [trackingToken, setTrackingToken] = useState<string>('');
   
   const [formData, setFormData] = useState({
     firstName: '',
@@ -186,9 +185,6 @@ const ApplicationModal: React.FC<ApplicationModalProps> = ({ isOpen, onClose, jo
 
       console.log('Application submitted successfully:', data);
 
-      // Store tracking token for display
-      setTrackingToken(data.tracking_token);
-
       // Update local state for immediate UI update
       const newApplication = {
         id: data.id,
@@ -238,7 +234,7 @@ const ApplicationModal: React.FC<ApplicationModalProps> = ({ isOpen, onClose, jo
 
       toast({
         title: "Application Submitted!",
-        description: "Your application has been successfully submitted. Check your email for tracking information.",
+        description: "Your application has been successfully submitted. Check your email for confirmation.",
       });
 
     } catch (error) {
@@ -269,32 +265,11 @@ const ApplicationModal: React.FC<ApplicationModalProps> = ({ isOpen, onClose, jo
       additionalDocs: [],
     });
     setShowThankYou(false);
-    setTrackingToken('');
   };
 
   const handleClose = () => {
     resetForm();
     onClose();
-  };
-
-  const copyTrackingToken = () => {
-    navigator.clipboard.writeText(trackingToken);
-    toast({
-      title: "Copied!",
-      description: "Tracking token copied to clipboard",
-    });
-  };
-
-  const getTrackingUrl = () => {
-    return `${window.location.origin}/track/${trackingToken}`;
-  };
-
-  const copyTrackingUrl = () => {
-    navigator.clipboard.writeText(getTrackingUrl());
-    toast({
-      title: "Copied!",
-      description: "Tracking URL copied to clipboard",
-    });
   };
 
   if (showThankYou) {
@@ -314,49 +289,8 @@ const ApplicationModal: React.FC<ApplicationModalProps> = ({ isOpen, onClose, jo
               Thank you for your interest in the {job.position} position. We've received your application and will be in touch soon.
             </p>
             
-            {/* Tracking Information */}
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-              <h4 className="font-semibold text-blue-900 mb-3">Track Your Application</h4>
-              
-              <div className="space-y-3">
-                <div>
-                  <Label className="text-xs text-blue-700">Tracking Token</Label>
-                  <div className="flex items-center gap-2 mt-1">
-                    <Input 
-                      value={trackingToken} 
-                      readOnly 
-                      className="text-xs bg-white border-blue-200" 
-                    />
-                    <Button 
-                      size="sm" 
-                      variant="outline" 
-                      onClick={copyTrackingToken}
-                      className="shrink-0"
-                    >
-                      <Copy className="w-3 h-3" />
-                    </Button>
-                  </div>
-                </div>
-
-                <div>
-                  <Label className="text-xs text-blue-700">Tracking URL</Label>
-                  <div className="flex items-center gap-2 mt-1">
-                    <Button 
-                      size="sm" 
-                      variant="outline" 
-                      onClick={copyTrackingUrl}
-                      className="flex-1 text-xs"
-                    >
-                      <ExternalLink className="w-3 h-3 mr-1" />
-                      Copy Tracking Link
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            </div>
-
             <p className="text-sm text-gray-500 mb-6">
-              You should receive a confirmation email with tracking information shortly. Save your tracking token to check your application status anytime.
+              You should receive a confirmation email shortly with details about your application.
             </p>
             
             <Button onClick={handleClose} className="w-full bg-primary hover:bg-primary/90">
