@@ -4,7 +4,7 @@ import { EmailTemplate } from '@/types';
 export const generateEmailPreview = (template: EmailTemplate): string => {
   let html = template.html_body;
   
-  // Replace variables with sample data
+  // Replace variables with sample data including tracking variables
   const sampleData: Record<string, string> = {
     firstName: 'John',
     lastName: 'Doe',
@@ -14,6 +14,8 @@ export const generateEmailPreview = (template: EmailTemplate): string => {
     phone: '(555) 123-4567',
     earliestStartDate: 'January 15, 2024',
     applicationDate: new Date().toLocaleDateString(),
+    trackingToken: 'ABC123-DEF456-GHI789',
+    trackingUrl: 'https://yourapp.com/track/ABC123-DEF456-GHI789',
     adminUrl: '#'
   };
 
@@ -26,5 +28,24 @@ export const generateEmailPreview = (template: EmailTemplate): string => {
 };
 
 export const generateSubjectPreview = (subject: string): string => {
-  return subject.replace(/\{\{(\w+)\}\}/g, '[Sample $1]');
+  const sampleData: Record<string, string> = {
+    firstName: 'John',
+    lastName: 'Doe',
+    position: 'Registered Nurse',
+    location: 'New York, NY',
+    email: 'john.doe@example.com',
+    phone: '(555) 123-4567',
+    earliestStartDate: 'January 15, 2024',
+    applicationDate: new Date().toLocaleDateString(),
+    trackingToken: 'ABC123-DEF456-GHI789',
+    trackingUrl: 'https://yourapp.com/track/ABC123-DEF456-GHI789'
+  };
+
+  let previewSubject = subject;
+  Object.entries(sampleData).forEach(([key, value]) => {
+    const placeholder = `{{${key}}}`;
+    previewSubject = previewSubject.replace(new RegExp(placeholder, 'g'), value);
+  });
+
+  return previewSubject;
 };

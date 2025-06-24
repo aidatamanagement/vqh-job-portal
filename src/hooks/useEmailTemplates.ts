@@ -65,6 +65,39 @@ export const useEmailTemplates = () => {
     }
   };
 
+  const createTemplate = async (template: Omit<EmailTemplate, 'id' | 'created_at' | 'updated_at'>) => {
+    try {
+      console.log('Creating template:', template);
+      
+      const { error } = await supabase
+        .from('email_templates')
+        .insert({
+          slug: template.slug,
+          name: template.name,
+          subject: template.subject,
+          html_body: template.html_body,
+          variables: template.variables,
+          is_active: template.is_active
+        });
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "Email template created successfully",
+      });
+
+      fetchTemplates();
+    } catch (error: any) {
+      console.error('Error creating template:', error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to create email template",
+        variant: "destructive",
+      });
+    }
+  };
+
   const updateTemplate = async (template: EmailTemplate) => {
     try {
       const { error } = await supabase
@@ -105,6 +138,7 @@ export const useEmailTemplates = () => {
     isLoading,
     error,
     fetchTemplates,
-    updateTemplate
+    updateTemplate,
+    createTemplate
   };
 };
