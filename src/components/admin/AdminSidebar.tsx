@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -45,7 +44,7 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({ currentView, onViewChange }
 
   const activeJobs = jobs.filter(job => job.isActive).length;
   const totalJobs = jobs.length;
-  const waitingApplications = applications.filter(app => app.status === 'waiting').length;
+  const pendingApplications = applications.filter(app => app.status === 'application_submitted').length;
 
   const toggleMenu = (menuId: string) => {
     setExpandedMenu(prev => prev === menuId ? null : menuId);
@@ -83,7 +82,7 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({ currentView, onViewChange }
           label: 'Submissions',
           icon: FileText,
           view: 'submissions' as AdminView,
-          badge: waitingApplications > 0 ? waitingApplications.toString() : undefined,
+          badge: pendingApplications > 0 ? pendingApplications.toString() : undefined,
         },
       ],
     },

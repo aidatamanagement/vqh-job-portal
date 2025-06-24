@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -60,8 +59,8 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
     return new Date(app.createdAt) > oneMonthAgo;
   }).length;
 
-  const approvedApplications = applications.filter(app => app.status === 'approved').length;
-  const pendingApplications = applications.filter(app => app.status === 'waiting').length;
+  const hiredApplications = applications.filter(app => app.status === 'hired').length;
+  const pendingApplications = applications.filter(app => app.status === 'application_submitted').length;
 
   // Real CRM metrics from actual data
   const salesVisits = visitLogs.length;
@@ -123,7 +122,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
       title: 'Application Status',
       metrics: [
         { label: 'Pending Review', value: pendingApplications, color: 'text-yellow-600', bg: 'bg-yellow-50' },
-        { label: 'Approved', value: approvedApplications, color: 'text-green-600', bg: 'bg-green-50' },
+        { label: 'Hired', value: hiredApplications, color: 'text-green-600', bg: 'bg-green-50' },
         { label: 'Conversion Rate', value: conversionRate, color: 'text-blue-600', bg: 'bg-blue-50' },
       ]
     },
@@ -155,12 +154,12 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
     // Add recent applications
     const recentApplications = applications.slice(0, 2).map(app => ({
       type: 'application',
-      title: app.status === 'approved' ? `Application approved: ${app.firstName} ${app.lastName}` : `New application received: ${app.firstName} ${app.lastName}`,
+      title: app.status === 'hired' ? `Application hired: ${app.firstName} ${app.lastName}` : `New application received: ${app.firstName} ${app.lastName}`,
       subtitle: app.appliedPosition,
       time: new Date(app.createdAt).toLocaleDateString(),
-      icon: app.status === 'approved' ? CheckCircle : FileText,
-      color: app.status === 'approved' ? 'text-green-600' : 'text-indigo-600',
-      bg: app.status === 'approved' ? 'bg-green-50' : 'bg-indigo-50',
+      icon: app.status === 'hired' ? CheckCircle : FileText,
+      color: app.status === 'hired' ? 'text-green-600' : 'text-indigo-600',
+      bg: app.status === 'hired' ? 'bg-green-50' : 'bg-indigo-50',
     }));
 
     // Add recent visit logs
