@@ -1,4 +1,5 @@
 
+
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -55,7 +56,7 @@ const ApplicationDetailsModal: React.FC<ApplicationDetailsModalProps> = ({
 
   // Enhanced status badge with more vibrant colors
   const getEnhancedStatusBadge = (status: string) => {
-    const baseClasses = "font-semibold px-4 py-2 text-sm border-2 shadow-sm";
+    const baseClasses = "font-semibold px-3 py-1 text-sm border-2 shadow-sm rounded-lg";
     
     switch (status) {
       case 'hired':
@@ -219,11 +220,11 @@ const ApplicationDetailsModal: React.FC<ApplicationDetailsModalProps> = ({
                 <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-4">Update Application Status</h3>
                 <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-end">
                   <div className="flex-1 max-w-xs">
-                    <label className="block text-sm font-medium text-gray-700 mb-3">
-                      Change Status From:
-                    </label>
-                    <div className={`inline-block rounded-lg mb-3 ${getEnhancedStatusBadge(selectedApplication.status)}`}>
-                      {getStatusText(selectedApplication.status)}
+                    <div className="flex items-center gap-2 mb-3">
+                      <span className="text-sm font-medium text-gray-700">Change Status From:</span>
+                      <span className={getEnhancedStatusBadge(selectedApplication.status)}>
+                        {getStatusText(selectedApplication.status)}
+                      </span>
                     </div>
                     <Select value={selectedStatus} onValueChange={setSelectedStatus}>
                       <SelectTrigger className="w-full bg-white border-gray-300 focus:border-primary focus:ring-primary">
@@ -293,3 +294,4 @@ const ApplicationDetailsModal: React.FC<ApplicationDetailsModalProps> = ({
 };
 
 export default ApplicationDetailsModal;
+
