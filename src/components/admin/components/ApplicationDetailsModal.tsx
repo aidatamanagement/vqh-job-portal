@@ -1,10 +1,11 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { FileText, Download, ExternalLink, Trash2 } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { FileText, Download, ExternalLink, Trash2, ChevronDown } from 'lucide-react';
 import { JobApplication } from '@/types';
 import { formatDate, getStatusBadgeVariant, getStatusText } from '../utils/submissionsUtils';
 
@@ -25,7 +26,32 @@ const ApplicationDetailsModal: React.FC<ApplicationDetailsModalProps> = ({
   onOpenFileViewer,
   deletingApplication
 }) => {
+  const [selectedStatus, setSelectedStatus] = useState<string>('');
+  const [isUpdating, setIsUpdating] = useState(false);
+
   if (!selectedApplication) return null;
+
+  const statusOptions = [
+    { value: 'application_submitted', label: 'Application Submitted' },
+    { value: 'under_review', label: 'Under Review' },
+    { value: 'shortlisted', label: 'Shortlisted' },
+    { value: 'interview_scheduled', label: 'Interview Scheduled' },
+    { value: 'decisioning', label: 'Decisioning' },
+    { value: 'hired', label: 'Hired' },
+    { value: 'rejected', label: 'Rejected' },
+  ];
+
+  const handleStatusUpdate = async () => {
+    if (!selectedStatus || selectedStatus === selectedApplication.status) return;
+    
+    setIsUpdating(true);
+    try {
+      await onUpdateStatus(selectedApplication.id, selectedStatus as any);
+      setSelectedStatus(''); // Reset selection after successful update
+    } finally {
+      setIsUpdating(false);
+    }
+  };
 
   return (
     <Dialog open={!!selectedApplication} onOpenChange={(open) => !open && onClose()}>
@@ -161,61 +187,43 @@ const ApplicationDetailsModal: React.FC<ApplicationDetailsModalProps> = ({
             </div>
           </div>
 
-          {/* Action Buttons */}
-          <div className="flex flex-col sm:flex-row gap-3 pt-4 border-t">
-            <div className="flex flex-wrap gap-2">
+          {/* Status Update Section */}
+          <div className="border-t pt-4">
+            <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-4">Update Application Status</h3>
+            <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-end">
+              <div className="flex-1 min-w-0">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Change Status From: <Badge variant={getStatusBadgeVariant(selectedApplication.status)} className="ml-1">
+                    {getStatusText(selectedApplication.status)}
+                  </Badge>
+                </label>
+                <Select value={selectedStatus} onValueChange={setSelectedStatus}>
+                  <SelectTrigger className="w-full bg-white">
+                    <SelectValue placeholder="Select new status..." />
+                  </SelectTrigger>
+                  <SelectContent className="bg-white border shadow-lg z-50">
+                    {statusOptions
+                      .filter(option => option.value !== selectedApplication.status)
+                      .map((option) => (
+                        <SelectItem key={option.value} value={option.value} className="hover:bg-gray-100">
+                          {option.label}
+                        </SelectItem>
+                      ))}
+                  </SelectContent>
+                </Select>
+              </div>
               <Button
-                onClick={() => onUpdateStatus(selectedApplication.id, 'under_review')}
-                disabled={selectedApplication.status === 'under_review'}
-                className="bg-blue-600 hover:bg-blue-700 text-sm px-3 py-2"
+                onClick={handleStatusUpdate}
+                disabled={!selectedStatus || selectedStatus === selectedApplication.status || isUpdating}
+                className="bg-primary hover:bg-primary/90 min-w-[100px]"
               >
-                Under Review
-              </Button>
-              <Button
-                onClick={() => onUpdateStatus(selectedApplication.id, 'shortlisted')}
-                disabled={selectedApplication.status === 'shortlisted'}
-                className="bg-green-600 hover:bg-green-700 text-sm px-3 py-2"
-              >
-                Shortlist
-              </Button>
-              <Button
-                onClick={() => onUpdateStatus(selectedApplication.id, 'interview_scheduled')}
-                disabled={selectedApplication.status === 'interview_scheduled'}
-                className="bg-purple-600 hover:bg-purple-700 text-sm px-3 py-2"
-              >
-                Schedule Interview
-              </Button>
-              <Button
-                onClick={() => onUpdateStatus(selectedApplication.id, 'decisioning')}
-                disabled={selectedApplication.status === 'decisioning'}
-                className="bg-orange-600 hover:bg-orange-700 text-sm px-3 py-2"
-              >
-                Decisioning
-              </Button>
-              <Button
-                onClick={() => onUpdateStatus(selectedApplication.id, 'hired')}
-                disabled={selectedApplication.status === 'hired'}
-                className="bg-green-800 hover:bg-green-900 text-sm px-3 py-2"
-              >
-                Hire
-              </Button>
-              <Button
-                variant="destructive"
-                onClick={() => onUpdateStatus(selectedApplication.id, 'rejected')}
-                disabled={selectedApplication.status === 'rejected'}
-                className="text-sm px-3 py-2"
-              >
-                Reject
-              </Button>
-              <Button
-                variant="outline"
-                onClick={() => onUpdateStatus(selectedApplication.id, 'application_submitted')}
-                disabled={selectedApplication.status === 'application_submitted'}
-                className="text-sm px-3 py-2"
-              >
-                Reset to Submitted
+                {isUpdating ? 'Updating...' : 'Save Status'}
               </Button>
             </div>
+          </div>
+
+          {/* Delete Action */}
+          <div className="border-t pt-4">
             <AlertDialog>
               <AlertDialogTrigger asChild>
                 <Button
