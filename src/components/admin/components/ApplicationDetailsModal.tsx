@@ -11,7 +11,7 @@ import { formatDate, getStatusBadgeVariant, getStatusText } from '../utils/submi
 interface ApplicationDetailsModalProps {
   selectedApplication: JobApplication | null;
   onClose: () => void;
-  onUpdateStatus: (id: string, status: 'waiting' | 'approved' | 'rejected') => void;
+  onUpdateStatus: (id: string, status: 'application_submitted' | 'under_review' | 'shortlisted' | 'interview_scheduled' | 'decisioning' | 'hired' | 'rejected') => void;
   onDeleteApplication: (applicationId: string) => void;
   onOpenFileViewer: (url: string, name: string) => void;
   deletingApplication: string | null;
@@ -163,29 +163,59 @@ const ApplicationDetailsModal: React.FC<ApplicationDetailsModalProps> = ({
 
           {/* Action Buttons */}
           <div className="flex flex-col sm:flex-row gap-3 pt-4 border-t">
-            <Button
-              onClick={() => onUpdateStatus(selectedApplication.id, 'approved')}
-              disabled={selectedApplication.status === 'approved'}
-              className="bg-green-600 hover:bg-green-700 text-sm px-4 py-2"
-            >
-              Approve
-            </Button>
-            <Button
-              variant="destructive"
-              onClick={() => onUpdateStatus(selectedApplication.id, 'rejected')}
-              disabled={selectedApplication.status === 'rejected'}
-              className="text-sm px-4 py-2"
-            >
-              Reject
-            </Button>
-            <Button
-              variant="outline"
-              onClick={() => onUpdateStatus(selectedApplication.id, 'waiting')}
-              disabled={selectedApplication.status === 'waiting'}
-              className="text-sm px-4 py-2"
-            >
-              Mark as Pending
-            </Button>
+            <div className="flex flex-wrap gap-2">
+              <Button
+                onClick={() => onUpdateStatus(selectedApplication.id, 'under_review')}
+                disabled={selectedApplication.status === 'under_review'}
+                className="bg-blue-600 hover:bg-blue-700 text-sm px-3 py-2"
+              >
+                Under Review
+              </Button>
+              <Button
+                onClick={() => onUpdateStatus(selectedApplication.id, 'shortlisted')}
+                disabled={selectedApplication.status === 'shortlisted'}
+                className="bg-green-600 hover:bg-green-700 text-sm px-3 py-2"
+              >
+                Shortlist
+              </Button>
+              <Button
+                onClick={() => onUpdateStatus(selectedApplication.id, 'interview_scheduled')}
+                disabled={selectedApplication.status === 'interview_scheduled'}
+                className="bg-purple-600 hover:bg-purple-700 text-sm px-3 py-2"
+              >
+                Schedule Interview
+              </Button>
+              <Button
+                onClick={() => onUpdateStatus(selectedApplication.id, 'decisioning')}
+                disabled={selectedApplication.status === 'decisioning'}
+                className="bg-orange-600 hover:bg-orange-700 text-sm px-3 py-2"
+              >
+                Decisioning
+              </Button>
+              <Button
+                onClick={() => onUpdateStatus(selectedApplication.id, 'hired')}
+                disabled={selectedApplication.status === 'hired'}
+                className="bg-green-800 hover:bg-green-900 text-sm px-3 py-2"
+              >
+                Hire
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={() => onUpdateStatus(selectedApplication.id, 'rejected')}
+                disabled={selectedApplication.status === 'rejected'}
+                className="text-sm px-3 py-2"
+              >
+                Reject
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => onUpdateStatus(selectedApplication.id, 'application_submitted')}
+                disabled={selectedApplication.status === 'application_submitted'}
+                className="text-sm px-3 py-2"
+              >
+                Reset to Submitted
+              </Button>
+            </div>
             <AlertDialog>
               <AlertDialogTrigger asChild>
                 <Button

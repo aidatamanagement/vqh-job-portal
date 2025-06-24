@@ -92,7 +92,7 @@ export const useDataFetching = (user: User | null, userProfile: any | null) => {
         earliestStartDate: app.earliest_start_date,
         cityState: app.city_state,
         coverLetter: app.cover_letter,
-        status: app.status as 'waiting' | 'approved' | 'rejected',
+        status: app.status as 'application_submitted' | 'under_review' | 'shortlisted' | 'interview_scheduled' | 'decisioning' | 'hired' | 'rejected',
         additionalDocsUrls: app.additional_docs_urls || [],
         trackingToken: app.tracking_token,
         createdAt: app.created_at,

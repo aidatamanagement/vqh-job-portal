@@ -55,7 +55,7 @@ export const useSubmissions = () => {
         coverLetter: item.cover_letter || '',
         resumeUrl: getResumeUrl(item.id),
         additionalDocsUrls: item.additional_docs_urls || [],
-        status: item.status as 'waiting' | 'approved' | 'rejected',
+        status: item.status as 'application_submitted' | 'under_review' | 'shortlisted' | 'interview_scheduled' | 'decisioning' | 'hired' | 'rejected',
         notes: '',
         trackingToken: item.tracking_token,
         createdAt: item.created_at,
@@ -127,7 +127,7 @@ export const useSubmissions = () => {
   };
 
   // Update application status in Supabase with email automation
-  const updateApplicationStatus = async (id: string, newStatus: 'waiting' | 'approved' | 'rejected') => {
+  const updateApplicationStatus = async (id: string, newStatus: 'application_submitted' | 'under_review' | 'shortlisted' | 'interview_scheduled' | 'decisioning' | 'hired' | 'rejected') => {
     try {
       console.log('Updating application status:', { id, newStatus });
 
@@ -137,8 +137,8 @@ export const useSubmissions = () => {
       // Find the application to get details for email
       const application = submissions.find(app => app.id === id);
       
-      // Send email notification for approved/rejected status (not for waiting)
-      if (application && (newStatus === 'approved' || newStatus === 'rejected')) {
+      // Send email notification for hired/rejected status (not for other statuses)
+      if (application && (newStatus === 'hired' || newStatus === 'rejected')) {
         try {
           console.log('Sending status update email:', { 
             email: application.email, 
@@ -151,7 +151,7 @@ export const useSubmissions = () => {
             firstName: application.firstName,
             lastName: application.lastName,
             appliedPosition: application.appliedPosition,
-            status: newStatus
+            status: newStatus === 'hired' ? 'approved' : newStatus // Map 'hired' to 'approved' for email template
           });
 
           console.log('Status update email sent successfully');
@@ -174,15 +174,15 @@ export const useSubmissions = () => {
       ));
 
       // Show success message (only if email didn't fail above)
-      if (!application || newStatus === 'waiting') {
+      if (!application || (newStatus !== 'hired' && newStatus !== 'rejected')) {
         toast({
           title: "Status Updated",
-          description: `Application status has been updated to ${newStatus}`,
+          description: `Application status has been updated to ${newStatus.replace('_', ' ')}`,
         });
       } else {
         toast({
           title: "Status Updated",
-          description: `Application status updated to ${newStatus} and notification email sent to applicant`,
+          description: `Application status updated to ${newStatus.replace('_', ' ')} and notification email sent to applicant`,
         });
       }
 

@@ -1,4 +1,3 @@
-
 export interface Job {
   id: string;
   title: string;
@@ -44,7 +43,7 @@ export interface JobApplication {
   coverLetter: string;
   resumeUrl?: string;
   additionalDocsUrls: string[];
-  status: 'waiting' | 'approved' | 'rejected'; // Changed from 'declined' to 'rejected' to match database
+  status: 'application_submitted' | 'under_review' | 'shortlisted' | 'interview_scheduled' | 'decisioning' | 'hired' | 'rejected';
   notes?: string;
   trackingToken: string;
   createdAt: string;

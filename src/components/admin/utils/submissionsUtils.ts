@@ -1,4 +1,3 @@
-
 import { JobApplication } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -17,10 +16,16 @@ export const formatDate = (dateString: string) => {
 
 export const getStatusBadgeVariant = (status: string) => {
   switch (status) {
-    case 'approved':
+    case 'hired':
       return 'default';
     case 'rejected':
       return 'destructive';
+    case 'shortlisted':
+    case 'interview_scheduled':
+      return 'default';
+    case 'under_review':
+    case 'decisioning':
+      return 'secondary';
     default:
       return 'secondary';
   }
@@ -28,10 +33,18 @@ export const getStatusBadgeVariant = (status: string) => {
 
 export const getStatusText = (status: string) => {
   switch (status) {
-    case 'waiting':
-      return 'Pending';
-    case 'approved':
-      return 'Approved';
+    case 'application_submitted':
+      return 'Application Submitted';
+    case 'under_review':
+      return 'Under Review';
+    case 'shortlisted':
+      return 'Shortlisted';
+    case 'interview_scheduled':
+      return 'Interview Scheduled';
+    case 'decisioning':
+      return 'Decisioning';
+    case 'hired':
+      return 'Hired';
     case 'rejected':
       return 'Rejected';
     default:
@@ -134,7 +147,7 @@ export const deleteApplicationFromDatabase = async (applicationId: string) => {
 
 export const updateApplicationStatusInDatabase = async (
   id: string, 
-  newStatus: 'waiting' | 'approved' | 'rejected'
+  newStatus: 'application_submitted' | 'under_review' | 'shortlisted' | 'interview_scheduled' | 'decisioning' | 'hired' | 'rejected'
 ) => {
   console.log('Updating application status:', { id, newStatus });
 

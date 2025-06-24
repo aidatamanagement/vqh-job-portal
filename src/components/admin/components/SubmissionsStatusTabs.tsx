@@ -31,23 +31,47 @@ const SubmissionsStatusTabs: React.FC<SubmissionsStatusTabsProps> = ({
       onValueChange={setStatusFilter}
       className="w-full animate-slide-up-delayed-2"
     >
-      <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 h-auto">
+      <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 h-auto">
         <TabsTrigger value="all" className="flex flex-col sm:flex-row items-center gap-1 sm:gap-2 p-2 text-xs sm:text-sm">
           <span>All</span>
           <Badge variant="secondary" className="text-xs">
             {getStatusCount(submissions, 'all')}
           </Badge>
         </TabsTrigger>
-        <TabsTrigger value="waiting" className="flex flex-col sm:flex-row items-center gap-1 sm:gap-2 p-2 text-xs sm:text-sm">
-          <span>Pending</span>
+        <TabsTrigger value="application_submitted" className="flex flex-col sm:flex-row items-center gap-1 sm:gap-2 p-2 text-xs sm:text-sm">
+          <span>Submitted</span>
           <Badge variant="secondary" className="text-xs">
-            {getStatusCount(submissions, 'waiting')}
+            {getStatusCount(submissions, 'application_submitted')}
           </Badge>
         </TabsTrigger>
-        <TabsTrigger value="approved" className="flex flex-col sm:flex-row items-center gap-1 sm:gap-2 p-2 text-xs sm:text-sm">
-          <span>Approved</span>
+        <TabsTrigger value="under_review" className="flex flex-col sm:flex-row items-center gap-1 sm:gap-2 p-2 text-xs sm:text-sm">
+          <span>Review</span>
           <Badge variant="secondary" className="text-xs">
-            {getStatusCount(submissions, 'approved')}
+            {getStatusCount(submissions, 'under_review')}
+          </Badge>
+        </TabsTrigger>
+        <TabsTrigger value="shortlisted" className="flex flex-col sm:flex-row items-center gap-1 sm:gap-2 p-2 text-xs sm:text-sm">
+          <span>Shortlisted</span>
+          <Badge variant="secondary" className="text-xs">
+            {getStatusCount(submissions, 'shortlisted')}
+          </Badge>
+        </TabsTrigger>
+        <TabsTrigger value="interview_scheduled" className="flex flex-col sm:flex-row items-center gap-1 sm:gap-2 p-2 text-xs sm:text-sm">
+          <span>Interview</span>
+          <Badge variant="secondary" className="text-xs">
+            {getStatusCount(submissions, 'interview_scheduled')}
+          </Badge>
+        </TabsTrigger>
+        <TabsTrigger value="decisioning" className="flex flex-col sm:flex-row items-center gap-1 sm:gap-2 p-2 text-xs sm:text-sm">
+          <span>Decision</span>
+          <Badge variant="secondary" className="text-xs">
+            {getStatusCount(submissions, 'decisioning')}
+          </Badge>
+        </TabsTrigger>
+        <TabsTrigger value="hired" className="flex flex-col sm:flex-row items-center gap-1 sm:gap-2 p-2 text-xs sm:text-sm">
+          <span>Hired</span>
+          <Badge variant="secondary" className="text-xs">
+            {getStatusCount(submissions, 'hired')}
           </Badge>
         </TabsTrigger>
         <TabsTrigger value="rejected" className="flex flex-col sm:flex-row items-center gap-1 sm:gap-2 p-2 text-xs sm:text-sm">
@@ -67,18 +91,54 @@ const SubmissionsStatusTabs: React.FC<SubmissionsStatusTabsProps> = ({
         />
       </TabsContent>
 
-      <TabsContent value="waiting" className="mt-6">
+      <TabsContent value="application_submitted" className="mt-6">
         <SubmissionsTable
-          submissions={getSubmissionsByStatus(filteredSubmissions, 'waiting')}
+          submissions={getSubmissionsByStatus(filteredSubmissions, 'application_submitted')}
           onViewApplication={onViewApplication}
           onDeleteApplication={onDeleteApplication}
           deletingApplication={deletingApplication}
         />
       </TabsContent>
 
-      <TabsContent value="approved" className="mt-6">
+      <TabsContent value="under_review" className="mt-6">
         <SubmissionsTable
-          submissions={getSubmissionsByStatus(filteredSubmissions, 'approved')}
+          submissions={getSubmissionsByStatus(filteredSubmissions, 'under_review')}
+          onViewApplication={onViewApplication}
+          onDeleteApplication={onDeleteApplication}
+          deletingApplication={deletingApplication}
+        />
+      </TabsContent>
+
+      <TabsContent value="shortlisted" className="mt-6">
+        <SubmissionsTable
+          submissions={getSubmissionsByStatus(filteredSubmissions, 'shortlisted')}
+          onViewApplication={onViewApplication}
+          onDeleteApplication={onDeleteApplication}
+          deletingApplication={deletingApplication}
+        />
+      </TabsContent>
+
+      <TabsContent value="interview_scheduled" className="mt-6">
+        <SubmissionsTable
+          submissions={getSubmissionsByStatus(filteredSubmissions, 'interview_scheduled')}
+          onViewApplication={onViewApplication}
+          onDeleteApplication={onDeleteApplication}
+          deletingApplication={deletingApplication}
+        />
+      </TabsContent>
+
+      <TabsContent value="decisioning" className="mt-6">
+        <SubmissionsTable
+          submissions={getSubmissionsByStatus(filteredSubmissions, 'decisioning')}
+          onViewApplication={onViewApplication}
+          onDeleteApplication={onDeleteApplication}
+          deletingApplication={deletingApplication}
+        />
+      </TabsContent>
+
+      <TabsContent value="hired" className="mt-6">
+        <SubmissionsTable
+          submissions={getSubmissionsByStatus(filteredSubmissions, 'hired')}
           onViewApplication={onViewApplication}
           onDeleteApplication={onDeleteApplication}
           deletingApplication={deletingApplication}
