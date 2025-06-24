@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -104,7 +103,7 @@ const ApplicationDetailsModal: React.FC<ApplicationDetailsModalProps> = ({
                   <span className="font-medium text-gray-700">Current Status:</span>
                   <Badge 
                     variant={getStatusBadgeVariant(selectedApplication.status)}
-                    className="ml-2 text-xs"
+                    className="ml-2 text-xs font-medium px-3 py-1"
                   >
                     {getStatusText(selectedApplication.status)}
                   </Badge>
@@ -187,73 +186,83 @@ const ApplicationDetailsModal: React.FC<ApplicationDetailsModalProps> = ({
             </div>
           </div>
 
-          {/* Status Update Section */}
+          {/* Status Update and Delete Section */}
           <div className="border-t pt-4">
-            <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-4">Update Application Status</h3>
-            <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-end">
-              <div className="flex-1 min-w-0">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Change Status From: <Badge variant={getStatusBadgeVariant(selectedApplication.status)} className="ml-1">
-                    {getStatusText(selectedApplication.status)}
-                  </Badge>
-                </label>
-                <Select value={selectedStatus} onValueChange={setSelectedStatus}>
-                  <SelectTrigger className="w-full bg-white">
-                    <SelectValue placeholder="Select new status..." />
-                  </SelectTrigger>
-                  <SelectContent className="bg-white border shadow-lg z-50">
-                    {statusOptions
-                      .filter(option => option.value !== selectedApplication.status)
-                      .map((option) => (
-                        <SelectItem key={option.value} value={option.value} className="hover:bg-gray-100">
-                          {option.label}
-                        </SelectItem>
-                      ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <Button
-                onClick={handleStatusUpdate}
-                disabled={!selectedStatus || selectedStatus === selectedApplication.status || isUpdating}
-                className="bg-primary hover:bg-primary/90 min-w-[100px]"
-              >
-                {isUpdating ? 'Updating...' : 'Save Status'}
-              </Button>
-            </div>
-          </div>
-
-          {/* Delete Action */}
-          <div className="border-t pt-4">
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <Button
-                  variant="outline"
-                  disabled={deletingApplication === selectedApplication.id}
-                  className="text-sm px-4 py-2 text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200"
-                >
-                  <Trash2 className="w-4 h-4 mr-2" />
-                  {deletingApplication === selectedApplication.id ? 'Deleting...' : 'Delete Application'}
-                </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>Delete Application</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    Are you sure you want to delete this application from {selectedApplication.firstName} {selectedApplication.lastName}? 
-                    This will permanently delete the application record and all uploaded files. This action cannot be undone.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Cancel</AlertDialogCancel>
-                  <AlertDialogAction
-                    onClick={() => onDeleteApplication(selectedApplication.id)}
-                    className="bg-red-600 hover:bg-red-700"
+            <div className="flex flex-col lg:flex-row gap-6">
+              {/* Status Update Section - Left Side */}
+              <div className="flex-1">
+                <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-4">Update Application Status</h3>
+                <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-end">
+                  <div className="flex-1 max-w-xs">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Change Status From: 
+                      <Badge 
+                        variant={getStatusBadgeVariant(selectedApplication.status)} 
+                        className="ml-2 font-medium px-3 py-1 text-xs"
+                      >
+                        {getStatusText(selectedApplication.status)}
+                      </Badge>
+                    </label>
+                    <Select value={selectedStatus} onValueChange={setSelectedStatus}>
+                      <SelectTrigger className="w-full bg-white border-gray-300 focus:border-primary focus:ring-primary">
+                        <SelectValue placeholder="Select new status..." />
+                      </SelectTrigger>
+                      <SelectContent className="bg-white border shadow-lg z-50 max-h-60">
+                        {statusOptions
+                          .filter(option => option.value !== selectedApplication.status)
+                          .map((option) => (
+                            <SelectItem key={option.value} value={option.value} className="hover:bg-gray-100 cursor-pointer">
+                              {option.label}
+                            </SelectItem>
+                          ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <Button
+                    onClick={handleStatusUpdate}
+                    disabled={!selectedStatus || selectedStatus === selectedApplication.status || isUpdating}
+                    className="bg-primary hover:bg-primary/90 min-w-[100px] whitespace-nowrap"
                   >
-                    Delete Application
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
+                    {isUpdating ? 'Updating...' : 'Save Status'}
+                  </Button>
+                </div>
+              </div>
+
+              {/* Delete Action - Right Side */}
+              <div className="lg:w-auto">
+                <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-4">Danger Zone</h3>
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button
+                      variant="outline"
+                      disabled={deletingApplication === selectedApplication.id}
+                      className="text-sm px-4 py-2 text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200 hover:border-red-300 whitespace-nowrap"
+                    >
+                      <Trash2 className="w-4 h-4 mr-2" />
+                      {deletingApplication === selectedApplication.id ? 'Deleting...' : 'Delete Application'}
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Delete Application</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Are you sure you want to delete this application from {selectedApplication.firstName} {selectedApplication.lastName}? 
+                        This will permanently delete the application record and all uploaded files. This action cannot be undone.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogAction
+                        onClick={() => onDeleteApplication(selectedApplication.id)}
+                        className="bg-red-600 hover:bg-red-700"
+                      >
+                        Delete Application
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              </div>
+            </div>
           </div>
         </div>
       </DialogContent>
