@@ -1,228 +1,31 @@
-import React, { useState, useEffect } from 'react';
-import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Inbox } from 'lucide-react';
+
+import React, { useState } from 'react';
 import { JobApplication } from '@/types';
-import { supabase } from '@/integrations/supabase/client';
-import { toast } from '@/hooks/use-toast';
-import { useEmailAutomation } from '@/hooks/useEmailAutomation';
+import { useSubmissions } from './hooks/useSubmissions';
+import SubmissionsHeader from './components/SubmissionsHeader';
 import SubmissionsFilters from './components/SubmissionsFilters';
-import SubmissionsTable from './components/SubmissionsTable';
+import SubmissionsStatusTabs from './components/SubmissionsStatusTabs';
 import ApplicationDetailsModal from './components/ApplicationDetailsModal';
 import FileViewerModal from './components/FileViewerModal';
 import {
-  getResumeUrl,
   getUniquePositions,
-  filterSubmissions,
-  getSubmissionsByStatus,
-  getStatusCount,
-  deleteApplicationFiles,
-  deleteApplicationFromDatabase,
-  updateApplicationStatusInDatabase
+  filterSubmissions
 } from './utils/submissionsUtils';
 
 const Submissions: React.FC = () => {
-  const [submissions, setSubmissions] = useState<JobApplication[]>([]);
-  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [positionFilter, setPositionFilter] = useState<string>('all');
   const [selectedApplication, setSelectedApplication] = useState<JobApplication | null>(null);
   const [viewingFile, setViewingFile] = useState<{ url: string; name: string } | null>(null);
-  const [deletingApplication, setDeletingApplication] = useState<string | null>(null);
 
-  const { sendApplicationStatusEmail } = useEmailAutomation();
-
-  // Fetch submissions from Supabase
-  const fetchSubmissions = async () => {
-    try {
-      setLoading(true);
-      console.log('Fetching submissions from Supabase...');
-
-      const { data, error } = await supabase
-        .from('job_applications')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      if (error) {
-        console.error('Error fetching submissions:', error);
-        toast({
-          title: "Error",
-          description: "Failed to load submissions. Please try again.",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      console.log('Fetched submissions:', data);
-
-      // Transform data to match the expected format
-      const transformedSubmissions: JobApplication[] = data.map(item => ({
-        id: item.id,
-        jobId: item.job_id,
-        firstName: item.first_name,
-        lastName: item.last_name,
-        email: item.email,
-        phone: item.phone || '',
-        appliedPosition: item.applied_position,
-        earliestStartDate: item.earliest_start_date || '',
-        cityState: item.city_state || '',
-        coverLetter: item.cover_letter || '',
-        resumeUrl: getResumeUrl(item.id),
-        additionalDocsUrls: item.additional_docs_urls || [],
-        status: item.status as 'waiting' | 'approved' | 'rejected',
-        notes: '',
-        trackingToken: item.tracking_token,
-        createdAt: item.created_at,
-        updatedAt: item.updated_at,
-      }));
-
-      setSubmissions(transformedSubmissions);
-    } catch (error) {
-      console.error('Error in fetchSubmissions:', error);
-      toast({
-        title: "Error",
-        description: "Failed to load submissions. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Delete application and associated files
-  const deleteApplication = async (applicationId: string) => {
-    if (!applicationId) {
-      toast({
-        title: "Error",
-        description: "Invalid application ID.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    try {
-      setDeletingApplication(applicationId);
-      console.log('Starting deletion process for application:', applicationId);
-
-      // Step 1: Delete the application record from the database
-      console.log('Step 1: Deleting record from database...');
-      await deleteApplicationFromDatabase(applicationId);
-      console.log('Successfully deleted application from database');
-
-      // Step 2: Delete files from storage (non-blocking)
-      console.log('Step 2: Deleting files from storage...');
-      try {
-        await deleteApplicationFiles(applicationId);
-        console.log('Files deleted from storage successfully');
-      } catch (storageError) {
-        console.warn('Storage deletion failed, but continuing since database deletion succeeded:', storageError);
-      }
-
-      // Step 3: Update local state after successful database deletion
-      console.log('Step 3: Updating local state...');
-      setSubmissions(prev => prev.filter(app => app.id !== applicationId));
-
-      // Close the details modal if the deleted application was selected
-      if (selectedApplication && selectedApplication.id === applicationId) {
-        setSelectedApplication(null);
-      }
-
-      toast({
-        title: "Success",
-        description: "Application has been successfully deleted.",
-      });
-
-    } catch (error) {
-      console.error('Error deleting application:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-      toast({
-        title: "Deletion Failed",
-        description: `Failed to delete application: ${errorMessage}`,
-        variant: "destructive",
-      });
-    } finally {
-      setDeletingApplication(null);
-    }
-  };
-
-  // Update application status in Supabase with email automation
-  const updateApplicationStatus = async (id: string, newStatus: 'waiting' | 'approved' | 'rejected') => {
-    try {
-      console.log('Updating application status:', { id, newStatus });
-
-      // Update status in database
-      await updateApplicationStatusInDatabase(id, newStatus);
-
-      // Find the application to get details for email
-      const application = submissions.find(app => app.id === id);
-      
-      // Send email notification for approved/rejected status (not for waiting)
-      if (application && (newStatus === 'approved' || newStatus === 'rejected')) {
-        try {
-          console.log('Sending status update email:', { 
-            email: application.email, 
-            status: newStatus,
-            position: application.appliedPosition 
-          });
-
-          await sendApplicationStatusEmail({
-            email: application.email,
-            firstName: application.firstName,
-            lastName: application.lastName,
-            appliedPosition: application.appliedPosition,
-            status: newStatus
-          });
-
-          console.log('Status update email sent successfully');
-        } catch (emailError) {
-          console.warn('Failed to send status update email:', emailError);
-          // Don't throw error - email failure shouldn't prevent status update
-          toast({
-            title: "Status Updated",
-            description: `Application status updated to ${newStatus}. Note: Email notification may have failed to send.`,
-            variant: "destructive",
-          });
-        }
-      }
-
-      // Update local state
-      setSubmissions(prev => prev.map(app => 
-        app.id === id 
-          ? { ...app, status: newStatus, updatedAt: new Date().toISOString() }
-          : app
-      ));
-
-      if (selectedApplication && selectedApplication.id === id) {
-        setSelectedApplication(prev => prev ? { ...prev, status: newStatus } : null);
-      }
-
-      // Show success message (only if email didn't fail above)
-      if (!application || newStatus === 'waiting') {
-        toast({
-          title: "Status Updated",
-          description: `Application status has been updated to ${newStatus}`,
-        });
-      } else {
-        toast({
-          title: "Status Updated",
-          description: `Application status updated to ${newStatus} and notification email sent to applicant`,
-        });
-      }
-
-    } catch (error) {
-      console.error('Error in updateApplicationStatus:', error);
-      toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "Failed to update application status. Please try again.",
-        variant: "destructive",
-      });
-    }
-  };
-
-  useEffect(() => {
-    fetchSubmissions();
-  }, []);
+  const {
+    submissions,
+    loading,
+    deletingApplication,
+    deleteApplication,
+    updateApplicationStatus
+  } = useSubmissions();
 
   const filteredSubmissions = filterSubmissions(submissions, searchTerm, statusFilter, positionFilter);
   const uniquePositions = getUniquePositions(submissions);
@@ -231,17 +34,26 @@ const Submissions: React.FC = () => {
     setViewingFile({ url, name });
   };
 
+  const handleDeleteApplication = async (applicationId: string) => {
+    await deleteApplication(applicationId);
+    // Close the details modal if the deleted application was selected
+    if (selectedApplication && selectedApplication.id === applicationId) {
+      setSelectedApplication(null);
+    }
+  };
+
+  const handleUpdateApplicationStatus = async (id: string, newStatus: 'waiting' | 'approved' | 'rejected') => {
+    await updateApplicationStatus(id, newStatus);
+    // Update the selected application if it's currently being viewed
+    if (selectedApplication && selectedApplication.id === id) {
+      setSelectedApplication(prev => prev ? { ...prev, status: newStatus } : null);
+    }
+  };
+
   if (loading) {
     return (
       <div className="space-y-6 animate-slide-up">
-        <div className="flex justify-between items-center">
-          <div className="flex items-center gap-3">
-            <div className="p-2 rounded-lg" style={{ backgroundColor: '#005586' }}>
-              <Inbox className="w-6 h-6 text-white" />
-            </div>
-            <h1 className="font-bold text-gray-900 text-lg sm:text-xl lg:text-2xl">Submissions</h1>
-          </div>
-        </div>
+        <SubmissionsHeader />
         <div className="flex justify-center items-center h-64">
           <div className="spinner" />
           <span className="ml-2">Loading submissions...</span>
@@ -252,14 +64,7 @@ const Submissions: React.FC = () => {
 
   return (
     <div className="space-y-6 animate-slide-up">
-      <div className="flex justify-between items-center">
-        <div className="flex items-center gap-3">
-          <div className="p-2 rounded-lg" style={{ backgroundColor: '#005586' }}>
-            <Inbox className="w-6 h-6 text-white" />
-          </div>
-          <h1 className="font-bold text-gray-900 text-lg sm:text-xl lg:text-2xl">Submissions</h1>
-        </div>
-      </div>
+      <SubmissionsHeader />
 
       {/* Filters */}
       <SubmissionsFilters
@@ -271,81 +76,22 @@ const Submissions: React.FC = () => {
       />
 
       {/* Status Tabs with Counts */}
-      <Tabs 
-        value={statusFilter} 
-        onValueChange={setStatusFilter}
-        className="w-full animate-slide-up-delayed-2"
-      >
-        <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 h-auto">
-          <TabsTrigger value="all" className="flex flex-col sm:flex-row items-center gap-1 sm:gap-2 p-2 text-xs sm:text-sm">
-            <span>All</span>
-            <Badge variant="secondary" className="text-xs">
-              {getStatusCount(submissions, 'all')}
-            </Badge>
-          </TabsTrigger>
-          <TabsTrigger value="waiting" className="flex flex-col sm:flex-row items-center gap-1 sm:gap-2 p-2 text-xs sm:text-sm">
-            <span>Pending</span>
-            <Badge variant="secondary" className="text-xs">
-              {getStatusCount(submissions, 'waiting')}
-            </Badge>
-          </TabsTrigger>
-          <TabsTrigger value="approved" className="flex flex-col sm:flex-row items-center gap-1 sm:gap-2 p-2 text-xs sm:text-sm">
-            <span>Approved</span>
-            <Badge variant="secondary" className="text-xs">
-              {getStatusCount(submissions, 'approved')}
-            </Badge>
-          </TabsTrigger>
-          <TabsTrigger value="rejected" className="flex flex-col sm:flex-row items-center gap-1 sm:gap-2 p-2 text-xs sm:text-sm">
-            <span>Rejected</span>
-            <Badge variant="secondary" className="text-xs">
-              {getStatusCount(submissions, 'rejected')}
-            </Badge>
-          </TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="all" className="mt-6">
-          <SubmissionsTable
-            submissions={getSubmissionsByStatus(filteredSubmissions, 'all')}
-            onViewApplication={setSelectedApplication}
-            onDeleteApplication={deleteApplication}
-            deletingApplication={deletingApplication}
-          />
-        </TabsContent>
-
-        <TabsContent value="waiting" className="mt-6">
-          <SubmissionsTable
-            submissions={getSubmissionsByStatus(filteredSubmissions, 'waiting')}
-            onViewApplication={setSelectedApplication}
-            onDeleteApplication={deleteApplication}
-            deletingApplication={deletingApplication}
-          />
-        </TabsContent>
-
-        <TabsContent value="approved" className="mt-6">
-          <SubmissionsTable
-            submissions={getSubmissionsByStatus(filteredSubmissions, 'approved')}
-            onViewApplication={setSelectedApplication}
-            onDeleteApplication={deleteApplication}
-            deletingApplication={deletingApplication}
-          />
-        </TabsContent>
-
-        <TabsContent value="rejected" className="mt-6">
-          <SubmissionsTable
-            submissions={getSubmissionsByStatus(filteredSubmissions, 'rejected')}
-            onViewApplication={setSelectedApplication}
-            onDeleteApplication={deleteApplication}
-            deletingApplication={deletingApplication}
-          />
-        </TabsContent>
-      </Tabs>
+      <SubmissionsStatusTabs
+        statusFilter={statusFilter}
+        setStatusFilter={setStatusFilter}
+        filteredSubmissions={filteredSubmissions}
+        onViewApplication={setSelectedApplication}
+        onDeleteApplication={handleDeleteApplication}
+        deletingApplication={deletingApplication}
+        submissions={submissions}
+      />
 
       {/* Application Details Modal */}
       <ApplicationDetailsModal
         selectedApplication={selectedApplication}
         onClose={() => setSelectedApplication(null)}
-        onUpdateStatus={updateApplicationStatus}
-        onDeleteApplication={deleteApplication}
+        onUpdateStatus={handleUpdateApplicationStatus}
+        onDeleteApplication={handleDeleteApplication}
         onOpenFileViewer={openFileViewer}
         deletingApplication={deletingApplication}
       />
