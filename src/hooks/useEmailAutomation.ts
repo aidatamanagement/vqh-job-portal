@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 
 interface EmailVariables {
@@ -11,6 +12,7 @@ interface EmailVariables {
   applicationDate?: string;
   trackingToken?: string;
   trackingUrl?: string;
+  adminUrl?: string;
 }
 
 export const useEmailAutomation = () => {
@@ -21,7 +23,7 @@ export const useEmailAutomation = () => {
     adminEmails?: string[]
   ) => {
     try {
-      console.log('Sending email:', { templateSlug, recipientEmail, variables });
+      console.log('Sending email:', { templateSlug, recipientEmail, variables, adminEmails });
       
       const { data, error } = await supabase.functions.invoke('send-email', {
         body: {
@@ -59,27 +61,43 @@ export const useEmailAutomation = () => {
     },
     trackingToken?: string
   ) => {
-    const trackingUrl = trackingToken ? `${window.location.origin}/track/${trackingToken}` : '';
-    
-    const variables: EmailVariables = {
-      firstName: application.firstName,
-      lastName: application.lastName,
-      position: application.appliedPosition,
-      location: job.location,
-      email: application.email,
-      phone: application.phone || '',
-      earliestStartDate: application.earliestStartDate || '',
-      applicationDate: new Date().toLocaleDateString(),
-      trackingToken: trackingToken || '',
-      trackingUrl: trackingUrl
-    };
+    try {
+      const trackingUrl = trackingToken ? `${window.location.origin}/track/${trackingToken}` : '';
+      const adminUrl = `${window.location.origin}/admin`;
+      
+      const variables: EmailVariables = {
+        firstName: application.firstName,
+        lastName: application.lastName,
+        position: application.appliedPosition,
+        location: job.location,
+        email: application.email,
+        phone: application.phone || '',
+        earliestStartDate: application.earliestStartDate || '',
+        applicationDate: new Date().toLocaleDateString(),
+        trackingToken: trackingToken || '',
+        trackingUrl: trackingUrl,
+        adminUrl: adminUrl
+      };
 
-    // Send confirmation email to the candidate
-    await sendEmail('application_submitted', application.email, variables);
+      console.log('Sending confirmation email to candidate:', application.email);
+      // Send confirmation email to the candidate
+      await sendEmail('application_submitted', application.email, variables);
 
-    // Send admin notification
-    const adminEmails = ['admin@viaquesthospice.com']; // You can make this configurable
-    await sendEmail('admin_notification', adminEmails[0], variables, adminEmails);
+      console.log('Sending admin notification...');
+      // Send admin notification - using a separate call
+      const adminEmails = ['admin@viaquesthospice.com', 'careers@viaquesthospice.com'];
+      
+      // Send to each admin email individually to ensure delivery
+      for (const adminEmail of adminEmails) {
+        console.log('Sending admin notification to:', adminEmail);
+        await sendEmail('admin_notification', adminEmail, variables);
+      }
+
+      console.log('All emails sent successfully');
+    } catch (error) {
+      console.error('Error in sendApplicationSubmittedEmail:', error);
+      throw error;
+    }
   };
 
   const sendApplicationStatusEmail = async (

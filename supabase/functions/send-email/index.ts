@@ -72,13 +72,8 @@ const handler = async (req: Request): Promise<Response> => {
       htmlContent = htmlContent.replace(new RegExp(placeholder, 'g'), String(value));
     });
 
-    // Determine recipients based on template type
-    let recipients = [{ email: recipientEmail }];
-    
-    // For admin notifications, send to admin emails instead
-    if (templateSlug === 'admin_notification' && adminEmails && adminEmails.length > 0) {
-      recipients = adminEmails.map(email => ({ email }));
-    }
+    // Use the recipient email provided in the request
+    const recipients = [{ email: recipientEmail }];
 
     // Prepare Brevo email data
     const emailData: BrevoEmailData = {
@@ -92,23 +87,24 @@ const handler = async (req: Request): Promise<Response> => {
     };
 
     console.log('Sending email via Brevo to:', recipients.map(r => r.email).join(', '));
+    console.log('Email subject:', subject);
 
-    // Log email attempt for each recipient
-    const logPromises = recipients.map(recipient => 
-      supabaseClient
-        .from('email_logs')
-        .insert({
-          recipient_email: recipient.email,
-          template_slug: templateSlug,
-          subject,
-          variables_used: variables,
-          status: 'pending'
-        })
-        .select()
-        .single()
-    );
+    // Log email attempt
+    const { data: logData, error: logError } = await supabaseClient
+      .from('email_logs')
+      .insert({
+        recipient_email: recipientEmail,
+        template_slug: templateSlug,
+        subject,
+        variables_used: variables,
+        status: 'pending'
+      })
+      .select()
+      .single();
 
-    const logResults = await Promise.all(logPromises);
+    if (logError) {
+      console.error('Error creating email log:', logError);
+    }
 
     try {
       // Send email via Brevo
@@ -127,18 +123,16 @@ const handler = async (req: Request): Promise<Response> => {
       console.log('Brevo API response:', brevoResult);
       
       if (brevoResponse.ok) {
-        // Update logs with success
-        for (const logResult of logResults) {
-          if (logResult.data) {
-            await supabaseClient
-              .from('email_logs')
-              .update({
-                status: 'sent',
-                brevo_message_id: brevoResult.messageId,
-                sent_at: new Date().toISOString()
-              })
-              .eq('id', logResult.data.id);
-          }
+        // Update log with success
+        if (logData) {
+          await supabaseClient
+            .from('email_logs')
+            .update({
+              status: 'sent',
+              brevo_message_id: brevoResult.messageId,
+              sent_at: new Date().toISOString()
+            })
+            .eq('id', logData.id);
         }
 
         console.log('Email sent successfully:', brevoResult);
@@ -153,17 +147,15 @@ const handler = async (req: Request): Promise<Response> => {
     } catch (sendError) {
       console.error('Failed to send email:', sendError);
       
-      // Update logs with error
-      for (const logResult of logResults) {
-        if (logResult.data) {
-          await supabaseClient
-            .from('email_logs')
-            .update({
-              status: 'failed',
-              error_message: String(sendError)
-            })
-            .eq('id', logResult.data.id);
-        }
+      // Update log with error
+      if (logData) {
+        await supabaseClient
+          .from('email_logs')
+          .update({
+            status: 'failed',
+            error_message: String(sendError)
+          })
+          .eq('id', logData.id);
       }
 
       return new Response(
