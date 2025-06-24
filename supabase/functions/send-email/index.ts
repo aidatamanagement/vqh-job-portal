@@ -40,9 +40,9 @@ const handler = async (req: Request): Promise<Response> => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
     );
 
-    const { templateSlug, recipientEmail, variables }: EmailRequest = await req.json();
+    const { templateSlug, recipientEmail, variables, adminEmails }: EmailRequest = await req.json();
 
-    console.log('Processing email request:', { templateSlug, recipientEmail, variables });
+    console.log('Processing email request:', { templateSlug, recipientEmail, variables, adminEmails });
 
     // Get email template from database
     const { data: template, error: templateError } = await supabaseClient
@@ -72,31 +72,43 @@ const handler = async (req: Request): Promise<Response> => {
       htmlContent = htmlContent.replace(new RegExp(placeholder, 'g'), String(value));
     });
 
-    // Prepare Brevo email data with updated sender
+    // Determine recipients based on template type
+    let recipients = [{ email: recipientEmail }];
+    
+    // For admin notifications, send to admin emails instead
+    if (templateSlug === 'admin_notification' && adminEmails && adminEmails.length > 0) {
+      recipients = adminEmails.map(email => ({ email }));
+    }
+
+    // Prepare Brevo email data
     const emailData: BrevoEmailData = {
       sender: {
         name: "ViaQuest Hospice Careers",
         email: "careers@viaquesthospice.com"
       },
-      to: [{ email: recipientEmail }],
+      to: recipients,
       subject,
       htmlContent
     };
 
-    console.log('Sending email via Brevo to:', recipientEmail);
+    console.log('Sending email via Brevo to:', recipients.map(r => r.email).join(', '));
 
-    // Log email attempt
-    const { data: logEntry } = await supabaseClient
-      .from('email_logs')
-      .insert({
-        recipient_email: recipientEmail,
-        template_slug: templateSlug,
-        subject,
-        variables_used: variables,
-        status: 'pending'
-      })
-      .select()
-      .single();
+    // Log email attempt for each recipient
+    const logPromises = recipients.map(recipient => 
+      supabaseClient
+        .from('email_logs')
+        .insert({
+          recipient_email: recipient.email,
+          template_slug: templateSlug,
+          subject,
+          variables_used: variables,
+          status: 'pending'
+        })
+        .select()
+        .single()
+    );
+
+    const logResults = await Promise.all(logPromises);
 
     try {
       // Send email via Brevo
@@ -115,16 +127,18 @@ const handler = async (req: Request): Promise<Response> => {
       console.log('Brevo API response:', brevoResult);
       
       if (brevoResponse.ok) {
-        // Update log with success
-        if (logEntry) {
-          await supabaseClient
-            .from('email_logs')
-            .update({
-              status: 'sent',
-              brevo_message_id: brevoResult.messageId,
-              sent_at: new Date().toISOString()
-            })
-            .eq('id', logEntry.id);
+        // Update logs with success
+        for (const logResult of logResults) {
+          if (logResult.data) {
+            await supabaseClient
+              .from('email_logs')
+              .update({
+                status: 'sent',
+                brevo_message_id: brevoResult.messageId,
+                sent_at: new Date().toISOString()
+              })
+              .eq('id', logResult.data.id);
+          }
         }
 
         console.log('Email sent successfully:', brevoResult);
@@ -139,15 +153,17 @@ const handler = async (req: Request): Promise<Response> => {
     } catch (sendError) {
       console.error('Failed to send email:', sendError);
       
-      // Update log with error
-      if (logEntry) {
-        await supabaseClient
-          .from('email_logs')
-          .update({
-            status: 'failed',
-            error_message: String(sendError)
-          })
-          .eq('id', logEntry.id);
+      // Update logs with error
+      for (const logResult of logResults) {
+        if (logResult.data) {
+          await supabaseClient
+            .from('email_logs')
+            .update({
+              status: 'failed',
+              error_message: String(sendError)
+            })
+            .eq('id', logResult.data.id);
+        }
       }
 
       return new Response(

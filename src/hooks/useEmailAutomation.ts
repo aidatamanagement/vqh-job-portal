@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 
 interface EmailVariables {
@@ -75,8 +74,12 @@ export const useEmailAutomation = () => {
       trackingUrl: trackingUrl
     };
 
-    // Only send confirmation email to the candidate - no admin notifications
-    return sendEmail('application_submitted', application.email, variables);
+    // Send confirmation email to the candidate
+    await sendEmail('application_submitted', application.email, variables);
+
+    // Send admin notification
+    const adminEmails = ['admin@viaquesthospice.com']; // You can make this configurable
+    await sendEmail('admin_notification', adminEmails[0], variables, adminEmails);
   };
 
   const sendApplicationStatusEmail = async (
