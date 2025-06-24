@@ -1,5 +1,3 @@
-
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -81,7 +79,7 @@ const ApplicationDetailsModal: React.FC<ApplicationDetailsModalProps> = ({
   return (
     <Dialog open={!!selectedApplication} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="w-[95vw] max-w-4xl max-h-[90vh] overflow-y-auto m-2">
-        <DialogHeader>
+        <DialogHeader className="border-b pb-4">
           <DialogTitle className="text-lg sm:text-xl">Application Details</DialogTitle>
         </DialogHeader>
         
@@ -294,4 +292,3 @@ const ApplicationDetailsModal: React.FC<ApplicationDetailsModalProps> = ({
 };
 
 export default ApplicationDetailsModal;
-
