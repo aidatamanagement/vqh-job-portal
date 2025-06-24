@@ -15,8 +15,8 @@ export const generateEmailPreview = (template: EmailTemplate): string => {
     earliestStartDate: 'January 15, 2024',
     applicationDate: new Date().toLocaleDateString(),
     trackingToken: 'ABC123-DEF456-GHI789',
-    trackingUrl: 'https://yourapp.com/track/ABC123-DEF456-GHI789',
-    adminUrl: 'https://yourapp.com/admin'
+    trackingUrl: `${window.location.origin}/track/ABC123-DEF456-GHI789`,
+    adminUrl: `${window.location.origin}/admin`
   };
 
   Object.entries(sampleData).forEach(([key, value]) => {
@@ -38,8 +38,8 @@ export const generateSubjectPreview = (subject: string): string => {
     earliestStartDate: 'January 15, 2024',
     applicationDate: new Date().toLocaleDateString(),
     trackingToken: 'ABC123-DEF456-GHI789',
-    trackingUrl: 'https://yourapp.com/track/ABC123-DEF456-GHI789',
-    adminUrl: 'https://yourapp.com/admin'
+    trackingUrl: `${window.location.origin}/track/ABC123-DEF456-GHI789`,
+    adminUrl: `${window.location.origin}/admin`
   };
 
   let previewSubject = subject;
