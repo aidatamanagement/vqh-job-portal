@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -41,7 +42,6 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Textarea } from '@/components/ui/textarea';
 
 interface AdminUser {
   id: string;
@@ -72,10 +72,8 @@ const Settings: React.FC = () => {
   
   // Profile form state
   const [profileForm, setProfileForm] = useState({
-    displayName: userProfile?.display_name || '',
-    adminName: userProfile?.admin_name || '',
+    fullName: userProfile?.admin_name || userProfile?.display_name || '',
     email: user?.email || '',
-    personalNotes: '',
     currentPassword: '',
     newPassword: '',
     confirmPassword: '',
@@ -86,15 +84,13 @@ const Settings: React.FC = () => {
     email: '',
     password: '',
     confirmPassword: '',
-    adminName: '',
-    displayName: '',
+    fullName: '',
     role: 'admin' as UserRole,
   });
 
   // Edit user form state
   const [editUserForm, setEditUserForm] = useState({
-    adminName: '',
-    displayName: '',
+    fullName: '',
     role: 'admin' as UserRole,
   });
 
@@ -186,8 +182,8 @@ const Settings: React.FC = () => {
       const { error } = await supabase
         .from('profiles')
         .update({ 
-          display_name: profileForm.displayName,
-          admin_name: profileForm.adminName
+          admin_name: profileForm.fullName,
+          display_name: profileForm.fullName
         })
         .eq('id', user?.id);
 
@@ -201,8 +197,8 @@ const Settings: React.FC = () => {
       }
 
       // Update display name in context
-      if (profileForm.displayName !== userProfile?.display_name) {
-        updateUserDisplayName(profileForm.displayName);
+      if (profileForm.fullName !== userProfile?.display_name) {
+        updateUserDisplayName(profileForm.fullName);
       }
 
       setIsEditProfileOpen(false);
@@ -293,7 +289,7 @@ const Settings: React.FC = () => {
   const addNewUser = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!newAdminForm.email || !newAdminForm.password || !newAdminForm.confirmPassword || !newAdminForm.adminName) {
+    if (!newAdminForm.email || !newAdminForm.password || !newAdminForm.confirmPassword || !newAdminForm.fullName) {
       toast({
         title: "Missing Fields",
         description: "Please fill in all required fields",
@@ -340,8 +336,8 @@ const Settings: React.FC = () => {
         password: newAdminForm.password,
         options: {
           data: {
-            display_name: newAdminForm.displayName || newAdminForm.adminName,
-            admin_name: newAdminForm.adminName,
+            display_name: newAdminForm.fullName,
+            admin_name: newAdminForm.fullName,
             role: newAdminForm.role
           }
         }
@@ -367,8 +363,8 @@ const Settings: React.FC = () => {
           .from('profiles')
           .update({
             role: newAdminForm.role,
-            admin_name: newAdminForm.adminName,
-            display_name: newAdminForm.displayName || newAdminForm.adminName
+            admin_name: newAdminForm.fullName,
+            display_name: newAdminForm.fullName
           })
           .eq('id', authData.user.id);
 
@@ -383,8 +379,7 @@ const Settings: React.FC = () => {
         email: '',
         password: '',
         confirmPassword: '',
-        adminName: '',
-        displayName: '',
+        fullName: '',
         role: 'admin',
       });
 
@@ -393,7 +388,7 @@ const Settings: React.FC = () => {
 
       toast({
         title: "User Added",
-        description: `New ${newAdminForm.role} ${newAdminForm.adminName} (${newAdminForm.email}) has been added successfully`,
+        description: `New ${newAdminForm.role} ${newAdminForm.fullName} (${newAdminForm.email}) has been added successfully`,
       });
     } catch (error) {
       console.error('Error creating user:', error);
@@ -416,8 +411,8 @@ const Settings: React.FC = () => {
       const { error } = await supabase
         .from('profiles')
         .update({
-          admin_name: editUserForm.adminName,
-          display_name: editUserForm.displayName,
+          admin_name: editUserForm.fullName,
+          display_name: editUserForm.fullName,
           role: editUserForm.role
         })
         .eq('id', editingUser.id);
@@ -437,7 +432,7 @@ const Settings: React.FC = () => {
 
       toast({
         title: "User Updated",
-        description: `User ${editUserForm.adminName} has been updated successfully`,
+        description: `User ${editUserForm.fullName} has been updated successfully`,
       });
     } catch (error) {
       console.error('Error updating user:', error);
@@ -505,8 +500,7 @@ const Settings: React.FC = () => {
   const startEditUser = (userToEdit: AdminUser) => {
     setEditingUser(userToEdit);
     setEditUserForm({
-      adminName: userToEdit.admin_name || '',
-      displayName: userToEdit.display_name || '',
+      fullName: userToEdit.admin_name || userToEdit.display_name || '',
       role: userToEdit.role,
     });
   };
@@ -588,7 +582,7 @@ const Settings: React.FC = () => {
                         <Avatar className="w-24 h-24">
                           <AvatarImage src="" />
                           <AvatarFallback className="text-xl font-semibold bg-primary/10 text-primary">
-                            {(userProfile?.display_name || userProfile?.admin_name || user?.email || '')
+                            {(userProfile?.admin_name || userProfile?.display_name || user?.email || '')
                               .split(' ')
                               .map(name => name[0])
                               .join('')
@@ -608,7 +602,7 @@ const Settings: React.FC = () => {
 
                       <div className="text-center">
                         <h2 className="text-xl font-bold text-gray-900">
-                          {userProfile?.display_name || userProfile?.admin_name || 'Not set'}
+                          {userProfile?.admin_name || userProfile?.display_name || 'Not set'}
                         </h2>
                         <p className="text-gray-600 text-sm mt-1">
                           {userRoles.find(r => r.value === userProfile?.role)?.description || 'User'}
@@ -655,18 +649,10 @@ const Settings: React.FC = () => {
                       <div>
                         <Label className="text-sm text-gray-600">Full Name</Label>
                         <p className="font-medium text-gray-900">
-                          {userProfile?.admin_name || 'Not set'}
+                          {userProfile?.admin_name || userProfile?.display_name || 'Not set'}
                         </p>
                       </div>
                     </div>
-                  </div>
-
-                  {/* Personal Notes */}
-                  <div className="p-4 bg-gray-50 rounded-lg">
-                    <Label className="text-sm text-gray-600">Personal Notes</Label>
-                    <p className="font-medium text-gray-900 mt-1">
-                      {profileForm.personalNotes || 'No personal notes added yet.'}
-                    </p>
                   </div>
 
                   {/* Action Buttons */}
@@ -687,41 +673,15 @@ const Settings: React.FC = () => {
                         </DialogHeader>
                         <form onSubmit={updateProfile} className="space-y-4">
                           <div>
-                            <Label htmlFor="editDisplayName">Display Name</Label>
+                            <Label htmlFor="editFullName">Full Name</Label>
                             <Input
-                              id="editDisplayName"
+                              id="editFullName"
                               type="text"
-                              value={profileForm.displayName}
-                              onChange={(e) => handleProfileInputChange('displayName', e.target.value)}
-                              className="mt-1"
-                              placeholder="Enter your display name"
-                              disabled={isLoading}
-                            />
-                          </div>
-
-                          <div>
-                            <Label htmlFor="editAdminName">Full Name</Label>
-                            <Input
-                              id="editAdminName"
-                              type="text"
-                              value={profileForm.adminName}
-                              onChange={(e) => handleProfileInputChange('adminName', e.target.value)}
+                              value={profileForm.fullName}
+                              onChange={(e) => handleProfileInputChange('fullName', e.target.value)}
                               className="mt-1"
                               placeholder="Enter your full name"
                               disabled={isLoading}
-                            />
-                          </div>
-
-                          <div>
-                            <Label htmlFor="editPersonalNotes">Personal Notes</Label>
-                            <Textarea
-                              id="editPersonalNotes"
-                              value={profileForm.personalNotes}
-                              onChange={(e) => handleProfileInputChange('personalNotes', e.target.value)}
-                              className="mt-1"
-                              placeholder="Add any personal notes..."
-                              disabled={isLoading}
-                              rows={3}
                             />
                           </div>
 
@@ -893,27 +853,14 @@ const Settings: React.FC = () => {
                   </div>
 
                   <div>
-                    <Label htmlFor="adminName">Full Name *</Label>
+                    <Label htmlFor="fullName">Full Name *</Label>
                     <Input
-                      id="adminName"
+                      id="fullName"
                       type="text"
-                      value={newAdminForm.adminName}
-                      onChange={(e) => handleNewAdminInputChange('adminName', e.target.value)}
+                      value={newAdminForm.fullName}
+                      onChange={(e) => handleNewAdminInputChange('fullName', e.target.value)}
                       className="mt-1"
                       placeholder="Enter user's full name"
-                      disabled={isLoading}
-                    />
-                  </div>
-
-                  <div>
-                    <Label htmlFor="displayName">Display Name</Label>
-                    <Input
-                      id="displayName"
-                      type="text"
-                      value={newAdminForm.displayName}
-                      onChange={(e) => handleNewAdminInputChange('displayName', e.target.value)}
-                      className="mt-1"
-                      placeholder="Optional display name"
                       disabled={isLoading}
                     />
                   </div>
@@ -1096,29 +1043,16 @@ const Settings: React.FC = () => {
                   Edit User: {editingUser.email}
                 </h3>
                 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <Label htmlFor="editAdminName">Full Name</Label>
+                    <Label htmlFor="editFullName">Full Name</Label>
                     <Input
-                      id="editAdminName"
+                      id="editFullName"
                       type="text"
-                      value={editUserForm.adminName}
-                      onChange={(e) => handleEditUserInputChange('adminName', e.target.value)}
+                      value={editUserForm.fullName}
+                      onChange={(e) => handleEditUserInputChange('fullName', e.target.value)}
                       className="mt-1"
                       placeholder="Enter full name"
-                      disabled={isLoading}
-                    />
-                  </div>
-
-                  <div>
-                    <Label htmlFor="editDisplayName">Display Name</Label>
-                    <Input
-                      id="editDisplayName"
-                      type="text"
-                      value={editUserForm.displayName}
-                      onChange={(e) => handleEditUserInputChange('displayName', e.target.value)}
-                      className="mt-1"
-                      placeholder="Enter display name"
                       disabled={isLoading}
                     />
                   </div>
