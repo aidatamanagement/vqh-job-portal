@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -566,283 +565,291 @@ const Settings: React.FC = () => {
         </TabsList>
 
         <TabsContent value="profile" className="space-y-6">
-          {/* Centered Profile Card */}
+          {/* Profile Card with Two-Column Layout */}
           <div className="flex justify-center">
-            <Card className="w-full max-w-2xl p-8">
-              {/* Role Badge - Top Right */}
-              <div className="flex justify-end mb-4">
-                <div className="flex items-center space-x-2">
-                  <Badge variant={getRoleBadgeVariant(userProfile?.role as UserRole)} className="text-sm px-3 py-1">
-                    {userRoles.find(r => r.value === userProfile?.role)?.label || 'Unknown'}
-                  </Badge>
-                  {userProfile?.role === 'admin' && <Crown className="w-5 h-5 text-yellow-500" />}
-                </div>
-              </div>
-
-              {/* Profile Picture and Name - Centered */}
-              <div className="flex flex-col items-center space-y-6 mb-8">
-                <div className="relative">
-                  <Avatar className="w-32 h-32">
-                    <AvatarImage src="" />
-                    <AvatarFallback className="text-2xl font-semibold bg-primary/10 text-primary">
-                      {(userProfile?.display_name || userProfile?.admin_name || user?.email || '')
-                        .split(' ')
-                        .map(name => name[0])
-                        .join('')
-                        .toUpperCase()
-                        .slice(0, 2)}
-                    </AvatarFallback>
-                  </Avatar>
-                  <Button
-                    onClick={handleProfilePictureUpload}
-                    size="sm"
-                    variant="secondary"
-                    className="absolute -bottom-2 -right-2 rounded-full w-10 h-10 p-0"
-                  >
-                    <Camera className="w-4 h-4" />
-                  </Button>
-                </div>
-
-                <div className="text-center">
-                  <h2 className="text-2xl font-bold text-gray-900">
-                    {userProfile?.display_name || userProfile?.admin_name || 'Not set'}
-                  </h2>
-                  <p className="text-gray-600 mt-1">
-                    {userRoles.find(r => r.value === userProfile?.role)?.description || 'User'}
-                  </p>
-                </div>
-              </div>
-
-              {/* User Information */}
-              <div className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="flex items-center space-x-3 p-4 bg-gray-50 rounded-lg">
-                    <Mail className="w-5 h-5 text-gray-500" />
-                    <div>
-                      <Label className="text-sm text-gray-600">Email Address</Label>
-                      <p className="font-medium text-gray-900">{user?.email}</p>
+            <Card className="w-full max-w-4xl p-8">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                {/* Left Side - Profile Info in Gray Box */}
+                <div className="md:col-span-1">
+                  <div className="bg-gray-50 p-6 rounded-lg">
+                    {/* Role Badge - Top Right of Gray Box */}
+                    <div className="flex justify-end mb-4">
+                      <div className="flex items-center space-x-2">
+                        <Badge variant={getRoleBadgeVariant(userProfile?.role as UserRole)} className="text-sm px-3 py-1">
+                          {userRoles.find(r => r.value === userProfile?.role)?.label || 'Unknown'}
+                        </Badge>
+                        {userProfile?.role === 'admin' && <Crown className="w-5 h-5 text-yellow-500" />}
+                      </div>
                     </div>
-                  </div>
 
-                  <div className="flex items-center space-x-3 p-4 bg-gray-50 rounded-lg">
-                    <Clock className="w-5 h-5 text-gray-500" />
-                    <div>
-                      <Label className="text-sm text-gray-600">Last Sign-in</Label>
-                      <p className="font-medium text-gray-900">
-                        {user?.last_sign_in_at ? new Date(user.last_sign_in_at).toLocaleDateString() : 'Never'}
-                      </p>
-                    </div>
-                  </div>
+                    {/* Profile Picture and Name - Centered in Gray Box */}
+                    <div className="flex flex-col items-center space-y-4">
+                      <div className="relative">
+                        <Avatar className="w-24 h-24">
+                          <AvatarImage src="" />
+                          <AvatarFallback className="text-xl font-semibold bg-primary/10 text-primary">
+                            {(userProfile?.display_name || userProfile?.admin_name || user?.email || '')
+                              .split(' ')
+                              .map(name => name[0])
+                              .join('')
+                              .toUpperCase()
+                              .slice(0, 2)}
+                          </AvatarFallback>
+                        </Avatar>
+                        <Button
+                          onClick={handleProfilePictureUpload}
+                          size="sm"
+                          variant="secondary"
+                          className="absolute -bottom-1 -right-1 rounded-full w-8 h-8 p-0"
+                        >
+                          <Camera className="w-3 h-3" />
+                        </Button>
+                      </div>
 
-                  <div className="flex items-center space-x-3 p-4 bg-gray-50 rounded-lg">
-                    <Calendar className="w-5 h-5 text-gray-500" />
-                    <div>
-                      <Label className="text-sm text-gray-600">Account Created</Label>
-                      <p className="font-medium text-gray-900">
-                        {new Date(user?.created_at || '').toLocaleDateString()}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center space-x-3 p-4 bg-gray-50 rounded-lg">
-                    <User className="w-5 h-5 text-gray-500" />
-                    <div>
-                      <Label className="text-sm text-gray-600">Full Name</Label>
-                      <p className="font-medium text-gray-900">
-                        {userProfile?.admin_name || 'Not set'}
-                      </p>
+                      <div className="text-center">
+                        <h2 className="text-xl font-bold text-gray-900">
+                          {userProfile?.display_name || userProfile?.admin_name || 'Not set'}
+                        </h2>
+                        <p className="text-gray-600 text-sm mt-1">
+                          {userRoles.find(r => r.value === userProfile?.role)?.description || 'User'}
+                        </p>
+                      </div>
                     </div>
                   </div>
                 </div>
 
-                {/* Personal Notes */}
-                <div className="p-4 bg-gray-50 rounded-lg">
-                  <Label className="text-sm text-gray-600">Personal Notes</Label>
-                  <p className="font-medium text-gray-900 mt-1">
-                    {profileForm.personalNotes || 'No personal notes added yet.'}
-                  </p>
-                </div>
+                {/* Right Side - User Details */}
+                <div className="md:col-span-2 space-y-6">
+                  {/* User Information Grid */}
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                    <div className="flex items-center space-x-3 p-4 bg-gray-50 rounded-lg">
+                      <Mail className="w-5 h-5 text-gray-500" />
+                      <div>
+                        <Label className="text-sm text-gray-600">Email Address</Label>
+                        <p className="font-medium text-gray-900">{user?.email}</p>
+                      </div>
+                    </div>
 
-                {/* Action Buttons */}
-                <div className="flex flex-col sm:flex-row gap-4 pt-4">
-                  <Dialog open={isEditProfileOpen} onOpenChange={setIsEditProfileOpen}>
-                    <DialogTrigger asChild>
-                      <Button className="flex-1 bg-primary hover:bg-primary/90 flex items-center justify-center space-x-2">
-                        <Edit className="w-4 h-4" />
-                        <span>Edit Profile Info</span>
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent className="max-w-md">
-                      <DialogHeader>
-                        <DialogTitle>Edit Profile Information</DialogTitle>
-                        <DialogDescription>
-                          Update your profile details below.
-                        </DialogDescription>
-                      </DialogHeader>
-                      <form onSubmit={updateProfile} className="space-y-4">
-                        <div>
-                          <Label htmlFor="editDisplayName">Display Name</Label>
-                          <Input
-                            id="editDisplayName"
-                            type="text"
-                            value={profileForm.displayName}
-                            onChange={(e) => handleProfileInputChange('displayName', e.target.value)}
-                            className="mt-1"
-                            placeholder="Enter your display name"
-                            disabled={isLoading}
-                          />
-                        </div>
+                    <div className="flex items-center space-x-3 p-4 bg-gray-50 rounded-lg">
+                      <Clock className="w-5 h-5 text-gray-500" />
+                      <div>
+                        <Label className="text-sm text-gray-600">Last Sign-in</Label>
+                        <p className="font-medium text-gray-900">
+                          {user?.last_sign_in_at ? new Date(user.last_sign_in_at).toLocaleDateString() : 'Never'}
+                        </p>
+                      </div>
+                    </div>
 
-                        <div>
-                          <Label htmlFor="editAdminName">Full Name</Label>
-                          <Input
-                            id="editAdminName"
-                            type="text"
-                            value={profileForm.adminName}
-                            onChange={(e) => handleProfileInputChange('adminName', e.target.value)}
-                            className="mt-1"
-                            placeholder="Enter your full name"
-                            disabled={isLoading}
-                          />
-                        </div>
+                    <div className="flex items-center space-x-3 p-4 bg-gray-50 rounded-lg">
+                      <Calendar className="w-5 h-5 text-gray-500" />
+                      <div>
+                        <Label className="text-sm text-gray-600">Account Created</Label>
+                        <p className="font-medium text-gray-900">
+                          {new Date(user?.created_at || '').toLocaleDateString()}
+                        </p>
+                      </div>
+                    </div>
 
-                        <div>
-                          <Label htmlFor="editPersonalNotes">Personal Notes</Label>
-                          <Textarea
-                            id="editPersonalNotes"
-                            value={profileForm.personalNotes}
-                            onChange={(e) => handleProfileInputChange('personalNotes', e.target.value)}
-                            className="mt-1"
-                            placeholder="Add any personal notes..."
-                            disabled={isLoading}
-                            rows={3}
-                          />
-                        </div>
+                    <div className="flex items-center space-x-3 p-4 bg-gray-50 rounded-lg">
+                      <User className="w-5 h-5 text-gray-500" />
+                      <div>
+                        <Label className="text-sm text-gray-600">Full Name</Label>
+                        <p className="font-medium text-gray-900">
+                          {userProfile?.admin_name || 'Not set'}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
 
-                        <div className="flex space-x-3 pt-4">
-                          <Button
-                            type="button"
-                            variant="outline"
-                            onClick={() => setIsEditProfileOpen(false)}
-                            className="flex-1"
-                            disabled={isLoading}
-                          >
-                            Cancel
-                          </Button>
-                          <Button
-                            type="submit"
-                            className="flex-1 bg-primary hover:bg-primary/90"
-                            disabled={isLoading}
-                          >
-                            {isLoading ? 'Saving...' : 'Save Changes'}
-                          </Button>
-                        </div>
-                      </form>
-                    </DialogContent>
-                  </Dialog>
+                  {/* Personal Notes */}
+                  <div className="p-4 bg-gray-50 rounded-lg">
+                    <Label className="text-sm text-gray-600">Personal Notes</Label>
+                    <p className="font-medium text-gray-900 mt-1">
+                      {profileForm.personalNotes || 'No personal notes added yet.'}
+                    </p>
+                  </div>
 
-                  <Dialog open={isChangePasswordOpen} onOpenChange={setIsChangePasswordOpen}>
-                    <DialogTrigger asChild>
-                      <Button variant="outline" className="flex-1 flex items-center justify-center space-x-2">
-                        <Lock className="w-4 h-4" />
-                        <span>Change Password</span>
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent className="max-w-md">
-                      <DialogHeader>
-                        <DialogTitle>Change Password</DialogTitle>
-                        <DialogDescription>
-                          Enter your current password and choose a new one.
-                        </DialogDescription>
-                      </DialogHeader>
-                      <form onSubmit={changePassword} className="space-y-4">
-                        <div>
-                          <Label htmlFor="currentPassword">Current Password</Label>
-                          <div className="relative mt-1">
+                  {/* Action Buttons */}
+                  <div className="flex flex-col sm:flex-row gap-4">
+                    <Dialog open={isEditProfileOpen} onOpenChange={setIsEditProfileOpen}>
+                      <DialogTrigger asChild>
+                        <Button className="flex-1 bg-primary hover:bg-primary/90 flex items-center justify-center space-x-2">
+                          <Edit className="w-4 h-4" />
+                          <span>Edit Profile Info</span>
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent className="max-w-md">
+                        <DialogHeader>
+                          <DialogTitle>Edit Profile Information</DialogTitle>
+                          <DialogDescription>
+                            Update your profile details below.
+                          </DialogDescription>
+                        </DialogHeader>
+                        <form onSubmit={updateProfile} className="space-y-4">
+                          <div>
+                            <Label htmlFor="editDisplayName">Display Name</Label>
                             <Input
-                              id="currentPassword"
-                              type={showCurrentPassword ? 'text' : 'password'}
-                              value={profileForm.currentPassword}
-                              onChange={(e) => handleProfileInputChange('currentPassword', e.target.value)}
-                              className="pr-10"
+                              id="editDisplayName"
+                              type="text"
+                              value={profileForm.displayName}
+                              onChange={(e) => handleProfileInputChange('displayName', e.target.value)}
+                              className="mt-1"
+                              placeholder="Enter your display name"
                               disabled={isLoading}
                             />
-                            <button
-                              type="button"
-                              onClick={() => setShowCurrentPassword(!showCurrentPassword)}
-                              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                            >
-                              {showCurrentPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                            </button>
                           </div>
-                        </div>
 
-                        <div>
-                          <Label htmlFor="newPassword">New Password</Label>
-                          <div className="relative mt-1">
+                          <div>
+                            <Label htmlFor="editAdminName">Full Name</Label>
                             <Input
-                              id="newPassword"
-                              type={showNewPassword ? 'text' : 'password'}
-                              value={profileForm.newPassword}
-                              onChange={(e) => handleProfileInputChange('newPassword', e.target.value)}
-                              className="pr-10"
+                              id="editAdminName"
+                              type="text"
+                              value={profileForm.adminName}
+                              onChange={(e) => handleProfileInputChange('adminName', e.target.value)}
+                              className="mt-1"
+                              placeholder="Enter your full name"
                               disabled={isLoading}
                             />
-                            <button
-                              type="button"
-                              onClick={() => setShowNewPassword(!showNewPassword)}
-                              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                            >
-                              {showNewPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                            </button>
                           </div>
-                          <p className="text-xs text-gray-500 mt-1">
-                            Password must be at least 8 characters long
-                          </p>
-                        </div>
 
-                        <div>
-                          <Label htmlFor="confirmPassword">Confirm New Password</Label>
-                          <div className="relative mt-1">
-                            <Input
-                              id="confirmPassword"
-                              type={showConfirmPassword ? 'text' : 'password'}
-                              value={profileForm.confirmPassword}
-                              onChange={(e) => handleProfileInputChange('confirmPassword', e.target.value)}
-                              className="pr-10"
+                          <div>
+                            <Label htmlFor="editPersonalNotes">Personal Notes</Label>
+                            <Textarea
+                              id="editPersonalNotes"
+                              value={profileForm.personalNotes}
+                              onChange={(e) => handleProfileInputChange('personalNotes', e.target.value)}
+                              className="mt-1"
+                              placeholder="Add any personal notes..."
                               disabled={isLoading}
+                              rows={3}
                             />
-                            <button
-                              type="button"
-                              onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                            >
-                              {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                            </button>
                           </div>
-                        </div>
 
-                        <div className="flex space-x-3 pt-4">
-                          <Button
-                            type="button"
-                            variant="outline"
-                            onClick={() => setIsChangePasswordOpen(false)}
-                            className="flex-1"
-                            disabled={isLoading}
-                          >
-                            Cancel
-                          </Button>
-                          <Button
-                            type="submit"
-                            className="flex-1 bg-primary hover:bg-primary/90"
-                            disabled={isLoading}
-                          >
-                            {isLoading ? 'Changing...' : 'Change Password'}
-                          </Button>
-                        </div>
-                      </form>
-                    </DialogContent>
-                  </Dialog>
+                          <div className="flex space-x-3 pt-4">
+                            <Button
+                              type="button"
+                              variant="outline"
+                              onClick={() => setIsEditProfileOpen(false)}
+                              className="flex-1"
+                              disabled={isLoading}
+                            >
+                              Cancel
+                            </Button>
+                            <Button
+                              type="submit"
+                              className="flex-1 bg-primary hover:bg-primary/90"
+                              disabled={isLoading}
+                            >
+                              {isLoading ? 'Saving...' : 'Save Changes'}
+                            </Button>
+                          </div>
+                        </form>
+                      </DialogContent>
+                    </Dialog>
+
+                    <Dialog open={isChangePasswordOpen} onOpenChange={setIsChangePasswordOpen}>
+                      <DialogTrigger asChild>
+                        <Button variant="outline" className="flex-1 flex items-center justify-center space-x-2">
+                          <Lock className="w-4 h-4" />
+                          <span>Change Password</span>
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent className="max-w-md">
+                        <DialogHeader>
+                          <DialogTitle>Change Password</DialogTitle>
+                          <DialogDescription>
+                            Enter your current password and choose a new one.
+                          </DialogDescription>
+                        </DialogHeader>
+                        <form onSubmit={changePassword} className="space-y-4">
+                          <div>
+                            <Label htmlFor="currentPassword">Current Password</Label>
+                            <div className="relative mt-1">
+                              <Input
+                                id="currentPassword"
+                                type={showCurrentPassword ? 'text' : 'password'}
+                                value={profileForm.currentPassword}
+                                onChange={(e) => handleProfileInputChange('currentPassword', e.target.value)}
+                                className="pr-10"
+                                disabled={isLoading}
+                              />
+                              <button
+                                type="button"
+                                onClick={() => setShowCurrentPassword(!showCurrentPassword)}
+                                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                              >
+                                {showCurrentPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                              </button>
+                            </div>
+                          </div>
+
+                          <div>
+                            <Label htmlFor="newPassword">New Password</Label>
+                            <div className="relative mt-1">
+                              <Input
+                                id="newPassword"
+                                type={showNewPassword ? 'text' : 'password'}
+                                value={profileForm.newPassword}
+                                onChange={(e) => handleProfileInputChange('newPassword', e.target.value)}
+                                className="pr-10"
+                                disabled={isLoading}
+                              />
+                              <button
+                                type="button"
+                                onClick={() => setShowNewPassword(!showNewPassword)}
+                                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                              >
+                                {showNewPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                              </button>
+                            </div>
+                            <p className="text-xs text-gray-500 mt-1">
+                              Password must be at least 8 characters long
+                            </p>
+                          </div>
+
+                          <div>
+                            <Label htmlFor="confirmPassword">Confirm New Password</Label>
+                            <div className="relative mt-1">
+                              <Input
+                                id="confirmPassword"
+                                type={showConfirmPassword ? 'text' : 'password'}
+                                value={profileForm.confirmPassword}
+                                onChange={(e) => handleProfileInputChange('confirmPassword', e.target.value)}
+                                className="pr-10"
+                                disabled={isLoading}
+                              />
+                              <button
+                                type="button"
+                                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                              >
+                                {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                              </button>
+                            </div>
+                          </div>
+
+                          <div className="flex space-x-3 pt-4">
+                            <Button
+                              type="button"
+                              variant="outline"
+                              onClick={() => setIsChangePasswordOpen(false)}
+                              className="flex-1"
+                              disabled={isLoading}
+                            >
+                              Cancel
+                            </Button>
+                            <Button
+                              type="submit"
+                              className="flex-1 bg-primary hover:bg-primary/90"
+                              disabled={isLoading}
+                            >
+                              {isLoading ? 'Changing...' : 'Change Password'}
+                            </Button>
+                          </div>
+                        </form>
+                      </DialogContent>
+                    </Dialog>
+                  </div>
                 </div>
               </div>
             </Card>
