@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { supabase } from '@/integrations/supabase/client';
-import { Mail, Search, Calendar, User, AlertCircle, CheckCircle, Clock } from 'lucide-react';
+import { Mail, Search, User, AlertCircle, CheckCircle, Clock } from 'lucide-react';
 import { format } from 'date-fns';
 import { EmailLog } from '@/types';
 
@@ -30,7 +30,7 @@ const EmailLogs: React.FC = () => {
         .from('email_logs')
         .select('*')
         .order('created_at', { ascending: false })
-        .limit(100);
+        .limit(50);
 
       if (error) throw error;
       
@@ -62,8 +62,7 @@ const EmailLogs: React.FC = () => {
     if (searchTerm) {
       filtered = filtered.filter(log => 
         log.recipient_email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        log.subject.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        log.template_slug.toLowerCase().includes(searchTerm.toLowerCase())
+        log.subject.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
 
@@ -119,7 +118,7 @@ const EmailLogs: React.FC = () => {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold text-gray-900">Email Logs</h2>
-          <p className="text-gray-600">Monitor email delivery status and troubleshoot issues</p>
+          <p className="text-gray-600">Monitor recent email activity</p>
         </div>
         <Button onClick={fetchEmailLogs} variant="outline">
           Refresh
@@ -131,7 +130,7 @@ const EmailLogs: React.FC = () => {
         <Card className="p-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600">Total Emails</p>
+              <p className="text-sm text-gray-600">Total</p>
               <p className="text-2xl font-bold">{logs.length}</p>
             </div>
             <Mail className="w-8 h-8 text-gray-400" />
@@ -176,7 +175,7 @@ const EmailLogs: React.FC = () => {
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
               <Input
-                placeholder="Search by email, subject, or template..."
+                placeholder="Search by email or subject..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-10"
@@ -198,10 +197,10 @@ const EmailLogs: React.FC = () => {
       </Card>
 
       {/* Email Logs Table */}
-      <div className="space-y-4">
+      <div className="space-y-3">
         {filteredLogs.map((log) => (
           <Card key={log.id} className="p-4">
-            <div className="flex items-start justify-between">
+            <div className="flex items-center justify-between">
               <div className="flex-1">
                 <div className="flex items-center space-x-3 mb-2">
                   {getStatusIcon(log.status)}
@@ -209,43 +208,17 @@ const EmailLogs: React.FC = () => {
                   {getStatusBadge(log.status)}
                 </div>
                 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-gray-600">
-                  <div className="flex items-center space-x-2">
+                <div className="flex items-center space-x-4 text-sm text-gray-600">
+                  <div className="flex items-center space-x-1">
                     <User className="w-4 h-4" />
                     <span>{log.recipient_email}</span>
                   </div>
-                  
-                  <div className="flex items-center space-x-2">
-                    <Mail className="w-4 h-4" />
-                    <span className="capitalize">{log.template_slug.replace('_', ' ')}</span>
-                  </div>
-                  
-                  <div className="flex items-center space-x-2">
-                    <Calendar className="w-4 h-4" />
-                    <span>{format(new Date(log.created_at), 'MMM d, yyyy HH:mm')}</span>
-                  </div>
-                  
-                  {log.sent_at && (
-                    <div className="flex items-center space-x-2">
-                      <CheckCircle className="w-4 h-4" />
-                      <span>Sent: {format(new Date(log.sent_at), 'MMM d, yyyy HH:mm')}</span>
-                    </div>
-                  )}
+                  <span>{format(new Date(log.created_at), 'MMM d, HH:mm')}</span>
                 </div>
                 
                 {log.error_message && (
-                  <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-md">
-                    <p className="text-sm text-red-800">
-                      <strong>Error:</strong> {log.error_message}
-                    </p>
-                  </div>
-                )}
-                
-                {log.brevo_message_id && (
-                  <div className="mt-2">
-                    <span className="text-xs text-gray-500">
-                      Brevo ID: {log.brevo_message_id}
-                    </span>
+                  <div className="mt-2 text-sm text-red-600">
+                    Error: {log.error_message}
                   </div>
                 )}
               </div>

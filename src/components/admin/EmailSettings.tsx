@@ -5,11 +5,10 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import { Badge } from '@/components/ui/badge';
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useEmailSettings } from '@/hooks/useEmailSettings';
-import { Mail, Send, Settings, AlertCircle, CheckCircle, Plus, X } from 'lucide-react';
+import { Mail, Send, Settings, CheckCircle, AlertCircle, Plus, X } from 'lucide-react';
 
 const EmailSettings: React.FC = () => {
   const { settings, saveSettings } = useEmailSettings();
@@ -295,54 +294,6 @@ const EmailSettings: React.FC = () => {
               </p>
             </div>
           )}
-        </div>
-      </Card>
-
-      {/* Email Templates Status */}
-      <Card className="p-6">
-        <div className="flex items-center space-x-3 mb-4">
-          <Mail className="w-5 h-5 text-primary" />
-          <h3 className="text-lg font-semibold">Email Templates Status</h3>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-            <span className="text-sm font-medium">Application Submitted</span>
-            <Badge variant="default">Active</Badge>
-          </div>
-          
-          <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-            <span className="text-sm font-medium">Application Approved</span>
-            <Badge variant="default">Active</Badge>
-          </div>
-          
-          <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-            <span className="text-sm font-medium">Application Rejected</span>
-            <Badge variant="default">Active</Badge>
-          </div>
-          
-          <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-            <span className="text-sm font-medium">Admin Notification</span>
-            <Badge variant="default">Active</Badge>
-          </div>
-        </div>
-      </Card>
-
-      {/* API Configuration Notice */}
-      <Card className="p-6 bg-blue-50 border-blue-200">
-        <div className="flex items-start space-x-3">
-          <AlertCircle className="w-5 h-5 text-blue-600 mt-0.5" />
-          <div>
-            <h4 className="font-medium text-blue-900 mb-2">Brevo API Configuration</h4>
-            <p className="text-sm text-blue-800 mb-3">
-              To enable email delivery, make sure your Brevo API key is configured in the Supabase Edge Function secrets.
-            </p>
-            <div className="space-y-1 text-sm text-blue-700">
-              <p>• Get your API key from <a href="https://app.brevo.com/settings/keys/api" target="_blank" rel="noopener noreferrer" className="underline">Brevo Dashboard</a></p>
-              <p>• Add it as BREVO_API_KEY in Supabase Edge Function secrets</p>
-              <p>• Verify your sending domain in Brevo</p>
-            </div>
-          </div>
         </div>
       </Card>
     </div>
