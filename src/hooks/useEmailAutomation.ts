@@ -14,6 +14,7 @@ interface EmailVariables {
   trackingToken?: string;
   trackingUrl?: string;
   adminUrl?: string;
+  calendlyUrl?: string;
 }
 
 // Define which statuses should trigger email notifications
@@ -40,6 +41,26 @@ const STATUS_TO_TEMPLATE_MAP = {
 
 export const useEmailAutomation = () => {
   const { getAdminEmails } = useEmailSettings();
+
+  const getCalendlyUrl = async (): Promise<string | null> => {
+    try {
+      const { data, error } = await supabase
+        .from('calendly_settings')
+        .select('default_event_type_uri')
+        .limit(1)
+        .single();
+
+      if (error || !data?.default_event_type_uri) {
+        console.log('No Calendly settings found or no default event type URI');
+        return null;
+      }
+
+      return data.default_event_type_uri;
+    } catch (error) {
+      console.error('Error fetching Calendly settings:', error);
+      return null;
+    }
+  };
 
   const sendEmail = async (
     templateSlug: string,
@@ -159,6 +180,12 @@ export const useEmailAutomation = () => {
 
       const trackingUrl = trackingToken ? `${window.location.origin}/track/${trackingToken}` : '';
       
+      // Get Calendly URL for shortlisted status
+      let calendlyUrl = '';
+      if (application.status === 'shortlisted') {
+        calendlyUrl = await getCalendlyUrl() || '';
+      }
+      
       const variables: EmailVariables = {
         firstName: application.firstName,
         lastName: application.lastName,
@@ -166,6 +193,7 @@ export const useEmailAutomation = () => {
         location: job?.location || '',
         trackingToken: trackingToken || '',
         trackingUrl: trackingUrl,
+        calendlyUrl: calendlyUrl,
       };
 
       console.log('Using template:', templateSlug);

@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -18,7 +17,8 @@ import {
   ChevronDown,
   ChevronRight,
   Home,
-  Layout
+  Layout,
+  Calendar
 } from 'lucide-react';
 import { useAppContext } from '@/contexts/AppContext';
 import { getRolePermissions } from '@/utils/rolePermissions';
@@ -27,7 +27,8 @@ type AdminView =
   | 'dashboard'
   | 'post-job' 
   | 'manage-jobs' 
-  | 'submissions' 
+  | 'submissions'
+  | 'interviews'
   | 'settings' 
   | 'email-management' 
   | 'guide-training'
@@ -122,6 +123,13 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({ currentView, onViewChange }
           icon: FileText,
           view: 'submissions' as AdminView,
           badge: pendingApplications > 0 ? pendingApplications.toString() : undefined,
+          visible: permissions.canViewApplications,
+        },
+        {
+          id: 'interviews',
+          label: 'Interviews',
+          icon: Calendar,
+          view: 'interviews' as AdminView,
           visible: permissions.canViewApplications,
         },
       ].filter(child => child.visible),

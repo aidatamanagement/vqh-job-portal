@@ -1,4 +1,3 @@
-
 export interface Job {
   id: string;
   title: string;
@@ -93,7 +92,7 @@ export interface EmailLog {
   created_at: string;
 }
 
-// New CRM and Training types
+// CRM and Training types
 export interface Salesperson {
   id: string;
   name: string;
@@ -132,6 +131,31 @@ export interface TrainingVideo {
   url: string;
   duration?: string;
   view_count: number;
+  created_at: string;
+  updated_at: string;
+}
+
+// Calendly and Interview types
+export interface Interview {
+  id: string;
+  application_id: string;
+  calendly_event_id: string;
+  calendly_event_uri: string;
+  candidate_email: string;
+  interviewer_email?: string;
+  scheduled_time: string;
+  meeting_url?: string;
+  status: 'scheduled' | 'completed' | 'cancelled' | 'no-show';
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CalendlySettings {
+  id: string;
+  api_token: string;
+  organization_uri: string;
+  default_event_type_uri?: string;
+  webhook_url?: string;
   created_at: string;
   updated_at: string;
 }

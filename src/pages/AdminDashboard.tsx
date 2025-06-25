@@ -7,6 +7,7 @@ import Dashboard from '@/components/admin/Dashboard';
 import PostJob from '@/components/admin/PostJob';
 import ManageJobs from '@/components/admin/ManageJobs';
 import Submissions from '@/components/admin/Submissions';
+import Interviews from '@/components/admin/Interviews';
 import Settings from '@/components/admin/Settings';
 import EmailManagement from '@/components/admin/EmailManagement';
 import Salespeople from '@/components/admin/Salespeople';
@@ -20,7 +21,8 @@ type AdminView =
   | 'dashboard'
   | 'post-job' 
   | 'manage-jobs' 
-  | 'submissions' 
+  | 'submissions'
+  | 'interviews'
   | 'settings' 
   | 'email-management' 
   | 'guide-training'
@@ -54,6 +56,8 @@ const AdminDashboard: React.FC = () => {
         return <ManageJobs />;
       case 'submissions':
         return <Submissions />;
+      case 'interviews':
+        return <Interviews />;
       case 'email-management':
         return <EmailManagement />;
       case 'guide-training':
