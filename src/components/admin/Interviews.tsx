@@ -54,7 +54,7 @@ const Interviews: React.FC = () => {
   const [isCheckingConfig, setIsCheckingConfig] = useState(true);
   const [isSyncing, setIsSyncing] = useState(false);
   const { toast } = useToast();
-  const { getEvents } = useCalendlyApi();
+  const { getEvents, getInvitees } = useCalendlyApi();
 
   useEffect(() => {
     checkCalendlyConfiguration();
@@ -183,6 +183,7 @@ const Interviews: React.FC = () => {
           const eventId = event.uri.split('/').pop();
           if (!eventId) {
             console.warn('Could not extract event ID from URI:', event.uri);
+            skippedCount++;
             continue;
           }
 
@@ -199,30 +200,65 @@ const Interviews: React.FC = () => {
             continue;
           }
 
-          // Get first invitee email (assuming single invitee for now)
-          // Note: The actual invitee data might be in a different structure
-          // This is a simplified approach based on typical Calendly event structure
-          let candidateEmail = '';
-          let candidateName = '';
+          // Get invitees for this event
+          console.log(`Fetching invitees for event ${event.uri}`);
+          const inviteesResult = await getInvitees(event.uri);
           
-          // Try to extract email from event data if available
-          // This might need adjustment based on actual Calendly API response structure
-          if (event.invitees_counter?.total > 0) {
-            // For this sync, we'll need to make an additional API call to get invitee details
-            // or extract from the event data if available
-            console.log('Event has invitees, but detailed invitee data not available in list response');
-            console.log('Event details:', JSON.stringify(event, null, 2));
-            
-            // Skip events without clear invitee information for now
-            console.warn(`Skipping event ${eventId} - no invitee email available`);
+          if (!inviteesResult.success || !inviteesResult.invitees || inviteesResult.invitees.length === 0) {
+            console.warn(`No invitees found for event ${eventId}, skipping`);
             skippedCount++;
             continue;
           }
 
-          // Try to find a matching job application by looking for recent applications
-          // This is a fallback approach when we don't have direct email matching
-          console.log(`Event ${eventId} has no invitees or invitee data not accessible, skipping for now`);
-          skippedCount++;
+          const invitee = inviteesResult.invitees[0]; // Get the first invitee
+          console.log(`Found invitee: ${invitee.email} for event ${eventId}`);
+
+          // Try to find a matching job application by email
+          const { data: applications, error: appError } = await supabase
+            .from('job_applications')
+            .select('id')
+            .eq('email', invitee.email)
+            .order('created_at', { ascending: false })
+            .limit(1);
+
+          if (appError) {
+            console.error(`Error finding application for ${invitee.email}:`, appError);
+            skippedCount++;
+            continue;
+          }
+
+          if (!applications || applications.length === 0) {
+            console.log(`No application found for email: ${invitee.email}, skipping event ${eventId}`);
+            skippedCount++;
+            continue;
+          }
+
+          const application = applications[0];
+
+          // Create interview record
+          const { data: interview, error: interviewError } = await supabase
+            .from('interviews')
+            .insert({
+              application_id: application.id,
+              calendly_event_id: eventId,
+              calendly_event_uri: event.uri,
+              candidate_email: invitee.email,
+              interviewer_email: null, // We don't have this from the events API
+              scheduled_time: event.start_time,
+              meeting_url: event.location?.join_url || null,
+              status: event.status === 'active' ? 'scheduled' : event.status,
+            })
+            .select()
+            .single();
+
+          if (interviewError) {
+            console.error(`Error creating interview for event ${eventId}:`, interviewError);
+            skippedCount++;
+            continue;
+          }
+
+          console.log(`Successfully synced interview for event ${eventId}`);
+          syncedCount++;
 
         } catch (eventError) {
           console.error(`Error processing event ${event.uri}:`, eventError);
@@ -420,8 +456,7 @@ const Interviews: React.FC = () => {
         <AlertDescription>
           <p className="text-blue-800 text-sm">
             <strong>Note:</strong> Interviews are automatically created when candidates book through Calendly links. 
-            The sync function is primarily for development and testing purposes. In production, the Calendly webhook 
-            automatically creates interview records when bookings are made.
+            The sync function fetches existing scheduled events and creates interview records for those with matching job applications.
           </p>
         </AlertDescription>
       </Alert>

@@ -82,6 +82,12 @@ const handler = async (req: Request): Promise<Response> => {
         
         apiUrl = `https://api.calendly.com/scheduled_events?organization=${encodeURIComponent(orgUri)}&min_start_time=${minStartTime.toISOString()}&max_start_time=${maxStartTime.toISOString()}`;
         break;
+
+      case 'getInvitees':
+        const { eventUri } = body;
+        console.log("Event URI:", eventUri);
+        apiUrl = `${eventUri}/invitees`;
+        break;
         
       default:
         return new Response(

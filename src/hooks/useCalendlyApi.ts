@@ -48,6 +48,18 @@ interface CalendlyEvent {
   updated_at: string;
 }
 
+interface CalendlyInvitee {
+  uri: string;
+  name: string;
+  email: string;
+  status: string;
+  created_at: string;
+  updated_at: string;
+  canceled: boolean;
+  payment: any;
+  no_show: any;
+}
+
 export const useCalendlyApi = () => {
   const testConnection = async (): Promise<{ success: boolean; user?: CalendlyUser; error?: string }> => {
     try {
@@ -186,10 +198,40 @@ export const useCalendlyApi = () => {
     }
   };
 
+  const getInvitees = async (eventUri: string): Promise<{ success: boolean; invitees?: CalendlyInvitee[]; error?: string }> => {
+    try {
+      console.log("Getting invitees for event:", eventUri);
+      
+      const { data, error } = await supabase.functions.invoke('calendly-api', {
+        body: { 
+          action: 'getInvitees',
+          eventUri 
+        }
+      });
+
+      console.log("Get invitees response:", { data, error });
+
+      if (error) {
+        console.error('Error getting Calendly invitees:', error);
+        return { success: false, error: error.message };
+      }
+
+      if (!data?.success) {
+        return { success: false, error: data?.error || 'Failed to get invitees' };
+      }
+
+      return { success: true, invitees: data.data.collection };
+    } catch (error) {
+      console.error('Error in getInvitees:', error);
+      return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
+    }
+  };
+
   return {
     testConnection,
     getUser,
     getEventTypes,
     getEvents,
+    getInvitees,
   };
 };
