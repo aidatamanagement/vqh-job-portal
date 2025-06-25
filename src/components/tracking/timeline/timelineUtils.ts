@@ -1,5 +1,6 @@
 
-import { CheckCircle, XCircle, Eye, UserCheck, Users, FileCheck, Calendar } from 'lucide-react';
+import React from 'react';
+import { CheckCircle, XCircle, Eye, UserCheck, Users, FileCheck, Calendar, Clock } from 'lucide-react';
 
 export interface TimelineStepData {
   id: string;
@@ -44,7 +45,7 @@ export const getTimelineSteps = (application: ApplicationData): TimelineStepData
     id: 'application_submitted',
     title: 'Application Submitted',
     description: 'Your application has been received',
-    icon: <CheckCircle className="w-4 h-4" />,
+    icon: React.createElement(CheckCircle, { className: "w-4 h-4" }),
     status: 'completed',
     date: application.created_at
   });
@@ -55,7 +56,7 @@ export const getTimelineSteps = (application: ApplicationData): TimelineStepData
       id: 'under_review',
       title: 'Under Review',
       description: 'Our team is reviewing your application',
-      icon: <Eye className="w-4 h-4" />,
+      icon: React.createElement(Eye, { className: "w-4 h-4" }),
       status: statusIndex > 1 ? 'completed' : 'current',
       date: application.updated_at
     });
@@ -67,7 +68,7 @@ export const getTimelineSteps = (application: ApplicationData): TimelineStepData
       id: 'shortlisted',
       title: 'Shortlisted',
       description: 'You have been shortlisted for further consideration',
-      icon: <Users className="w-4 h-4" />,
+      icon: React.createElement(Users, { className: "w-4 h-4" }),
       status: statusIndex > 2 ? 'completed' : 'current',
       date: application.updated_at
     });
@@ -79,7 +80,7 @@ export const getTimelineSteps = (application: ApplicationData): TimelineStepData
       id: 'interview_scheduled',
       title: 'Interview Scheduled',
       description: 'Interview has been scheduled',
-      icon: <Calendar className="w-4 h-4" />,
+      icon: React.createElement(Calendar, { className: "w-4 h-4" }),
       status: statusIndex > 3 ? 'completed' : 'current',
       date: application.updated_at
     });
@@ -91,7 +92,7 @@ export const getTimelineSteps = (application: ApplicationData): TimelineStepData
       id: 'decisioning',
       title: 'Final Decision',
       description: 'Final decision is being made',
-      icon: <FileCheck className="w-4 h-4" />,
+      icon: React.createElement(FileCheck, { className: "w-4 h-4" }),
       status: statusIndex > 4 ? 'completed' : 'current',
       date: application.updated_at
     });
@@ -103,7 +104,7 @@ export const getTimelineSteps = (application: ApplicationData): TimelineStepData
       id: 'hired',
       title: 'Hired',
       description: 'Congratulations! You have been hired',
-      icon: <UserCheck className="w-4 h-4" />,
+      icon: React.createElement(UserCheck, { className: "w-4 h-4" }),
       status: 'current',
       date: application.updated_at
     });
@@ -112,7 +113,7 @@ export const getTimelineSteps = (application: ApplicationData): TimelineStepData
       id: 'rejected',
       title: 'Application Not Selected',
       description: 'Thank you for your interest. We encourage you to apply for future opportunities',
-      icon: <XCircle className="w-4 h-4" />,
+      icon: React.createElement(XCircle, { className: "w-4 h-4" }),
       status: 'current',
       date: application.updated_at
     });
@@ -124,14 +125,14 @@ export const getTimelineSteps = (application: ApplicationData): TimelineStepData
 export const getStatusIcon = (status: string) => {
   switch (status) {
     case 'hired':
-      return <CheckCircle className="w-5 h-5 text-green-600" />;
+      return React.createElement(CheckCircle, { className: "w-5 h-5 text-green-600" });
     case 'rejected':
-      return <XCircle className="w-5 h-5 text-red-600" />;
+      return React.createElement(XCircle, { className: "w-5 h-5 text-red-600" });
     case 'shortlisted':
     case 'interview_scheduled':
-      return <Users className="w-5 h-5 text-blue-600" />;
+      return React.createElement(Users, { className: "w-5 h-5 text-blue-600" });
     default:
-      return <Clock className="w-5 h-5 text-yellow-600" />;
+      return React.createElement(Clock, { className: "w-5 h-5 text-yellow-600" });
   }
 };
 
