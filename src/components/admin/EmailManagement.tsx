@@ -1,10 +1,11 @@
 
 import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Mail, MailCheck, Settings } from 'lucide-react';
+import { Mail, MailCheck, Settings, Toggle } from 'lucide-react';
 import EmailTemplates from './EmailTemplates';
 import EmailLogs from './EmailLogs';
 import EmailSettings from './EmailSettings';
+import EmailStatusSettings from './EmailStatusSettings';
 
 const EmailManagement: React.FC = () => {
   const [activeTab, setActiveTab] = useState('templates');
@@ -18,14 +19,19 @@ const EmailManagement: React.FC = () => {
         </div>
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Email Management</h1>
+          <p className="text-sm text-gray-600">Manage email templates, automation settings, and delivery logs</p>
         </div>
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="templates" className="flex items-center space-x-2">
             <Mail className="w-4 h-4" />
             <span>Templates</span>
+          </TabsTrigger>
+          <TabsTrigger value="automation" className="flex items-center space-x-2">
+            <Toggle className="w-4 h-4" />
+            <span>Automation</span>
           </TabsTrigger>
           <TabsTrigger value="logs" className="flex items-center space-x-2">
             <MailCheck className="w-4 h-4" />
@@ -39,6 +45,10 @@ const EmailManagement: React.FC = () => {
 
         <TabsContent value="templates" className="mt-6">
           <EmailTemplates />
+        </TabsContent>
+
+        <TabsContent value="automation" className="mt-6">
+          <EmailStatusSettings />
         </TabsContent>
 
         <TabsContent value="logs" className="mt-6">

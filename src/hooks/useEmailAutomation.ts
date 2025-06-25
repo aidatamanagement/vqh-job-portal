@@ -16,6 +16,28 @@ interface EmailVariables {
   adminUrl?: string;
 }
 
+// Define which statuses should trigger email notifications
+const EMAIL_ENABLED_STATUSES = {
+  'application_submitted': true,
+  'under_review': true,
+  'shortlisted': true,
+  'interview_scheduled': true,
+  'decisioning': true,
+  'hired': true,
+  'rejected': true,
+} as const;
+
+// Map application statuses to email template slugs
+const STATUS_TO_TEMPLATE_MAP = {
+  'application_submitted': 'application_submitted',
+  'under_review': 'under_review',
+  'shortlisted': 'shortlisted',
+  'interview_scheduled': 'interview_scheduled',
+  'decisioning': 'decisioning',
+  'hired': 'hired',
+  'rejected': 'application_rejected',
+} as const;
+
 export const useEmailAutomation = () => {
   const { getAdminEmails } = useEmailSettings();
 
@@ -108,7 +130,11 @@ export const useEmailAutomation = () => {
       lastName: string;
       appliedPosition: string;
       status: string;
-    }
+    },
+    job?: {
+      location?: string;
+    },
+    trackingToken?: string
   ) => {
     try {
       console.log('Preparing status update email for:', {
@@ -117,25 +143,78 @@ export const useEmailAutomation = () => {
         position: application.appliedPosition
       });
 
+      // Check if this status should trigger an email
+      const statusKey = application.status as keyof typeof EMAIL_ENABLED_STATUSES;
+      if (!EMAIL_ENABLED_STATUSES[statusKey]) {
+        console.log(`Email notifications disabled for status: ${application.status}`);
+        return { success: true, message: 'Email notifications disabled for this status' };
+      }
+
+      // Get the appropriate template slug
+      const templateSlug = STATUS_TO_TEMPLATE_MAP[statusKey];
+      if (!templateSlug) {
+        console.warn(`No email template found for status: ${application.status}`);
+        return { success: false, message: `No email template configured for status: ${application.status}` };
+      }
+
+      const trackingUrl = trackingToken ? `${window.location.origin}/track/${trackingToken}` : '';
+      
       const variables: EmailVariables = {
         firstName: application.firstName,
         lastName: application.lastName,
-        position: application.appliedPosition
+        position: application.appliedPosition,
+        location: job?.location || '',
+        trackingToken: trackingToken || '',
+        trackingUrl: trackingUrl,
       };
 
-      const templateSlug = application.status === 'approved' ? 'application_approved' : 'application_rejected';
-      
       console.log('Using template:', templateSlug);
-      return await sendEmail(templateSlug, application.email, variables);
+      const result = await sendEmail(templateSlug, application.email, variables);
+      
+      return { success: true, result };
     } catch (error) {
       console.error('Error in sendApplicationStatusEmail:', error);
       throw new Error(`Failed to send ${application.status} email: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   };
 
+  // New function to send status update emails for any status change
+  const sendStatusChangeNotification = async (
+    application: {
+      email: string;
+      firstName: string;
+      lastName: string;
+      appliedPosition: string;
+      status: 'application_submitted' | 'under_review' | 'shortlisted' | 'interview_scheduled' | 'decisioning' | 'hired' | 'rejected';
+    },
+    job?: {
+      location?: string;
+    },
+    trackingToken?: string
+  ) => {
+    return sendApplicationStatusEmail(application, job, trackingToken);
+  };
+
+  // Function to check if email should be sent for a status
+  const shouldSendEmailForStatus = (status: string): boolean => {
+    const statusKey = status as keyof typeof EMAIL_ENABLED_STATUSES;
+    return EMAIL_ENABLED_STATUSES[statusKey] || false;
+  };
+
+  // Function to get template slug for a status
+  const getTemplateSlugForStatus = (status: string): string | null => {
+    const statusKey = status as keyof typeof STATUS_TO_TEMPLATE_MAP;
+    return STATUS_TO_TEMPLATE_MAP[statusKey] || null;
+  };
+
   return {
     sendEmail,
     sendApplicationSubmittedEmail,
-    sendApplicationStatusEmail
+    sendApplicationStatusEmail,
+    sendStatusChangeNotification,
+    shouldSendEmailForStatus,
+    getTemplateSlugForStatus,
+    EMAIL_ENABLED_STATUSES,
+    STATUS_TO_TEMPLATE_MAP
   };
 };
