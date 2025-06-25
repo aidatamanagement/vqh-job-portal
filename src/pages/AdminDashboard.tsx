@@ -15,14 +15,12 @@ import TrainingVideos from '@/components/admin/TrainingVideos';
 import CrmReports from '@/components/admin/CrmReports';
 import GuideTraining from '@/components/admin/GuideTraining';
 import ContentManager from '@/components/admin/ContentManager';
-import Interviews from '@/components/admin/Interviews';
 
 type AdminView = 
   | 'dashboard'
   | 'post-job' 
   | 'manage-jobs' 
   | 'submissions' 
-  | 'interviews'
   | 'settings' 
   | 'email-management' 
   | 'guide-training'
@@ -56,8 +54,6 @@ const AdminDashboard: React.FC = () => {
         return <ManageJobs />;
       case 'submissions':
         return <Submissions />;
-      case 'interviews':
-        return <Interviews />;
       case 'email-management':
         return <EmailManagement />;
       case 'guide-training':
@@ -99,7 +95,7 @@ const AdminDashboard: React.FC = () => {
           <AdminSidebar 
             currentView={currentView} 
             onViewChange={(view) => {
-              setCurrentView(view as AdminView);
+              setCurrentView(view);
               setSidebarOpen(false); // Close sidebar on mobile after selection
             }} 
           />

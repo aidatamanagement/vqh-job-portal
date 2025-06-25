@@ -9,36 +9,6 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      calendly_settings: {
-        Row: {
-          api_token: string
-          created_at: string
-          default_event_type_uri: string | null
-          id: string
-          organization_uri: string
-          updated_at: string
-          webhook_url: string | null
-        }
-        Insert: {
-          api_token: string
-          created_at?: string
-          default_event_type_uri?: string | null
-          id?: string
-          organization_uri: string
-          updated_at?: string
-          webhook_url?: string | null
-        }
-        Update: {
-          api_token?: string
-          created_at?: string
-          default_event_type_uri?: string | null
-          id?: string
-          organization_uri?: string
-          updated_at?: string
-          webhook_url?: string | null
-        }
-        Relationships: []
-      }
       email_logs: {
         Row: {
           brevo_message_id: string | null
@@ -113,56 +83,6 @@ export type Database = {
           variables?: Json | null
         }
         Relationships: []
-      }
-      interviews: {
-        Row: {
-          application_id: string
-          calendly_event_id: string
-          calendly_event_uri: string
-          candidate_email: string
-          created_at: string
-          id: string
-          interviewer_email: string | null
-          meeting_url: string | null
-          scheduled_time: string
-          status: string
-          updated_at: string
-        }
-        Insert: {
-          application_id: string
-          calendly_event_id: string
-          calendly_event_uri: string
-          candidate_email: string
-          created_at?: string
-          id?: string
-          interviewer_email?: string | null
-          meeting_url?: string | null
-          scheduled_time: string
-          status?: string
-          updated_at?: string
-        }
-        Update: {
-          application_id?: string
-          calendly_event_id?: string
-          calendly_event_uri?: string
-          candidate_email?: string
-          created_at?: string
-          id?: string
-          interviewer_email?: string | null
-          meeting_url?: string | null
-          scheduled_time?: string
-          status?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "interviews_application_id_fkey"
-            columns: ["application_id"]
-            isOneToOne: false
-            referencedRelation: "job_applications"
-            referencedColumns: ["id"]
-          },
-        ]
       }
       job_applications: {
         Row: {
