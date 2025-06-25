@@ -2,7 +2,7 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Calendar, CheckCircle, XCircle, AlertCircle, Clock, Eye, Users, UserCheck, Building } from 'lucide-react';
+import { CheckCircle, XCircle, AlertCircle, Clock, Eye, UserCheck } from 'lucide-react';
 
 interface ApplicationData {
   id: string;
@@ -28,8 +28,8 @@ interface TimelineStep {
   title: string;
   description: string;
   icon: React.ReactNode;
-  status: 'completed' | 'current' | 'pending';
-  date?: string;
+  status: 'completed' | 'current';
+  date: string;
 }
 
 const ApplicationTimeline: React.FC<ApplicationTimelineProps> = ({ application }) => {
@@ -67,7 +67,7 @@ const ApplicationTimeline: React.FC<ApplicationTimelineProps> = ({ application }
     });
   };
 
-  // Dynamic timeline steps based on application status
+  // Only show steps up to current status
   const getTimelineSteps = (): TimelineStep[] => {
     const steps: TimelineStep[] = [
       {
@@ -77,25 +77,39 @@ const ApplicationTimeline: React.FC<ApplicationTimelineProps> = ({ application }
         icon: <CheckCircle className="w-4 h-4" />,
         status: 'completed',
         date: application.created_at
-      },
-      {
+      }
+    ];
+
+    // Add review step if not waiting
+    if (application.status !== 'waiting') {
+      steps.push({
+        id: 'review',
+        title: 'Initial Review',
+        description: 'Our team reviewed your application',
+        icon: <Eye className="w-4 h-4" />,
+        status: 'completed',
+        date: application.updated_at
+      });
+    } else {
+      // If still waiting, show current review step
+      steps.push({
         id: 'review',
         title: 'Initial Review',
         description: 'Our team is reviewing your application',
         icon: <Eye className="w-4 h-4" />,
-        status: application.status === 'waiting' ? 'current' : 'completed',
-        date: application.status !== 'waiting' ? application.updated_at : undefined
-      }
-    ];
+        status: 'current',
+        date: application.updated_at
+      });
+    }
 
-    // Add final step based on status
+    // Add final step only if decision has been made
     if (application.status === 'approved') {
       steps.push({
         id: 'approved',
         title: 'Application Approved',
         description: 'Congratulations! Your application has been approved',
         icon: <UserCheck className="w-4 h-4" />,
-        status: 'completed',
+        status: 'current',
         date: application.updated_at
       });
     } else if (application.status === 'rejected') {
@@ -104,16 +118,8 @@ const ApplicationTimeline: React.FC<ApplicationTimelineProps> = ({ application }
         title: 'Application Not Selected',
         description: 'Thank you for your interest. We encourage you to apply for future opportunities',
         icon: <XCircle className="w-4 h-4" />,
-        status: 'completed',
+        status: 'current',
         date: application.updated_at
-      });
-    } else {
-      steps.push({
-        id: 'decision',
-        title: 'Final Decision',
-        description: 'Decision pending',
-        icon: <Clock className="w-4 h-4" />,
-        status: 'pending'
       });
     }
 
@@ -133,17 +139,10 @@ const ApplicationTimeline: React.FC<ApplicationTimelineProps> = ({ application }
         };
       case 'current':
         return {
-          iconBg: 'bg-blue-100',
-          iconColor: 'text-blue-600',
+          iconBg: application.status === 'approved' ? 'bg-green-100' : application.status === 'rejected' ? 'bg-red-100' : 'bg-blue-100',
+          iconColor: application.status === 'approved' ? 'text-green-600' : application.status === 'rejected' ? 'text-red-600' : 'text-blue-600',
           titleColor: 'text-gray-900',
           descColor: 'text-gray-600'
-        };
-      case 'pending':
-        return {
-          iconBg: 'bg-gray-100',
-          iconColor: 'text-gray-400',
-          titleColor: 'text-gray-500',
-          descColor: 'text-gray-400'
         };
       default:
         return {
@@ -186,7 +185,7 @@ const ApplicationTimeline: React.FC<ApplicationTimelineProps> = ({ application }
             </div>
           </div>
 
-          {/* Dynamic Timeline */}
+          {/* Timeline */}
           <div className="space-y-6">
             {timelineSteps.map((step, index) => {
               const styles = getStepStyles(step);
@@ -210,11 +209,9 @@ const ApplicationTimeline: React.FC<ApplicationTimelineProps> = ({ application }
                       <p className={`text-sm ${styles.descColor} mt-1`}>
                         {step.description}
                       </p>
-                      {step.date && (
-                        <p className="text-xs text-gray-400 mt-2">
-                          {formatDate(step.date)}
-                        </p>
-                      )}
+                      <p className="text-xs text-gray-400 mt-2">
+                        {formatDate(step.date)}
+                      </p>
                     </div>
                   </div>
                   
