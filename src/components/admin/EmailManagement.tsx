@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Mail, MailCheck, Settings, Toggle } from 'lucide-react';
+import { Mail, MailCheck, Settings, Settings2 } from 'lucide-react';
 import EmailTemplates from './EmailTemplates';
 import EmailLogs from './EmailLogs';
 import EmailSettings from './EmailSettings';
@@ -30,7 +30,7 @@ const EmailManagement: React.FC = () => {
             <span>Templates</span>
           </TabsTrigger>
           <TabsTrigger value="automation" className="flex items-center space-x-2">
-            <Toggle className="w-4 h-4" />
+            <Settings2 className="w-4 h-4" />
             <span>Automation</span>
           </TabsTrigger>
           <TabsTrigger value="logs" className="flex items-center space-x-2">
