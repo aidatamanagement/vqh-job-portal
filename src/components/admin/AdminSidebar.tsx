@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -41,6 +42,33 @@ interface AdminSidebarProps {
   onViewChange: (view: AdminView) => void;
 }
 
+interface MenuItem {
+  id: string;
+  label: string;
+  icon: React.ComponentType<any>;
+  type: 'single';
+  view: AdminView;
+  visible: boolean;
+}
+
+interface MenuGroup {
+  id: string;
+  label: string;
+  icon: React.ComponentType<any>;
+  type: 'group';
+  visible: boolean;
+  children: Array<{
+    id: string;
+    label: string;
+    icon: React.ComponentType<any>;
+    view: AdminView;
+    badge?: string;
+    visible: boolean;
+  }>;
+}
+
+type MenuConfig = MenuItem | MenuGroup;
+
 const AdminSidebar: React.FC<AdminSidebarProps> = ({ currentView, onViewChange }) => {
   const { jobs, applications, userProfile } = useAppContext();
   const [expandedMenu, setExpandedMenu] = useState<string | null>('job-portal');
@@ -57,7 +85,7 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({ currentView, onViewChange }
     setExpandedMenu(prev => prev === menuId ? null : menuId);
   };
 
-  const menuItems = [
+  const menuItems: MenuConfig[] = [
     {
       id: 'dashboard',
       label: 'Dashboard',
