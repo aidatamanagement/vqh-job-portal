@@ -15,7 +15,9 @@ import {
   ExternalLink,
   User,
   Clock,
-  Link as LinkIcon
+  Link as LinkIcon,
+  AlertTriangle,
+  Info
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -42,6 +44,7 @@ const CalendlySettings: React.FC = () => {
   const [isTesting, setIsTesting] = useState(false);
   const [connectionStatus, setConnectionStatus] = useState<'unknown' | 'success' | 'error'>('unknown');
   const [isLoadingSettings, setIsLoadingSettings] = useState(true);
+  const [showSetupGuide, setShowSetupGuide] = useState(false);
 
   const { toast } = useToast();
   const { testConnection, getUser, getEventTypes } = useCalendlyApi();
@@ -80,7 +83,11 @@ const CalendlySettings: React.FC = () => {
         // Auto-test connection if settings exist
         if (data.api_token && data.organization_uri) {
           await testCalendlyConnection();
+        } else {
+          setShowSetupGuide(true);
         }
+      } else {
+        setShowSetupGuide(true);
       }
     } catch (error) {
       console.error('Error loading settings:', error);
@@ -99,10 +106,19 @@ const CalendlySettings: React.FC = () => {
       if (userResult.success && userResult.user) {
         setUser(userResult.user);
         setConnectionStatus('success');
+        setShowSetupGuide(false);
+        
+        // Auto-populate organization URI if not set
+        if (!settings.organization_uri && userResult.user.current_organization) {
+          setSettings(prev => ({
+            ...prev,
+            organization_uri: userResult.user.current_organization
+          }));
+        }
         
         // Load event types
-        if (settings.organization_uri || userResult.user.current_organization) {
-          const orgUri = settings.organization_uri || userResult.user.current_organization;
+        const orgUri = settings.organization_uri || userResult.user.current_organization;
+        if (orgUri) {
           const eventTypesResult = await getEventTypes(orgUri);
           
           if (eventTypesResult.success) {
@@ -116,6 +132,7 @@ const CalendlySettings: React.FC = () => {
         });
       } else {
         setConnectionStatus('error');
+        setShowSetupGuide(true);
         toast({
           title: "Connection Failed",
           description: userResult.error || "Failed to connect to Calendly",
@@ -124,6 +141,7 @@ const CalendlySettings: React.FC = () => {
       }
     } catch (error) {
       setConnectionStatus('error');
+      setShowSetupGuide(true);
       console.error('Error testing connection:', error);
       toast({
         title: "Connection Error",
@@ -132,6 +150,39 @@ const CalendlySettings: React.FC = () => {
       });
     } finally {
       setIsTesting(false);
+    }
+  };
+
+  const autoDetectOrganization = async () => {
+    setIsLoading(true);
+    try {
+      const userResult = await getUser();
+      
+      if (userResult.success && userResult.user?.current_organization) {
+        setSettings(prev => ({
+          ...prev,
+          organization_uri: userResult.user.current_organization
+        }));
+        
+        toast({
+          title: "Organization Detected",
+          description: "Organization URI has been automatically detected",
+        });
+      } else {
+        toast({
+          title: "Detection Failed",
+          description: "Could not auto-detect organization URI. Please enter it manually.",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Detection Error",
+        description: "Failed to detect organization URI",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -217,25 +268,54 @@ const CalendlySettings: React.FC = () => {
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
+          {/* Setup Guide Alert */}
+          {showSetupGuide && (
+            <Alert className="border-blue-200 bg-blue-50">
+              <Info className="h-4 w-4 text-blue-600" />
+              <AlertDescription>
+                <div className="space-y-2">
+                  <p className="font-medium text-blue-800">Quick Setup Guide:</p>
+                  <ol className="list-decimal list-inside space-y-1 text-sm text-blue-700">
+                    <li>Your Calendly API token has been configured ✓</li>
+                    <li>Click "Auto-Detect Organization" or manually enter your Organization URI</li>
+                    <li>Save settings and test the connection</li>
+                    <li>Select a default event type for interviews</li>
+                  </ol>
+                </div>
+              </AlertDescription>
+            </Alert>
+          )}
+
           <Alert>
             <LinkIcon className="h-4 w-4" />
             <AlertDescription>
-              The Calendly API token is securely stored as a Supabase secret. Only enter your organization URI and configure settings below.
+              The Calendly API token is securely stored as a Supabase secret. Configure your organization settings below.
             </AlertDescription>
           </Alert>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <Label htmlFor="organizationUri">Organization URI *</Label>
-              <Input
-                id="organizationUri"
-                value={settings.organization_uri}
-                onChange={(e) => handleInputChange('organization_uri', e.target.value)}
-                placeholder="https://api.calendly.com/organizations/AAAA..."
-                disabled={isLoading}
-              />
+              <div className="flex gap-2 mt-1">
+                <Input
+                  id="organizationUri"
+                  value={settings.organization_uri}
+                  onChange={(e) => handleInputChange('organization_uri', e.target.value)}
+                  placeholder="https://api.calendly.com/organizations/AAAA..."
+                  disabled={isLoading}
+                  className="flex-1"
+                />
+                <Button
+                  onClick={autoDetectOrganization}
+                  variant="outline"
+                  disabled={isLoading}
+                  className="whitespace-nowrap"
+                >
+                  Auto-Detect
+                </Button>
+              </div>
               <p className="text-xs text-gray-500 mt-1">
-                Found in your Calendly account settings or from the API
+                Found in your Calendly account settings or detected automatically
               </p>
             </div>
 

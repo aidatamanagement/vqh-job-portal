@@ -1,13 +1,30 @@
 
 import React, { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Calendar, Clock, User, ExternalLink, RefreshCw, Settings, CheckCircle2 } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import {
+  Calendar,
+  Clock,
+  User,
+  Mail,
+  Phone,
+  MapPin,
+  ExternalLink,
+  RefreshCw,
+  Search,
+  Filter,
+  AlertTriangle,
+  CheckCircle,
+  Settings,
+  Plus
+} from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { format } from 'date-fns';
 import { useCalendlyApi } from '@/hooks/useCalendlyApi';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 interface Interview {
   id: string;
@@ -21,125 +38,140 @@ interface Interview {
   status: string;
   created_at: string;
   updated_at: string;
-}
-
-interface Application {
-  id: string;
-  first_name: string;
-  last_name: string;
-  applied_position: string;
-  email: string;
+  // From join with job_applications
+  first_name?: string;
+  last_name?: string;
+  phone?: string;
+  applied_position?: string;
+  city_state?: string;
 }
 
 const Interviews: React.FC = () => {
   const [interviews, setInterviews] = useState<Interview[]>([]);
-  const [applications, setApplications] = useState<Record<string, Application>>({});
-  const [calendlyEvents, setCalendlyEvents] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [syncingCalendly, setSyncingCalendly] = useState(false);
-  const [calendlyConnected, setCalendlyConnected] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [isCalendlyConfigured, setIsCalendlyConfigured] = useState(false);
+  const [isCheckingConfig, setIsCheckingConfig] = useState(true);
+  const [isSyncing, setIsSyncing] = useState(false);
   const { toast } = useToast();
-  const { getEvents, testConnection } = useCalendlyApi();
+  const { getEvents } = useCalendlyApi();
 
-  const fetchInterviews = async () => {
+  useEffect(() => {
+    checkCalendlyConfiguration();
+    loadInterviews();
+  }, []);
+
+  const checkCalendlyConfiguration = async () => {
     try {
-      const { data: interviewsData, error: interviewsError } = await supabase
-        .from('interviews')
+      const { data, error } = await supabase
+        .from('calendly_settings')
         .select('*')
-        .order('scheduled_time', { ascending: true });
+        .limit(1)
+        .single();
 
-      if (interviewsError) {
-        console.error('Error fetching interviews:', interviewsError);
+      if (error && error.code !== 'PGRST116') {
+        console.error('Error checking Calendly configuration:', error);
+        setIsCalendlyConfigured(false);
+      } else if (data && data.organization_uri) {
+        setIsCalendlyConfigured(true);
+      } else {
+        setIsCalendlyConfigured(false);
+      }
+    } catch (error) {
+      console.error('Error checking Calendly configuration:', error);
+      setIsCalendlyConfigured(false);
+    } finally {
+      setIsCheckingConfig(false);
+    }
+  };
+
+  const loadInterviews = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('interviews')
+        .select(`
+          *,
+          job_applications!inner(
+            first_name,
+            last_name,
+            phone,
+            applied_position,
+            city_state
+          )
+        `)
+        .order('scheduled_time', { ascending: false });
+
+      if (error) {
+        console.error('Error loading interviews:', error);
         toast({
           title: "Error",
-          description: "Failed to fetch interviews",
+          description: "Failed to load interviews",
           variant: "destructive",
         });
         return;
       }
 
-      const applicationIds = interviewsData?.map(i => i.application_id).filter(Boolean) || [];
-      
-      if (applicationIds.length > 0) {
-        const { data: applicationsData, error: applicationsError } = await supabase
-          .from('job_applications')
-          .select('id, first_name, last_name, applied_position, email')
-          .in('id', applicationIds);
+      // Flatten the joined data
+      const flattenedInterviews = (data || []).map(interview => ({
+        ...interview,
+        first_name: interview.job_applications?.first_name,
+        last_name: interview.job_applications?.last_name,
+        phone: interview.job_applications?.phone,
+        applied_position: interview.job_applications?.applied_position,
+        city_state: interview.job_applications?.city_state,
+      }));
 
-        if (!applicationsError && applicationsData) {
-          const applicationsMap = applicationsData.reduce((acc, app) => {
-            acc[app.id] = app;
-            return acc;
-          }, {} as Record<string, Application>);
-          setApplications(applicationsMap);
-        }
-      }
-
-      setInterviews(interviewsData || []);
+      setInterviews(flattenedInterviews);
     } catch (error) {
-      console.error('Error in fetchInterviews:', error);
+      console.error('Error loading interviews:', error);
       toast({
         title: "Error",
-        description: "An unexpected error occurred",
+        description: "Failed to load interviews",
         variant: "destructive",
       });
     } finally {
-      setLoading(false);
-    }
-  };
-
-  const checkCalendlyConnection = async () => {
-    try {
-      const result = await testConnection();
-      setCalendlyConnected(result.success);
-      return result.success;
-    } catch (error) {
-      console.error('Error checking Calendly connection:', error);
-      setCalendlyConnected(false);
-      return false;
+      setIsLoading(false);
     }
   };
 
   const syncWithCalendly = async () => {
-    setSyncingCalendly(true);
-    
-    try {
-      // First check if Calendly is connected
-      const isConnected = await checkCalendlyConnection();
-      if (!isConnected) {
-        toast({
-          title: "Calendly Not Connected",
-          description: "Please configure Calendly integration in Settings first",
-          variant: "destructive",
-        });
-        return;
-      }
+    if (!isCalendlyConfigured) {
+      toast({
+        title: "Configuration Required",
+        description: "Please configure Calendly settings first",
+        variant: "destructive",
+      });
+      return;
+    }
 
-      // Get Calendly settings to fetch organization URI
-      const { data: settings, error: settingsError } = await supabase
+    setIsSyncing(true);
+    try {
+      // Get organization URI from settings
+      const { data: settings } = await supabase
         .from('calendly_settings')
         .select('organization_uri')
-        .limit(1)
         .single();
 
-      if (settingsError || !settings?.organization_uri) {
+      if (!settings?.organization_uri) {
         toast({
-          title: "Configuration Missing",
-          description: "Calendly organization URI not configured",
+          title: "Configuration Error",
+          description: "Organization URI not found in settings",
           variant: "destructive",
         });
         return;
       }
 
-      // Fetch events from Calendly
       const eventsResult = await getEvents(settings.organization_uri);
       
       if (eventsResult.success && eventsResult.events) {
-        setCalendlyEvents(eventsResult.events);
         toast({
           title: "Sync Successful",
-          description: `Synced ${eventsResult.events.length} events from Calendly`,
+          description: `Found ${eventsResult.events.length} Calendly events`,
         });
+        
+        // Reload interviews to show any updates
+        await loadInterviews();
       } else {
         toast({
           title: "Sync Failed",
@@ -151,229 +183,301 @@ const Interviews: React.FC = () => {
       console.error('Error syncing with Calendly:', error);
       toast({
         title: "Sync Error",
-        description: "An unexpected error occurred while syncing",
+        description: "An unexpected error occurred during sync",
         variant: "destructive",
       });
     } finally {
-      setSyncingCalendly(false);
+      setIsSyncing(false);
     }
   };
 
-  useEffect(() => {
-    fetchInterviews();
-    checkCalendlyConnection();
-  }, []);
-
-  const getStatusColor = (status: string) => {
+  const getStatusBadgeVariant = (status: string) => {
     switch (status.toLowerCase()) {
       case 'scheduled':
-        return 'bg-blue-100 text-blue-800';
+        return 'default';
       case 'completed':
-        return 'bg-green-100 text-green-800';
+        return 'secondary';
       case 'cancelled':
-        return 'bg-red-100 text-red-800';
-      case 'no-show':
-        return 'bg-yellow-100 text-yellow-800';
+        return 'destructive';
+      case 'no_show':
+        return 'outline';
       default:
-        return 'bg-gray-100 text-gray-800';
+        return 'outline';
     }
   };
 
-  const formatDateTime = (dateString: string) => {
-    return format(new Date(dateString), 'MMM dd, yyyy - h:mm a');
-  };
+  const filteredInterviews = interviews.filter(interview => {
+    const matchesSearch = 
+      interview.candidate_email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      `${interview.first_name} ${interview.last_name}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      interview.applied_position?.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    const matchesStatus = statusFilter === 'all' || interview.status === statusFilter;
+    
+    return matchesSearch && matchesStatus;
+  });
 
-  // Find matching Calendly event for an interview
-  const getCalendlyEventForInterview = (interview: Interview) => {
-    return calendlyEvents.find(event => 
-      event.uri === interview.calendly_event_uri || 
-      event.uuid === interview.calendly_event_id
-    );
-  };
-
-  if (loading) {
+  if (isCheckingConfig) {
     return (
-      <div className="space-y-6 animate-slide-up">
-        <div className="flex items-center justify-between">
+      <div className="space-y-6">
+        <div className="flex items-center space-x-3">
+          <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
+            <Calendar className="w-6 h-6 text-white" />
+          </div>
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Interviews</h1>
-            <p className="text-gray-600 mt-2">Manage scheduled interviews and meetings</p>
+            <h1 className="font-bold text-gray-900" style={{ fontSize: '1.3rem' }}>Interviews</h1>
           </div>
         </div>
-        <div className="flex justify-center items-center h-64">
-          <div className="spinner" />
-          <span className="ml-2">Loading interviews...</span>
+        
+        <Card>
+          <CardContent className="flex justify-center items-center py-8">
+            <RefreshCw className="w-6 h-6 animate-spin mr-2" />
+            <span>Checking Calendly configuration...</span>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  if (!isCalendlyConfigured) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center space-x-3">
+          <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
+            <Calendar className="w-6 h-6 text-white" />
+          </div>
+          <div>
+            <h1 className="font-bold text-gray-900" style={{ fontSize: '1.3rem' }}>Interviews</h1>
+          </div>
         </div>
+
+        <Alert className="border-yellow-200 bg-yellow-50">
+          <AlertTriangle className="h-4 w-4 text-yellow-600" />
+          <AlertDescription>
+            <div className="space-y-3">
+              <div>
+                <p className="font-medium text-yellow-800">Calendly Not Configured</p>
+                <p className="text-yellow-700 text-sm">
+                  To manage interviews, you need to configure your Calendly integration first.
+                </p>
+              </div>
+              
+              <div className="space-y-2">
+                <p className="text-sm font-medium text-yellow-800">Setup Steps:</p>
+                <ol className="list-decimal list-inside space-y-1 text-sm text-yellow-700">
+                  <li>Go to Settings → Calendly tab</li>
+                  <li>Enter your Calendly Organization URI</li>
+                  <li>Save settings and test the connection</li>
+                  <li>Select a default event type for interviews</li>
+                </ol>
+              </div>
+              
+              <Button 
+                onClick={() => window.location.href = '/admin?tab=settings'}
+                className="bg-yellow-600 hover:bg-yellow-700 text-white"
+              >
+                <Settings className="w-4 h-4 mr-2" />
+                Configure Calendly
+              </Button>
+            </div>
+          </AlertDescription>
+        </Alert>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6 animate-slide-up">
+    <div className="space-y-6">
+      {/* Header */}
       <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Interviews</h1>
-          <p className="text-gray-600 mt-2">Manage scheduled interviews and meetings</p>
-        </div>
-        <div className="flex items-center gap-3">
-          {/* Calendly Connection Status */}
-          <div className="flex items-center gap-2">
-            {calendlyConnected ? (
-              <>
-                <CheckCircle2 className="w-4 h-4 text-green-600" />
-                <span className="text-sm text-green-600">Calendly Connected</span>
-              </>
-            ) : (
-              <>
-                <Settings className="w-4 h-4 text-orange-600" />
-                <span className="text-sm text-orange-600">Calendly Not Configured</span>
-              </>
-            )}
+        <div className="flex items-center space-x-3">
+          <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
+            <Calendar className="w-6 h-6 text-white" />
           </div>
-
-          {calendlyConnected && (
-            <Button 
-              onClick={syncWithCalendly} 
-              variant="outline" 
-              disabled={syncingCalendly}
-              className="flex items-center gap-2"
-            >
-              <RefreshCw className={`w-4 h-4 ${syncingCalendly ? 'animate-spin' : ''}`} />
-              {syncingCalendly ? 'Syncing...' : 'Sync Calendly'}
-            </Button>
-          )}
-
-          <Button onClick={fetchInterviews} variant="outline" className="flex items-center gap-2">
-            <RefreshCw className="w-4 h-4" />
-            Refresh
-          </Button>
+          <div>
+            <h1 className="font-bold text-gray-900" style={{ fontSize: '1.3rem' }}>Interviews</h1>
+            <p className="text-gray-600 text-sm">Manage scheduled interviews and sync with Calendly</p>
+          </div>
         </div>
+        
+        <Button
+          onClick={syncWithCalendly}
+          disabled={isSyncing}
+          className="flex items-center gap-2"
+        >
+          {isSyncing ? (
+            <RefreshCw className="w-4 h-4 animate-spin" />
+          ) : (
+            <RefreshCw className="w-4 h-4" />
+          )}
+          Sync with Calendly
+        </Button>
       </div>
 
-      {/* Calendly Events Summary */}
-      {calendlyConnected && calendlyEvents.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Calendar className="w-5 h-5" />
-              Calendly Events ({calendlyEvents.length})
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-gray-600">
-              Last synced: {new Date().toLocaleString()} • {calendlyEvents.length} events found
-            </p>
-          </CardContent>
-        </Card>
-      )}
+      {/* Filters */}
+      <Card>
+        <CardContent className="pt-6">
+          <div className="flex flex-col sm:flex-row gap-4">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+              <Input
+                placeholder="Search by candidate name, email, or position..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+            
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="w-full sm:w-48">
+                <div className="flex items-center">
+                  <Filter className="w-4 h-4 mr-2" />
+                  <SelectValue placeholder="Filter by status" />
+                </div>
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Statuses</SelectItem>
+                <SelectItem value="scheduled">Scheduled</SelectItem>
+                <SelectItem value="completed">Completed</SelectItem>
+                <SelectItem value="cancelled">Cancelled</SelectItem>
+                <SelectItem value="no_show">No Show</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </CardContent>
+      </Card>
 
-      <div className="grid gap-4">
-        {interviews.length === 0 ? (
+      {/* Interviews List */}
+      <div className="space-y-4">
+        {isLoading ? (
           <Card>
-            <CardContent className="flex flex-col items-center justify-center py-12">
-              <Calendar className="w-12 h-12 text-gray-400 mb-4" />
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">No Interviews Scheduled</h3>
-              <p className="text-gray-600 text-center">
-                No interviews have been scheduled yet. When candidates book interviews through Calendly, they will appear here.
+            <CardContent className="flex justify-center items-center py-8">
+              <RefreshCw className="w-6 h-6 animate-spin mr-2" />
+              <span>Loading interviews...</span>
+            </CardContent>
+          </Card>
+        ) : filteredInterviews.length === 0 ? (
+          <Card>
+            <CardContent className="text-center py-8">
+              <Calendar className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-gray-900 mb-2">No Interviews Found</h3>
+              <p className="text-gray-500 mb-4">
+                {interviews.length === 0 
+                  ? "No interviews have been scheduled yet." 
+                  : "No interviews match your current filters."}
               </p>
+              {interviews.length === 0 && (
+                <p className="text-sm text-gray-400">
+                  Interviews are automatically created when candidates book through Calendly links sent in shortlisted emails.
+                </p>
+              )}
             </CardContent>
           </Card>
         ) : (
-          interviews.map((interview) => {
-            const application = applications[interview.application_id];
-            const calendlyEvent = getCalendlyEventForInterview(interview);
-            
-            return (
-              <Card key={interview.id} className="hover:shadow-md transition-shadow">
-                <CardHeader className="pb-4">
-                  <div className="flex items-start justify-between">
-                    <div className="flex items-center space-x-3">
-                      <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-                        <User className="w-5 h-5 text-blue-600" />
-                      </div>
+          filteredInterviews.map((interview) => (
+            <Card key={interview.id} className="hover:shadow-md transition-shadow">
+              <CardContent className="pt-6">
+                <div className="flex flex-col lg:flex-row gap-6">
+                  {/* Candidate Info */}
+                  <div className="flex-1">
+                    <div className="flex items-start justify-between mb-4">
                       <div>
-                        <CardTitle className="text-lg">
-                          {application ? `${application.first_name} ${application.last_name}` : 'Unknown Candidate'}
-                        </CardTitle>
-                        <p className="text-gray-600">
-                          {application ? application.applied_position : 'Position unknown'}
-                        </p>
+                        <h3 className="text-lg font-semibold text-gray-900">
+                          {interview.first_name} {interview.last_name}
+                        </h3>
+                        <p className="text-gray-600">{interview.applied_position}</p>
                       </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Badge className={getStatusColor(interview.status)}>
-                        {interview.status}
+                      <Badge variant={getStatusBadgeVariant(interview.status)}>
+                        {interview.status.replace('_', ' ').toUpperCase()}
                       </Badge>
-                      {calendlyEvent && (
-                        <Badge variant="outline" className="text-xs">
-                          Calendly Synced
-                        </Badge>
+                    </div>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                      <div className="flex items-center gap-2">
+                        <Mail className="w-4 h-4 text-gray-400" />
+                        <span>{interview.candidate_email}</span>
+                      </div>
+                      
+                      {interview.phone && (
+                        <div className="flex items-center gap-2">
+                          <Phone className="w-4 h-4 text-gray-400" />
+                          <span>{interview.phone}</span>
+                        </div>
+                      )}
+                      
+                      {interview.city_state && (
+                        <div className="flex items-center gap-2">
+                          <MapPin className="w-4 h-4 text-gray-400" />
+                          <span>{interview.city_state}</span>
+                        </div>
+                      )}
+                      
+                      {interview.interviewer_email && (
+                        <div className="flex items-center gap-2">
+                          <User className="w-4 h-4 text-gray-400" />
+                          <span>Interviewer: {interview.interviewer_email}</span>
+                        </div>
                       )}
                     </div>
                   </div>
-                </CardHeader>
-                
-                <CardContent className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="flex items-center space-x-2 text-gray-600">
-                      <Calendar className="w-4 h-4" />
-                      <span>{formatDateTime(interview.scheduled_time)}</span>
-                    </div>
-                    
-                    <div className="flex items-center space-x-2 text-gray-600">
-                      <User className="w-4 h-4" />
-                      <span>{interview.candidate_email}</span>
-                    </div>
-                    
-                    {interview.interviewer_email && (
-                      <div className="flex items-center space-x-2 text-gray-600">
-                        <User className="w-4 h-4" />
-                        <span>Interviewer: {interview.interviewer_email}</span>
-                      </div>
-                    )}
-
-                    {calendlyEvent && (
-                      <div className="flex items-center space-x-2 text-gray-600">
-                        <Clock className="w-4 h-4" />
-                        <span>Duration: {calendlyEvent.event_type?.duration || 'N/A'} min</span>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Additional Calendly Event Information */}
-                  {calendlyEvent && (
-                    <div className="bg-blue-50 p-3 rounded-lg">
-                      <h4 className="font-medium text-blue-900 mb-2">Calendly Event Details</h4>
-                      <div className="space-y-1 text-sm text-blue-800">
-                        <p><strong>Event:</strong> {calendlyEvent.name}</p>
-                        <p><strong>Status:</strong> {calendlyEvent.status}</p>
-                        {calendlyEvent.location && (
-                          <p><strong>Location:</strong> {calendlyEvent.location.type}</p>
-                        )}
-                        {calendlyEvent.invitees_counter && (
-                          <p><strong>Attendees:</strong> {calendlyEvent.invitees_counter.active}/{calendlyEvent.invitees_counter.total}</p>
-                        )}
-                      </div>
-                    </div>
-                  )}
                   
-                  {(interview.meeting_url || calendlyEvent?.location?.join_url) && (
-                    <div className="pt-2">
+                  {/* Interview Details */}
+                  <div className="lg:w-80 space-y-3">
+                    <div className="flex items-center gap-2 text-sm">
+                      <Clock className="w-4 h-4 text-gray-400" />
+                      <span>
+                        {new Date(interview.scheduled_time).toLocaleDateString('en-US', {
+                          weekday: 'long',
+                          year: 'numeric',
+                          month: 'long',
+                          day: 'numeric',
+                        })}
+                      </span>
+                    </div>
+                    
+                    <div className="flex items-center gap-2 text-sm">
+                      <Clock className="w-4 h-4 text-gray-400" />
+                      <span>
+                        {new Date(interview.scheduled_time).toLocaleTimeString('en-US', {
+                          hour: '2-digit',
+                          minute: '2-digit',
+                        })}
+                      </span>
+                    </div>
+                    
+                    <div className="flex gap-2">
+                      {interview.meeting_url && (
+                        <Button
+                          onClick={() => window.open(interview.meeting_url, '_blank')}
+                          variant="outline"
+                          size="sm"
+                          className="flex items-center gap-2"
+                        >
+                          <ExternalLink className="w-3 h-3" />
+                          Join Meeting
+                        </Button>
+                      )}
+                      
                       <Button
-                        variant="outline"
+                        onClick={() => window.open(`https://calendly.com/events/${interview.calendly_event_id}`, '_blank')}
+                        variant="ghost"
                         size="sm"
-                        onClick={() => window.open(interview.meeting_url || calendlyEvent?.location?.join_url, '_blank')}
                         className="flex items-center gap-2"
                       >
-                        <ExternalLink className="w-4 h-4" />
-                        Join Meeting
+                        <Calendar className="w-3 h-3" />
+                        View in Calendly
                       </Button>
                     </div>
-                  )}
-                </CardContent>
-              </Card>
-            );
-          })
+                    
+                    <div className="text-xs text-gray-500">
+                      <p>Scheduled: {new Date(interview.created_at).toLocaleDateString()}</p>
+                      <p>Event ID: {interview.calendly_event_id}</p>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))
         )}
       </div>
     </div>
