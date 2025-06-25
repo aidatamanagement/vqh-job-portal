@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -21,6 +20,7 @@ import {
   Layout
 } from 'lucide-react';
 import { useAppContext } from '@/contexts/AppContext';
+import { getRolePermissions } from '@/utils/rolePermissions';
 
 type AdminView = 
   | 'dashboard'
@@ -42,12 +42,16 @@ interface AdminSidebarProps {
 }
 
 const AdminSidebar: React.FC<AdminSidebarProps> = ({ currentView, onViewChange }) => {
-  const { jobs, applications } = useAppContext();
+  const { jobs, applications, userProfile } = useAppContext();
   const [expandedMenu, setExpandedMenu] = useState<string | null>('job-portal');
 
   const activeJobs = jobs.filter(job => job.isActive).length;
   const totalJobs = jobs.length;
   const pendingApplications = applications.filter(app => app.status === 'application_submitted').length;
+
+  // Get user permissions
+  const userRole = userProfile?.role || 'recruiter';
+  const permissions = getRolePermissions(userRole);
 
   const toggleMenu = (menuId: string) => {
     setExpandedMenu(prev => prev === menuId ? null : menuId);
@@ -60,18 +64,21 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({ currentView, onViewChange }
       icon: Home,
       type: 'single' as const,
       view: 'dashboard' as AdminView,
+      visible: permissions.canViewDashboard,
     },
     {
       id: 'job-portal',
       label: 'Job Portal',
       icon: Briefcase,
       type: 'group' as const,
+      visible: permissions.canManageJobs || permissions.canViewApplications,
       children: [
         {
           id: 'post-job',
           label: 'Post Job',
           icon: Plus,
           view: 'post-job' as AdminView,
+          visible: permissions.canManageJobs,
         },
         {
           id: 'manage-jobs',
@@ -79,6 +86,7 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({ currentView, onViewChange }
           icon: Briefcase,
           view: 'manage-jobs' as AdminView,
           badge: `${activeJobs}/${totalJobs}`,
+          visible: permissions.canManageJobs,
         },
         {
           id: 'submissions',
@@ -86,48 +94,55 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({ currentView, onViewChange }
           icon: FileText,
           view: 'submissions' as AdminView,
           badge: pendingApplications > 0 ? pendingApplications.toString() : undefined,
+          visible: permissions.canViewApplications,
         },
-      ],
+      ].filter(child => child.visible),
     },
     {
       id: 'crm',
       label: 'CRM',
       icon: Users,
       type: 'group' as const,
+      visible: permissions.canViewSalespeople || permissions.canViewVisitLogs,
       children: [
         {
           id: 'salespeople',
           label: 'Salespeople',
           icon: Users,
           view: 'salespeople' as AdminView,
+          visible: permissions.canViewSalespeople,
         },
         {
           id: 'visit-logs',
           label: 'Visit Logs',
           icon: MapPin,
           view: 'visit-logs' as AdminView,
+          visible: permissions.canViewVisitLogs,
         },
         {
           id: 'crm-reports',
           label: 'Reports',
           icon: ClipboardList,
           view: 'crm-reports' as AdminView,
+          visible: permissions.canViewVisitLogs, // Reports require visit logs access
         },
-      ],
+      ].filter(child => child.visible),
     },
     {
       id: 'training',
       label: 'Training',
       icon: BookOpen,
       type: 'group' as const,
+      visible: permissions.canViewTrainingVideos,
       children: [
         {
           id: 'training-videos',
           label: 'Videos',
           icon: Video,
           view: 'training-videos' as AdminView,
+          visible: permissions.canViewTrainingVideos,
         },
-      ],
+      ].filter(child => child.visible),
     },
     {
       id: 'content-manager',
@@ -135,28 +150,32 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({ currentView, onViewChange }
       icon: Layout,
       type: 'single' as const,
       view: 'content-manager' as AdminView,
+      visible: permissions.canManageContent,
     },
     {
       id: 'settings',
       label: 'Settings',
       icon: SettingsIcon,
       type: 'group' as const,
+      visible: permissions.canManageEmailSettings || permissions.canManageUsers,
       children: [
         {
           id: 'email-management',
           label: 'Email & Config',
           icon: Mail,
           view: 'email-management' as AdminView,
+          visible: permissions.canManageEmailSettings,
         },
         {
           id: 'user-roles',
           label: 'Users & Roles',
           icon: Users,
           view: 'settings' as AdminView,
+          visible: permissions.canManageUsers,
         },
-      ],
+      ].filter(child => child.visible),
     },
-  ];
+  ].filter(item => item.visible && (item.type === 'single' || item.children.length > 0));
 
   return (
     <div className="w-80 lg:w-80 w-72 bg-white border-r border-gray-200 min-h-screen">

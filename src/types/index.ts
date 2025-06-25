@@ -1,3 +1,4 @@
+
 export interface Job {
   id: string;
   title: string;
@@ -50,10 +51,12 @@ export interface JobApplication {
   updatedAt: string;
 }
 
+export type UserRole = 'admin' | 'recruiter' | 'hr' | 'trainer' | 'content_manager';
+
 export interface User {
   id: string;
   email: string;
-  role: 'admin';
+  role: UserRole;
   displayName?: string;
   createdAt: string;
 }
