@@ -18,10 +18,26 @@ export const useEmailSettings = () => {
 
   const loadSettings = async () => {
     try {
-      // For now, we'll use localStorage. In a real app, you'd save to a database
-      const savedSettings = localStorage.getItem('emailSettings');
-      if (savedSettings) {
-        setSettings(JSON.parse(savedSettings));
+      console.log('Loading email settings from database...');
+      const { data, error } = await supabase
+        .from('email_settings')
+        .select('*')
+        .limit(1)
+        .single();
+
+      if (error) {
+        console.error('Error loading email settings:', error);
+        // Use default settings if database fetch fails
+        return;
+      }
+
+      if (data) {
+        console.log('Loaded email settings:', data);
+        setSettings({
+          adminEmails: data.admin_emails || ['careers@viaquesthospice.com'],
+          enableNotifications: data.enable_notifications ?? true,
+          enableAutoResponses: data.enable_auto_responses ?? true,
+        });
       }
     } catch (error) {
       console.error('Error loading email settings:', error);
@@ -32,8 +48,45 @@ export const useEmailSettings = () => {
 
   const saveSettings = async (newSettings: EmailSettings) => {
     try {
-      localStorage.setItem('emailSettings', JSON.stringify(newSettings));
+      console.log('Saving email settings to database:', newSettings);
+      
+      // First check if any settings exist
+      const { data: existing } = await supabase
+        .from('email_settings')
+        .select('id')
+        .limit(1)
+        .single();
+
+      let result;
+      if (existing) {
+        // Update existing settings
+        result = await supabase
+          .from('email_settings')
+          .update({
+            admin_emails: newSettings.adminEmails,
+            enable_notifications: newSettings.enableNotifications,
+            enable_auto_responses: newSettings.enableAutoResponses,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', existing.id);
+      } else {
+        // Insert new settings
+        result = await supabase
+          .from('email_settings')
+          .insert({
+            admin_emails: newSettings.adminEmails,
+            enable_notifications: newSettings.enableNotifications,
+            enable_auto_responses: newSettings.enableAutoResponses,
+          });
+      }
+
+      if (result.error) {
+        console.error('Error saving email settings:', result.error);
+        return false;
+      }
+
       setSettings(newSettings);
+      console.log('Email settings saved successfully');
       return true;
     } catch (error) {
       console.error('Error saving email settings:', error);

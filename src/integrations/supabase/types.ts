@@ -78,6 +78,33 @@ export type Database = {
         }
         Relationships: []
       }
+      email_settings: {
+        Row: {
+          admin_emails: string[]
+          created_at: string
+          enable_auto_responses: boolean
+          enable_notifications: boolean
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          admin_emails?: string[]
+          created_at?: string
+          enable_auto_responses?: boolean
+          enable_notifications?: boolean
+          id?: string
+          updated_at?: string
+        }
+        Update: {
+          admin_emails?: string[]
+          created_at?: string
+          enable_auto_responses?: boolean
+          enable_notifications?: boolean
+          id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       email_templates: {
         Row: {
           created_at: string

@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
@@ -7,11 +7,18 @@ import { Badge } from '@/components/ui/badge';
 import { Save, Mail, Settings } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { useEmailAutomation } from '@/hooks/useEmailAutomation';
+import { useEmailSettings } from '@/hooks/useEmailSettings';
 
 const EmailStatusSettings: React.FC = () => {
   const { EMAIL_ENABLED_STATUSES, STATUS_TO_TEMPLATE_MAP } = useEmailAutomation();
-  const [emailSettings, setEmailSettings] = useState(EMAIL_ENABLED_STATUSES);
+  const { settings, saveSettings, isLoading } = useEmailSettings();
+  const [localSettings, setLocalSettings] = useState(settings);
   const [isSaving, setIsSaving] = useState(false);
+
+  // Update local settings when database settings change
+  useEffect(() => {
+    setLocalSettings(settings);
+  }, [settings]);
 
   const statusLabels = {
     'application_submitted': 'Application Submitted',
@@ -33,24 +40,18 @@ const EmailStatusSettings: React.FC = () => {
     'rejected': 'Professional rejection notification',
   };
 
-  const handleToggleStatus = (status: keyof typeof EMAIL_ENABLED_STATUSES) => {
-    setEmailSettings(prev => ({
-      ...prev,
-      [status]: !prev[status]
-    }));
-  };
-
   const handleSaveSettings = async () => {
     setIsSaving(true);
     try {
-      // Here you would typically save to your settings/configuration
-      // For now, we'll just show a success message
-      console.log('Saving email settings:', emailSettings);
-      
-      toast({
-        title: "Settings Saved",
-        description: "Email notification settings have been updated successfully.",
-      });
+      const success = await saveSettings(localSettings);
+      if (success) {
+        toast({
+          title: "Settings Saved",
+          description: "Email notification settings have been updated successfully.",
+        });
+      } else {
+        throw new Error('Failed to save settings');
+      }
     } catch (error) {
       console.error('Error saving email settings:', error);
       toast({
@@ -62,6 +63,10 @@ const EmailStatusSettings: React.FC = () => {
       setIsSaving(false);
     }
   };
+
+  if (isLoading) {
+    return <div className="flex justify-center p-8">Loading email settings...</div>;
+  }
 
   return (
     <div className="space-y-6">
@@ -77,10 +82,36 @@ const EmailStatusSettings: React.FC = () => {
       </div>
 
       <div className="grid gap-4">
+        {/* Master switches */}
+        <Card className="p-4 bg-blue-50 border-blue-200">
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h4 className="font-medium text-blue-900">Enable Email Notifications</h4>
+                <p className="text-sm text-blue-700">Send status update emails to applicants</p>
+              </div>
+              <Switch
+                checked={localSettings.enableNotifications}
+                onCheckedChange={(checked) => setLocalSettings(prev => ({ ...prev, enableNotifications: checked }))}
+              />
+            </div>
+            <div className="flex items-center justify-between">
+              <div>
+                <h4 className="font-medium text-blue-900">Enable Auto-Response Emails</h4>
+                <p className="text-sm text-blue-700">Automatically send confirmation emails</p>
+              </div>
+              <Switch
+                checked={localSettings.enableAutoResponses}
+                onCheckedChange={(checked) => setLocalSettings(prev => ({ ...prev, enableAutoResponses: checked }))}
+              />
+            </div>
+          </div>
+        </Card>
+
         {Object.entries(statusLabels).map(([status, label]) => {
           const statusKey = status as keyof typeof EMAIL_ENABLED_STATUSES;
           const templateSlug = STATUS_TO_TEMPLATE_MAP[statusKey];
-          const isEnabled = emailSettings[statusKey];
+          const isEnabled = EMAIL_ENABLED_STATUSES[statusKey];
           
           return (
             <Card key={status} className="p-4">
@@ -102,10 +133,6 @@ const EmailStatusSettings: React.FC = () => {
                     {statusDescriptions[statusKey]}
                   </p>
                 </div>
-                <Switch
-                  checked={isEnabled}
-                  onCheckedChange={() => handleToggleStatus(statusKey)}
-                />
               </div>
             </Card>
           );
