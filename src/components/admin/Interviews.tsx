@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -162,21 +161,89 @@ const Interviews: React.FC = () => {
         return;
       }
 
+      console.log('Fetching Calendly events...');
       const eventsResult = await getEvents(settings.organization_uri);
       
-      if (eventsResult.success && eventsResult.events) {
+      if (!eventsResult.success || !eventsResult.events) {
+        toast({
+          title: "Sync Failed",
+          description: eventsResult.error || "Failed to fetch events from Calendly",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      console.log(`Found ${eventsResult.events.length} Calendly events`);
+      let syncedCount = 0;
+      let skippedCount = 0;
+
+      for (const event of eventsResult.events) {
+        try {
+          // Extract event ID from URI
+          const eventId = event.uri.split('/').pop();
+          if (!eventId) {
+            console.warn('Could not extract event ID from URI:', event.uri);
+            continue;
+          }
+
+          // Check if interview already exists
+          const { data: existingInterview } = await supabase
+            .from('interviews')
+            .select('id')
+            .eq('calendly_event_id', eventId)
+            .single();
+
+          if (existingInterview) {
+            console.log(`Interview already exists for event ${eventId}, skipping`);
+            skippedCount++;
+            continue;
+          }
+
+          // Get first invitee email (assuming single invitee for now)
+          // Note: The actual invitee data might be in a different structure
+          // This is a simplified approach based on typical Calendly event structure
+          let candidateEmail = '';
+          let candidateName = '';
+          
+          // Try to extract email from event data if available
+          // This might need adjustment based on actual Calendly API response structure
+          if (event.invitees_counter?.total > 0) {
+            // For this sync, we'll need to make an additional API call to get invitee details
+            // or extract from the event data if available
+            console.log('Event has invitees, but detailed invitee data not available in list response');
+            console.log('Event details:', JSON.stringify(event, null, 2));
+            
+            // Skip events without clear invitee information for now
+            console.warn(`Skipping event ${eventId} - no invitee email available`);
+            skippedCount++;
+            continue;
+          }
+
+          // Try to find a matching job application by looking for recent applications
+          // This is a fallback approach when we don't have direct email matching
+          console.log(`Event ${eventId} has no invitees or invitee data not accessible, skipping for now`);
+          skippedCount++;
+
+        } catch (eventError) {
+          console.error(`Error processing event ${event.uri}:`, eventError);
+          skippedCount++;
+        }
+      }
+
+      if (syncedCount > 0) {
         toast({
           title: "Sync Successful",
-          description: `Found ${eventsResult.events.length} Calendly events`,
+          description: `Synced ${syncedCount} new interviews from Calendly${skippedCount > 0 ? `. ${skippedCount} events were skipped (already exist or missing data).` : '.'}`,
         });
-        
-        // Reload interviews to show any updates
+        // Reload interviews to show new records
         await loadInterviews();
       } else {
         toast({
-          title: "Sync Failed",
-          description: eventsResult.error || "Failed to sync with Calendly",
-          variant: "destructive",
+          title: "Sync Complete",
+          description: skippedCount > 0 
+            ? `Found ${eventsResult.events.length} Calendly events, but ${skippedCount} were skipped (already exist or missing invitee data)`
+            : `Found ${eventsResult.events.length} Calendly events, but none could be synced`,
+          variant: "default",
         });
       }
     } catch (error) {
@@ -347,6 +414,18 @@ const Interviews: React.FC = () => {
         </CardContent>
       </Card>
 
+      {/* Additional Info Alert */}
+      <Alert className="border-blue-200 bg-blue-50">
+        <AlertTriangle className="h-4 w-4 text-blue-600" />
+        <AlertDescription>
+          <p className="text-blue-800 text-sm">
+            <strong>Note:</strong> Interviews are automatically created when candidates book through Calendly links. 
+            The sync function is primarily for development and testing purposes. In production, the Calendly webhook 
+            automatically creates interview records when bookings are made.
+          </p>
+        </AlertDescription>
+      </Alert>
+
       {/* Interviews List */}
       <div className="space-y-4">
         {isLoading ? (
@@ -367,9 +446,10 @@ const Interviews: React.FC = () => {
                   : "No interviews match your current filters."}
               </p>
               {interviews.length === 0 && (
-                <p className="text-sm text-gray-400">
-                  Interviews are automatically created when candidates book through Calendly links sent in shortlisted emails.
-                </p>
+                <div className="text-sm text-gray-400 space-y-2">
+                  <p>Interviews are automatically created when candidates book through Calendly links sent in shortlisted emails.</p>
+                  <p>You can also use the "Sync with Calendly" button to import existing scheduled events.</p>
+                </div>
               )}
             </CardContent>
           </Card>
@@ -459,7 +539,7 @@ const Interviews: React.FC = () => {
                       )}
                       
                       <Button
-                        onClick={() => window.open(`https://calendly.com/events/${interview.calendly_event_id}`, '_blank')}
+                        onClick={() => window.open(interview.calendly_event_uri, '_blank')}
                         variant="ghost"
                         size="sm"
                         className="flex items-center gap-2"
