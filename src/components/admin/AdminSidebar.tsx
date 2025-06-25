@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -16,7 +17,8 @@ import {
   Video,
   ChevronDown,
   ChevronRight,
-  Home
+  Home,
+  Layout
 } from 'lucide-react';
 import { useAppContext } from '@/contexts/AppContext';
 
@@ -31,7 +33,8 @@ type AdminView =
   | 'salespeople'
   | 'visit-logs'
   | 'crm-reports'
-  | 'training-videos';
+  | 'training-videos'
+  | 'content-manager';
 
 interface AdminSidebarProps {
   currentView: AdminView;
@@ -125,6 +128,13 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({ currentView, onViewChange }
           view: 'training-videos' as AdminView,
         },
       ],
+    },
+    {
+      id: 'content-manager',
+      label: 'Content Manager',
+      icon: Layout,
+      type: 'single' as const,
+      view: 'content-manager' as AdminView,
     },
     {
       id: 'settings',

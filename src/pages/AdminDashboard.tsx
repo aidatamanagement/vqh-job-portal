@@ -14,6 +14,7 @@ import VisitLogs from '@/components/admin/VisitLogs';
 import TrainingVideos from '@/components/admin/TrainingVideos';
 import CrmReports from '@/components/admin/CrmReports';
 import GuideTraining from '@/components/admin/GuideTraining';
+import ContentManager from '@/components/admin/ContentManager';
 
 type AdminView = 
   | 'dashboard'
@@ -26,7 +27,8 @@ type AdminView =
   | 'salespeople'
   | 'visit-logs'
   | 'crm-reports'
-  | 'training-videos';
+  | 'training-videos'
+  | 'content-manager';
 
 const AdminDashboard: React.FC = () => {
   const { isAuthenticated } = useAppContext();
@@ -64,6 +66,8 @@ const AdminDashboard: React.FC = () => {
         return <CrmReports />;
       case 'training-videos':
         return <TrainingVideos />;
+      case 'content-manager':
+        return <ContentManager />;
       case 'settings':
         return <Settings />;
       default:
