@@ -331,6 +331,47 @@ export type Database = {
         }
         Relationships: []
       }
+      status_history: {
+        Row: {
+          application_id: string
+          changed_at: string
+          changed_by: string | null
+          id: string
+          new_status: string
+          notes: string | null
+          previous_status: string
+          transition_valid: boolean
+        }
+        Insert: {
+          application_id: string
+          changed_at?: string
+          changed_by?: string | null
+          id?: string
+          new_status: string
+          notes?: string | null
+          previous_status: string
+          transition_valid?: boolean
+        }
+        Update: {
+          application_id?: string
+          changed_at?: string
+          changed_by?: string | null
+          id?: string
+          new_status?: string
+          notes?: string | null
+          previous_status?: string
+          transition_valid?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "status_history_application_id_fkey"
+            columns: ["application_id"]
+            isOneToOne: false
+            referencedRelation: "job_applications"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       training_videos: {
         Row: {
           category: string
@@ -448,6 +489,10 @@ export type Database = {
           role: string
           created_at: string
         }[]
+      }
+      validate_status_transition: {
+        Args: { current_status: string; new_status: string }
+        Returns: boolean
       }
     }
     Enums: {

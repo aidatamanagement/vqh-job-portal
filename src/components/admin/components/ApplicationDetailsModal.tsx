@@ -1,12 +1,14 @@
+
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { FileText, Download, ExternalLink, Trash2, ChevronDown } from 'lucide-react';
+import { FileText, Download, ExternalLink, Trash2 } from 'lucide-react';
 import { JobApplication } from '@/types';
 import { formatDate, getStatusBadgeVariant, getStatusText } from '../utils/submissionsUtils';
+import StatusTransitionValidator from '../StatusTransitionValidator';
 
 interface ApplicationDetailsModalProps {
   selectedApplication: JobApplication | null;
@@ -40,8 +42,25 @@ const ApplicationDetailsModal: React.FC<ApplicationDetailsModalProps> = ({
     { value: 'rejected', label: 'Rejected' },
   ];
 
+  const validateTransition = (currentStatus: string, newStatus: string): boolean => {
+    const validTransitions: Record<string, string[]> = {
+      'application_submitted': ['under_review', 'rejected'],
+      'under_review': ['shortlisted', 'rejected'],
+      'shortlisted': ['interview_scheduled', 'rejected'],
+      'interview_scheduled': ['decisioning', 'rejected'],
+      'decisioning': ['hired', 'rejected'],
+      'hired': [],
+      'rejected': []
+    };
+
+    if (currentStatus === newStatus) return false;
+    return validTransitions[currentStatus]?.includes(newStatus) || false;
+  };
+
+  const isTransitionValid = selectedStatus ? validateTransition(selectedApplication.status, selectedStatus) : false;
+
   const handleStatusUpdate = async () => {
-    if (!selectedStatus || selectedStatus === selectedApplication.status) return;
+    if (!selectedStatus || selectedStatus === selectedApplication.status || !isTransitionValid) return;
     
     setIsUpdating(true);
     try {
@@ -216,36 +235,50 @@ const ApplicationDetailsModal: React.FC<ApplicationDetailsModalProps> = ({
               {/* Status Update Section - Left Side */}
               <div className="flex-1">
                 <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-4">Update Application Status</h3>
-                <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-end">
-                  <div className="flex-1 max-w-xs">
-                    <div className="flex items-center gap-2 mb-3">
-                      <span className="text-sm font-medium text-gray-700">Change Status From:</span>
-                      <span className={getEnhancedStatusBadge(selectedApplication.status)}>
-                        {getStatusText(selectedApplication.status)}
-                      </span>
-                    </div>
-                    <Select value={selectedStatus} onValueChange={setSelectedStatus}>
-                      <SelectTrigger className="w-full bg-white border-gray-300 focus:border-primary focus:ring-primary">
-                        <SelectValue placeholder="Select new status..." />
-                      </SelectTrigger>
-                      <SelectContent className="bg-white border shadow-lg z-50 max-h-60">
-                        {statusOptions
-                          .filter(option => option.value !== selectedApplication.status)
-                          .map((option) => (
-                            <SelectItem key={option.value} value={option.value} className="hover:bg-gray-100 cursor-pointer">
-                              {option.label}
-                            </SelectItem>
-                          ))}
-                      </SelectContent>
-                    </Select>
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2 mb-3">
+                    <span className="text-sm font-medium text-gray-700">Current Status:</span>
+                    <span className={getEnhancedStatusBadge(selectedApplication.status)}>
+                      {getStatusText(selectedApplication.status)}
+                    </span>
                   </div>
-                  <Button
-                    onClick={handleStatusUpdate}
-                    disabled={!selectedStatus || selectedStatus === selectedApplication.status || isUpdating}
-                    className="bg-primary hover:bg-primary/90 min-w-[100px] whitespace-nowrap"
-                  >
-                    {isUpdating ? 'Updating...' : 'Save Status'}
-                  </Button>
+                  
+                  <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-end">
+                    <div className="flex-1 max-w-xs">
+                      <Select value={selectedStatus} onValueChange={setSelectedStatus}>
+                        <SelectTrigger className="w-full bg-white border-gray-300 focus:border-primary focus:ring-primary">
+                          <SelectValue placeholder="Select new status..." />
+                        </SelectTrigger>
+                        <SelectContent className="bg-white border shadow-lg z-50 max-h-60">
+                          {statusOptions
+                            .filter(option => option.value !== selectedApplication.status)
+                            .map((option) => (
+                              <SelectItem key={option.value} value={option.value} className="hover:bg-gray-100 cursor-pointer">
+                                {option.label}
+                              </SelectItem>
+                            ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <Button
+                      onClick={handleStatusUpdate}
+                      disabled={!selectedStatus || selectedStatus === selectedApplication.status || !isTransitionValid || isUpdating}
+                      className="bg-primary hover:bg-primary/90 min-w-[100px] whitespace-nowrap"
+                    >
+                      {isUpdating ? 'Updating...' : 'Save Status'}
+                    </Button>
+                  </div>
+
+                  {/* Status Transition Validation */}
+                  {selectedStatus && (
+                    <div className="mt-4">
+                      <StatusTransitionValidator
+                        currentStatus={selectedApplication.status}
+                        newStatus={selectedStatus}
+                        isValid={isTransitionValid}
+                      />
+                    </div>
+                  )}
                 </div>
               </div>
 
