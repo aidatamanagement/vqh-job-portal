@@ -4,7 +4,7 @@ import { EmailTemplate } from '@/types';
 export const generateEmailPreview = (template: EmailTemplate): string => {
   let html = template.html_body;
   
-  // Replace variables with sample data including tracking variables
+  // Replace variables with sample data including tracking and calendly variables
   const sampleData: Record<string, string> = {
     firstName: 'John',
     lastName: 'Doe',
@@ -16,7 +16,8 @@ export const generateEmailPreview = (template: EmailTemplate): string => {
     applicationDate: new Date().toLocaleDateString(),
     trackingToken: 'ABC123-DEF456-GHI789',
     trackingUrl: `${window.location.origin}/track/ABC123-DEF456-GHI789`,
-    adminUrl: `${window.location.origin}/admin`
+    adminUrl: `${window.location.origin}/admin`,
+    calendlyUrl: 'https://calendly.com/your-company/interview'
   };
 
   Object.entries(sampleData).forEach(([key, value]) => {
@@ -39,7 +40,8 @@ export const generateSubjectPreview = (subject: string): string => {
     applicationDate: new Date().toLocaleDateString(),
     trackingToken: 'ABC123-DEF456-GHI789',
     trackingUrl: `${window.location.origin}/track/ABC123-DEF456-GHI789`,
-    adminUrl: `${window.location.origin}/admin`
+    adminUrl: `${window.location.origin}/admin`,
+    calendlyUrl: 'https://calendly.com/your-company/interview'
   };
 
   let previewSubject = subject;

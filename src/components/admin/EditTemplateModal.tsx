@@ -34,7 +34,8 @@ const availableVariables = [
   'applicationDate',
   'trackingToken',
   'trackingUrl',
-  'adminUrl'
+  'adminUrl',
+  'calendlyUrl'
 ];
 
 const EditTemplateModal: React.FC<EditTemplateModalProps> = ({

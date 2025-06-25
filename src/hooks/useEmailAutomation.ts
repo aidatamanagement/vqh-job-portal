@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { useEmailSettings } from './useEmailSettings';
 
@@ -55,18 +54,22 @@ export const useEmailAutomation = () => {
         return null;
       }
 
-      // Convert Calendly event type URI to a scheduling URL
-      // The default_event_type_uri should be in format: https://api.calendly.com/event_types/AAAA...
-      // We need to extract the event type ID and create a scheduling URL
       const eventTypeUri = data.default_event_type_uri;
+      console.log('Raw Calendly URI from database:', eventTypeUri);
       
-      // If it's already a scheduling URL (starts with calendly.com), return as is
+      // If it's already a scheduling URL (contains calendly.com but not api.calendly.com), return as is
       if (eventTypeUri.includes('calendly.com') && !eventTypeUri.includes('api.calendly.com')) {
+        console.log('Using direct scheduling URL:', eventTypeUri);
         return eventTypeUri;
       }
       
-      // If it's an API URI, we'll return it as is and let the template handle the conversion
-      // In a production environment, you might want to fetch the actual scheduling URL from Calendly API
+      // If it's an API URI, try to extract the event type ID and create a scheduling URL
+      if (eventTypeUri.includes('api.calendly.com/event_types/')) {
+        // For now, return the API URI - the admin should configure a direct scheduling URL
+        console.log('API URI detected, returning as-is. Admin should configure direct scheduling URL.');
+        return eventTypeUri;
+      }
+      
       return eventTypeUri;
     } catch (error) {
       console.error('Error fetching Calendly settings:', error);
@@ -121,6 +124,9 @@ export const useEmailAutomation = () => {
       const trackingUrl = trackingToken ? `${window.location.origin}/track/${trackingToken}` : '';
       const adminUrl = `${window.location.origin}/admin`;
       
+      // Get Calendly URL for all emails
+      const calendlyUrl = await getCalendlyUrl() || '';
+      
       const variables: EmailVariables = {
         firstName: application.firstName,
         lastName: application.lastName,
@@ -132,10 +138,13 @@ export const useEmailAutomation = () => {
         applicationDate: new Date().toLocaleDateString(),
         trackingToken: trackingToken || '',
         trackingUrl: trackingUrl,
-        adminUrl: adminUrl
+        adminUrl: adminUrl,
+        calendlyUrl: calendlyUrl
       };
 
       console.log('Sending confirmation email to candidate:', application.email);
+      console.log('Email variables for application submitted:', variables);
+      
       // Send confirmation email to the candidate
       await sendEmail('application_submitted', application.email, variables);
 
@@ -192,22 +201,9 @@ export const useEmailAutomation = () => {
 
       const trackingUrl = trackingToken ? `${window.location.origin}/track/${trackingToken}` : '';
       
-      // Get Calendly URL for shortlisted status
-      let calendlyUrl = '';
-      if (application.status === 'shortlisted') {
-        const fetchedCalendlyUrl = await getCalendlyUrl();
-        if (fetchedCalendlyUrl) {
-          // If it's an API URI, convert it to a user-friendly scheduling URL
-          if (fetchedCalendlyUrl.includes('api.calendly.com/event_types/')) {
-            // Extract the event type ID and create a generic scheduling URL
-            // Note: In production, you'd want to get the actual scheduling URL from Calendly
-            calendlyUrl = fetchedCalendlyUrl.replace('api.calendly.com/event_types/', 'calendly.com/your-username/');
-          } else {
-            calendlyUrl = fetchedCalendlyUrl;
-          }
-        }
-        console.log('Calendly URL for shortlisted email:', calendlyUrl);
-      }
+      // Get Calendly URL for all status emails
+      const calendlyUrl = await getCalendlyUrl() || '';
+      console.log('Calendly URL fetched for status email:', calendlyUrl);
       
       const variables: EmailVariables = {
         firstName: application.firstName,
@@ -220,7 +216,7 @@ export const useEmailAutomation = () => {
       };
 
       console.log('Using template:', templateSlug);
-      console.log('Email variables:', variables);
+      console.log('Email variables for status update:', variables);
       const result = await sendEmail(templateSlug, application.email, variables);
       
       return { success: true, result };
