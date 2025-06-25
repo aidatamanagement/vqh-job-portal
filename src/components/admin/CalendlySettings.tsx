@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -45,6 +44,7 @@ const CalendlySettings: React.FC = () => {
   const [connectionStatus, setConnectionStatus] = useState<'unknown' | 'success' | 'error'>('unknown');
   const [isLoadingSettings, setIsLoadingSettings] = useState(true);
   const [showSetupGuide, setShowSetupGuide] = useState(false);
+  const [errorDetails, setErrorDetails] = useState<string>('');
 
   const { toast } = useToast();
   const { testConnection, getUser, getEventTypes } = useCalendlyApi();
@@ -97,19 +97,25 @@ const CalendlySettings: React.FC = () => {
   };
 
   const testCalendlyConnection = async () => {
+    console.log("Starting Calendly connection test...");
     setIsTesting(true);
     setConnectionStatus('unknown');
+    setErrorDetails('');
 
     try {
-      const userResult = await getUser();
+      console.log("Calling testConnection...");
+      const userResult = await testConnection();
+      console.log("Test connection result:", userResult);
       
       if (userResult.success && userResult.user) {
         setUser(userResult.user);
         setConnectionStatus('success');
         setShowSetupGuide(false);
+        setErrorDetails('');
         
         // Auto-populate organization URI if not set
         if (!settings.organization_uri && userResult.user.current_organization) {
+          console.log("Auto-populating organization URI:", userResult.user.current_organization);
           setSettings(prev => ({
             ...prev,
             organization_uri: userResult.user.current_organization
@@ -119,10 +125,14 @@ const CalendlySettings: React.FC = () => {
         // Load event types
         const orgUri = settings.organization_uri || userResult.user.current_organization;
         if (orgUri) {
+          console.log("Loading event types for organization:", orgUri);
           const eventTypesResult = await getEventTypes(orgUri);
+          console.log("Event types result:", eventTypesResult);
           
           if (eventTypesResult.success) {
             setEventTypes(eventTypesResult.eventTypes || []);
+          } else {
+            console.warn("Failed to load event types:", eventTypesResult.error);
           }
         }
 
@@ -131,8 +141,11 @@ const CalendlySettings: React.FC = () => {
           description: "Successfully connected to Calendly API",
         });
       } else {
+        console.error("Connection failed:", userResult.error);
         setConnectionStatus('error');
         setShowSetupGuide(true);
+        setErrorDetails(userResult.error || 'Unknown connection error');
+        
         toast({
           title: "Connection Failed",
           description: userResult.error || "Failed to connect to Calendly",
@@ -140,12 +153,15 @@ const CalendlySettings: React.FC = () => {
         });
       }
     } catch (error) {
+      console.error('Error in testCalendlyConnection:', error);
       setConnectionStatus('error');
       setShowSetupGuide(true);
-      console.error('Error testing connection:', error);
+      const errorMsg = error instanceof Error ? error.message : 'An unexpected error occurred';
+      setErrorDetails(errorMsg);
+      
       toast({
         title: "Connection Error",
-        description: "An unexpected error occurred while testing the connection",
+        description: errorMsg,
         variant: "destructive",
       });
     } finally {
@@ -154,11 +170,17 @@ const CalendlySettings: React.FC = () => {
   };
 
   const autoDetectOrganization = async () => {
+    console.log("Starting auto-detect organization...");
     setIsLoading(true);
+    setErrorDetails('');
+    
     try {
+      console.log("Calling getUser for auto-detect...");
       const userResult = await getUser();
+      console.log("Auto-detect user result:", userResult);
       
       if (userResult.success && userResult.user?.current_organization) {
+        console.log("Organization detected:", userResult.user.current_organization);
         setSettings(prev => ({
           ...prev,
           organization_uri: userResult.user.current_organization
@@ -169,16 +191,23 @@ const CalendlySettings: React.FC = () => {
           description: "Organization URI has been automatically detected",
         });
       } else {
+        console.warn("Auto-detect failed:", userResult.error);
+        setErrorDetails(userResult.error || 'Could not auto-detect organization URI');
+        
         toast({
           title: "Detection Failed",
-          description: "Could not auto-detect organization URI. Please enter it manually.",
+          description: userResult.error || "Could not auto-detect organization URI. Please enter it manually.",
           variant: "destructive",
         });
       }
     } catch (error) {
+      console.error('Error in autoDetectOrganization:', error);
+      const errorMsg = error instanceof Error ? error.message : 'Failed to detect organization URI';
+      setErrorDetails(errorMsg);
+      
       toast({
         title: "Detection Error",
-        description: "Failed to detect organization URI",
+        description: errorMsg,
         variant: "destructive",
       });
     } finally {
@@ -281,6 +310,28 @@ const CalendlySettings: React.FC = () => {
                     <li>Save settings and test the connection</li>
                     <li>Select a default event type for interviews</li>
                   </ol>
+                </div>
+              </AlertDescription>
+            </Alert>
+          )}
+
+          {/* Error Details */}
+          {errorDetails && connectionStatus === 'error' && (
+            <Alert className="border-red-200 bg-red-50">
+              <AlertTriangle className="h-4 w-4 text-red-600" />
+              <AlertDescription>
+                <div className="space-y-2">
+                  <p className="font-medium text-red-800">Connection Error Details:</p>
+                  <p className="text-sm text-red-700">{errorDetails}</p>
+                  <div className="text-xs text-red-600 mt-2">
+                    <p>Troubleshooting steps:</p>
+                    <ul className="list-disc list-inside space-y-1">
+                      <li>Check if your Calendly API token is valid</li>
+                      <li>Verify the token has the required permissions</li>
+                      <li>Ensure your Calendly account is active</li>
+                      <li>Check the browser console for more details</li>
+                    </ul>
+                  </div>
                 </div>
               </AlertDescription>
             </Alert>

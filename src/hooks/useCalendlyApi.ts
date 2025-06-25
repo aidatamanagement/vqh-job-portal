@@ -51,39 +51,74 @@ interface CalendlyEvent {
 export const useCalendlyApi = () => {
   const testConnection = async (): Promise<{ success: boolean; user?: CalendlyUser; error?: string }> => {
     try {
+      console.log("Testing Calendly connection...");
+      
       const { data, error } = await supabase.functions.invoke('calendly-api', {
         body: { action: 'testConnection' }
       });
 
+      console.log("Supabase function response:", { data, error });
+
       if (error) {
-        console.error('Error testing Calendly connection:', error);
-        return { success: false, error: error.message };
+        console.error('Supabase function error:', error);
+        return { 
+          success: false, 
+          error: `Connection failed: ${error.message || 'Unknown error'}` 
+        };
+      }
+
+      if (!data) {
+        console.error('No data returned from function');
+        return { 
+          success: false, 
+          error: 'No response from Calendly API function' 
+        };
       }
 
       if (!data.success) {
-        return { success: false, error: data.error || 'Unknown error' };
+        console.error('Function returned error:', data.error);
+        return { 
+          success: false, 
+          error: data.error || 'Calendly API connection failed' 
+        };
       }
 
+      if (!data.data || !data.data.resource) {
+        console.error('Invalid response structure:', data);
+        return { 
+          success: false, 
+          error: 'Invalid response from Calendly API' 
+        };
+      }
+
+      console.log("Connection successful:", data.data.resource);
       return { success: true, user: data.data.resource };
     } catch (error) {
       console.error('Error in testConnection:', error);
-      return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
+      return { 
+        success: false, 
+        error: `Connection error: ${error instanceof Error ? error.message : 'Unknown error'}` 
+      };
     }
   };
 
   const getUser = async (): Promise<{ success: boolean; user?: CalendlyUser; error?: string }> => {
     try {
+      console.log("Getting Calendly user...");
+      
       const { data, error } = await supabase.functions.invoke('calendly-api', {
         body: { action: 'getUser' }
       });
+
+      console.log("Get user response:", { data, error });
 
       if (error) {
         console.error('Error getting Calendly user:', error);
         return { success: false, error: error.message };
       }
 
-      if (!data.success) {
-        return { success: false, error: data.error || 'Unknown error' };
+      if (!data?.success) {
+        return { success: false, error: data?.error || 'Failed to get user' };
       }
 
       return { success: true, user: data.data.resource };
@@ -95,6 +130,8 @@ export const useCalendlyApi = () => {
 
   const getEventTypes = async (organizationUri: string): Promise<{ success: boolean; eventTypes?: CalendlyEventType[]; error?: string }> => {
     try {
+      console.log("Getting event types for organization:", organizationUri);
+      
       const { data, error } = await supabase.functions.invoke('calendly-api', {
         body: { 
           action: 'getEventTypes',
@@ -102,13 +139,15 @@ export const useCalendlyApi = () => {
         }
       });
 
+      console.log("Get event types response:", { data, error });
+
       if (error) {
         console.error('Error getting Calendly event types:', error);
         return { success: false, error: error.message };
       }
 
-      if (!data.success) {
-        return { success: false, error: data.error || 'Unknown error' };
+      if (!data?.success) {
+        return { success: false, error: data?.error || 'Failed to get event types' };
       }
 
       return { success: true, eventTypes: data.data.collection };
@@ -120,6 +159,8 @@ export const useCalendlyApi = () => {
 
   const getEvents = async (organizationUri: string): Promise<{ success: boolean; events?: CalendlyEvent[]; error?: string }> => {
     try {
+      console.log("Getting events for organization:", organizationUri);
+      
       const { data, error } = await supabase.functions.invoke('calendly-api', {
         body: { 
           action: 'getEvents',
@@ -127,13 +168,15 @@ export const useCalendlyApi = () => {
         }
       });
 
+      console.log("Get events response:", { data, error });
+
       if (error) {
         console.error('Error getting Calendly events:', error);
         return { success: false, error: error.message };
       }
 
-      if (!data.success) {
-        return { success: false, error: data.error || 'Unknown error' };
+      if (!data?.success) {
+        return { success: false, error: data?.error || 'Failed to get events' };
       }
 
       return { success: true, events: data.data.collection };
