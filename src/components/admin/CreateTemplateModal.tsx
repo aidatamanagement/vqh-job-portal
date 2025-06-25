@@ -6,22 +6,110 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Save, X, Eye, Edit, Plus } from 'lucide-react';
+import { Save, X, Sparkles } from 'lucide-react';
 import { EmailTemplate } from '@/types';
-import { generateEmailPreview, generateSubjectPreview } from '@/utils/emailPreviewUtils';
 
 interface CreateTemplateModalProps {
   isOpen: boolean;
   onClose: () => void;
   onCreate: (template: Omit<EmailTemplate, 'id' | 'created_at' | 'updated_at'>) => void;
 }
+
+const templatePresets = {
+  'application_submitted': {
+    name: 'Application Submitted Confirmation',
+    subject: 'Application Received - {{position}} at {{location}}',
+    html_body: `<h2>Thank you for your application!</h2>
+<p>Dear {{firstName}} {{lastName}},</p>
+<p>We have received your application for the <strong>{{position}}</strong> position at our {{location}} location.</p>
+<p>Your application is being reviewed and we will contact you soon with next steps.</p>
+<p>Application Details:</p>
+<ul>
+  <li>Position: {{position}}</li>
+  <li>Location: {{location}}</li>
+  <li>Application Date: {{applicationDate}}</li>
+  <li>Phone: {{phone}}</li>
+  <li>Email: {{email}}</li>
+</ul>
+<p>You can track your application status using this link: <a href="{{trackingUrl}}">Track Application</a></p>
+<p>Thank you for your interest in joining our team!</p>
+<p>Best regards,<br>HR Team</p>`
+  },
+  'under_review': {
+    name: 'Application Under Review',
+    subject: 'Application Update - {{position}}',
+    html_body: `<h2>Application Status Update</h2>
+<p>Dear {{firstName}} {{lastName}},</p>
+<p>Your application for the <strong>{{position}}</strong> position is currently under review by our team.</p>
+<p>We will contact you within the next few business days with an update on your application status.</p>
+<p>Track your application: <a href="{{trackingUrl}}">View Status</a></p>
+<p>Best regards,<br>HR Team</p>`
+  },
+  'shortlisted': {
+    name: 'Shortlisted Candidate',
+    subject: 'Congratulations - You\'ve been shortlisted for {{position}}',
+    html_body: `<h2>Congratulations!</h2>
+<p>Dear {{firstName}} {{lastName}},</p>
+<p>We are pleased to inform you that you have been shortlisted for the <strong>{{position}}</strong> position at our {{location}} location.</p>
+<p>Someone from our team will be in touch with you soon to discuss the next steps in the interview process.</p>
+<p>Track your application: <a href="{{trackingUrl}}">View Status</a></p>
+<p>We look forward to speaking with you!</p>
+<p>Best regards,<br>HR Team</p>`
+  },
+  'interview_scheduled': {
+    name: 'Interview Scheduled',
+    subject: 'Interview Scheduled - {{position}}',
+    html_body: `<h2>Interview Scheduled</h2>
+<p>Dear {{firstName}} {{lastName}},</p>
+<p>Your interview for the <strong>{{position}}</strong> position has been scheduled.</p>
+<p>Please check your email for detailed interview information including date, time, and location.</p>
+<p>Track your application: <a href="{{trackingUrl}}">View Status</a></p>
+<p>We look forward to meeting with you!</p>
+<p>Best regards,<br>HR Team</p>`
+  },
+  'hired': {
+    name: 'Job Offer - Welcome to the Team',
+    subject: 'Welcome to the Team - {{position}}',
+    html_body: `<h2>Welcome to Our Team!</h2>
+<p>Dear {{firstName}} {{lastName}},</p>
+<p>Congratulations! We are excited to offer you the <strong>{{position}}</strong> position at our {{location}} location.</p>
+<p>Please check your email for detailed offer information including start date, compensation, and next steps.</p>
+<p>We are thrilled to have you join our team and look forward to working with you!</p>
+<p>Best regards,<br>HR Team</p>`
+  },
+  'application_rejected': {
+    name: 'Application Status Update',
+    subject: 'Update on Your Application - {{position}}',
+    html_body: `<h2>Application Status Update</h2>
+<p>Dear {{firstName}} {{lastName}},</p>
+<p>Thank you for your interest in the <strong>{{position}}</strong> position at our {{location}} location.</p>
+<p>After careful consideration, we have decided to move forward with other candidates at this time.</p>
+<p>We encourage you to apply for future opportunities that match your skills and experience.</p>
+<p>Thank you again for considering us as an employer.</p>
+<p>Best regards,<br>HR Team</p>`
+  },
+  'admin_notification': {
+    name: 'Admin Notification - New Application',
+    subject: 'New Application Received - {{position}}',
+    html_body: `<h2>New Application Received</h2>
+<p>A new application has been submitted:</p>
+<ul>
+  <li><strong>Candidate:</strong> {{firstName}} {{lastName}}</li>
+  <li><strong>Position:</strong> {{position}}</li>
+  <li><strong>Location:</strong> {{location}}</li>
+  <li><strong>Email:</strong> {{email}}</li>
+  <li><strong>Phone:</strong> {{phone}}</li>
+  <li><strong>Application Date:</strong> {{applicationDate}}</li>
+</ul>
+<p><a href="{{adminUrl}}">View in Admin Panel</a></p>`
+  }
+};
 
 const availableVariables = [
   'firstName',
@@ -42,210 +130,53 @@ const CreateTemplateModal: React.FC<CreateTemplateModalProps> = ({
   onClose,
   onCreate,
 }) => {
-  const [activeTab, setActiveTab] = useState('edit');
-  const [templateData, setTemplateData] = useState({
-    name: '',
+  const [template, setTemplate] = useState<Omit<EmailTemplate, 'id' | 'created_at' | 'updated_at'>>({
     slug: '',
+    name: '',
     subject: '',
     html_body: '',
-    variables: availableVariables,
+    variables: [],
     is_active: true
   });
 
-  const templatePresets = {
-    application_submitted: {
-      name: 'Application Submitted Confirmation',
-      subject: 'Thank you for your application - {{position}}',
-      html_body: `<!DOCTYPE html>
-<html>
-<head>
-    <style>
-        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-        .header { background-color: #f8f9fa; padding: 20px; text-align: center; }
-        .content { padding: 20px; }
-        .footer { background-color: #f8f9fa; padding: 15px; text-align: center; font-size: 12px; }
-        .tracking-link { background-color: #007bff; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block; margin: 15px 0; }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <div class="header">
-            <h2>Application Received</h2>
-        </div>
-        <div class="content">
-            <p>Dear {{firstName}} {{lastName}},</p>
-            <p>Thank you for your interest in the <strong>{{position}}</strong> position at ViaQuest Hospice in {{location}}.</p>
-            <p>We have successfully received your application submitted on {{applicationDate}}.</p>
-            <p>You can track the status of your application using the link below:</p>
-            <a href="{{trackingUrl}}" class="tracking-link">Track My Application</a>
-            <p>Your tracking code is: <strong>{{trackingToken}}</strong></p>
-            <p>We will review your application and contact you if your qualifications match our requirements.</p>
-            <p>Best regards,<br>ViaQuest Hospice Careers Team</p>
-        </div>
-        <div class="footer">
-            <p>This is an automated message. Please do not reply to this email.</p>
-        </div>
-    </div>
-</body>
-</html>`,
-      variables: availableVariables
-    },
-    admin_notification: {
-      name: 'Admin Notification - New Application',
-      subject: 'New Application: {{firstName}} {{lastName}} - {{position}}',
-      html_body: `<!DOCTYPE html>
-<html>
-<head>
-    <style>
-        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-        .header { background-color: #dc3545; color: white; padding: 20px; text-align: center; }
-        .content { padding: 20px; }
-        .info-box { background-color: #f8f9fa; padding: 15px; border-left: 4px solid #007bff; margin: 15px 0; }
-        .admin-link { background-color: #28a745; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block; margin: 15px 0; }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <div class="header">
-            <h2>New Job Application Received</h2>
-        </div>
-        <div class="content">
-            <p>A new application has been submitted for the <strong>{{position}}</strong> position.</p>
-            <div class="info-box">
-                <h3>Applicant Details:</h3>
-                <p><strong>Name:</strong> {{firstName}} {{lastName}}</p>
-                <p><strong>Email:</strong> {{email}}</p>
-                <p><strong>Phone:</strong> {{phone}}</p>
-                <p><strong>Position:</strong> {{position}}</p>
-                <p><strong>Location:</strong> {{location}}</p>
-                <p><strong>Earliest Start Date:</strong> {{earliestStartDate}}</p>
-                <p><strong>Application Date:</strong> {{applicationDate}}</p>
-                <p><strong>Tracking Code:</strong> {{trackingToken}}</p>
-            </div>
-            <a href="{{adminUrl}}" class="admin-link">View in Admin Dashboard</a>
-            <p>Please log into the admin dashboard to review the full application and documents.</p>
-        </div>
-    </div>
-</body>
-</html>`,
-      variables: availableVariables
-    },
-    application_approved: {
-      name: 'Application Approved',
-      subject: 'Congratulations! Your application has been approved - {{position}}',
-      html_body: `<!DOCTYPE html>
-<html>
-<head>
-    <style>
-        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-        .header { background-color: #28a745; color: white; padding: 20px; text-align: center; }
-        .content { padding: 20px; }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <div class="header">
-            <h2>Application Approved!</h2>
-        </div>
-        <div class="content">
-            <p>Dear {{firstName}} {{lastName}},</p>
-            <p>Congratulations! We are pleased to inform you that your application for the <strong>{{position}}</strong> position has been approved.</p>
-            <p>Our HR team will contact you soon to discuss the next steps in the hiring process.</p>
-            <p>Thank you for your interest in joining the ViaQuest Hospice team.</p>
-            <p>Best regards,<br>ViaQuest Hospice Careers Team</p>
-        </div>
-    </div>
-</body>
-</html>`,
-      variables: availableVariables
-    },
-    application_rejected: {
-      name: 'Application Not Selected',
-      subject: 'Update on your application - {{position}}',
-      html_body: `<!DOCTYPE html>
-<html>
-<head>
-    <style>
-        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-        .header { background-color: #6c757d; color: white; padding: 20px; text-align: center; }
-        .content { padding: 20px; }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <div class="header">
-            <h2>Application Update</h2>
-        </div>
-        <div class="content">
-            <p>Dear {{firstName}} {{lastName}},</p>
-            <p>Thank you for your interest in the <strong>{{position}}</strong> position at ViaQuest Hospice.</p>
-            <p>After careful consideration, we have decided to move forward with other candidates whose qualifications more closely match our current needs.</p>
-            <p>We encourage you to apply for future opportunities that match your skills and experience.</p>
-            <p>Best regards,<br>ViaQuest Hospice Careers Team</p>
-        </div>
-    </div>
-</body>
-</html>`,
-      variables: availableVariables
-    }
+  const [selectedPreset, setSelectedPreset] = useState<string>('');
+
+  const handleInputChange = (field: keyof typeof template, value: string | boolean | string[]) => {
+    setTemplate(prev => ({ ...prev, [field]: value }));
   };
 
-  const handleInputChange = (field: string, value: string | boolean | string[]) => {
-    setTemplateData(prev => ({ ...prev, [field]: value }));
-  };
-
-  const handlePresetSelect = (preset: string) => {
-    if (preset === 'custom') {
-      setTemplateData({
-        name: '',
-        slug: '',
-        subject: '',
-        html_body: '',
+  const handlePresetSelect = (presetKey: string) => {
+    if (presetKey && templatePresets[presetKey as keyof typeof templatePresets]) {
+      const preset = templatePresets[presetKey as keyof typeof templatePresets];
+      setTemplate({
+        slug: presetKey,
+        name: preset.name,
+        subject: preset.subject,
+        html_body: preset.html_body,
         variables: availableVariables,
         is_active: true
       });
-    } else {
-      const presetData = templatePresets[preset as keyof typeof templatePresets];
-      setTemplateData({
-        name: presetData.name,
-        slug: preset,
-        subject: presetData.subject,
-        html_body: presetData.html_body,
-        variables: presetData.variables,
-        is_active: true
-      });
+      setSelectedPreset(presetKey);
     }
   };
 
   const handleCreate = () => {
-    if (!templateData.name || !templateData.slug || !templateData.subject || !templateData.html_body) {
-      alert('Please fill in all required fields');
-      return;
+    if (template.slug && template.name && template.subject && template.html_body) {
+      onCreate(template);
+      handleClose();
     }
-    onCreate(templateData);
-    setTemplateData({
-      name: '',
-      slug: '',
-      subject: '',
-      html_body: '',
-      variables: availableVariables,
-      is_active: true
-    });
   };
 
   const handleClose = () => {
-    setTemplateData({
-      name: '',
+    setTemplate({
       slug: '',
+      name: '',
       subject: '',
       html_body: '',
-      variables: availableVariables,
+      variables: [],
       is_active: true
     });
+    setSelectedPreset('');
     onClose();
   };
 
@@ -256,134 +187,131 @@ const CreateTemplateModal: React.FC<CreateTemplateModalProps> = ({
           <DialogTitle>Create New Email Template</DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-4">
+        <div className="space-y-6">
           <div>
-            <Label htmlFor="template-preset">Template Preset</Label>
-            <Select onValueChange={handlePresetSelect}>
-              <SelectTrigger>
-                <SelectValue placeholder="Choose a preset or start from scratch" />
+            <Label>Template Presets</Label>
+            <Select value={selectedPreset} onValueChange={handlePresetSelect}>
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Choose a preset template or create from scratch" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="custom">Custom Template</SelectItem>
-                <SelectItem value="application_submitted">Application Submitted Confirmation</SelectItem>
-                <SelectItem value="admin_notification">Admin Notification</SelectItem>
-                <SelectItem value="application_approved">Application Approved</SelectItem>
-                <SelectItem value="application_rejected">Application Rejected</SelectItem>
+                <SelectItem value="application_submitted">
+                  <div className="flex items-center space-x-2">
+                    <Sparkles className="w-4 h-4" />
+                    <span>Application Submitted Confirmation</span>
+                  </div>
+                </SelectItem>
+                <SelectItem value="under_review">
+                  <div className="flex items-center space-x-2">
+                    <Sparkles className="w-4 h-4" />
+                    <span>Application Under Review</span>
+                  </div>
+                </SelectItem>
+                <SelectItem value="shortlisted">
+                  <div className="flex items-center space-x-2">
+                    <Sparkles className="w-4 h-4" />
+                    <span>Shortlisted Candidate</span>
+                  </div>
+                </SelectItem>
+                <SelectItem value="interview_scheduled">
+                  <div className="flex items-center space-x-2">
+                    <Sparkles className="w-4 h-4" />
+                    <span>Interview Scheduled</span>
+                  </div>
+                </SelectItem>
+                <SelectItem value="hired">
+                  <div className="flex items-center space-x-2">
+                    <Sparkles className="w-4 h-4" />
+                    <span>Job Offer - Welcome to Team</span>
+                  </div>
+                </SelectItem>
+                <SelectItem value="application_rejected">
+                  <div className="flex items-center space-x-2">
+                    <Sparkles className="w-4 h-4" />
+                    <span>Application Rejected</span>
+                  </div>
+                </SelectItem>
+                <SelectItem value="admin_notification">
+                  <div className="flex items-center space-x-2">
+                    <Sparkles className="w-4 h-4" />
+                    <span>Admin Notification</span>
+                  </div>
+                </SelectItem>
               </SelectContent>
             </Select>
           </div>
 
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="edit" className="flex items-center space-x-2">
-                <Edit className="w-4 h-4" />
-                <span>Edit</span>
-              </TabsTrigger>
-              <TabsTrigger value="preview" className="flex items-center space-x-2">
-                <Eye className="w-4 h-4" />
-                <span>Preview</span>
-              </TabsTrigger>
-            </TabsList>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="template-name">Template Name</Label>
+              <Input
+                id="template-name"
+                value={template.name}
+                onChange={(e) => handleInputChange('name', e.target.value)}
+                placeholder="Enter template name..."
+              />
+            </div>
+            <div>
+              <Label htmlFor="template-slug">Slug</Label>
+              <Input
+                id="template-slug"
+                value={template.slug}
+                onChange={(e) => handleInputChange('slug', e.target.value)}
+                placeholder="template_slug"
+              />
+            </div>
+          </div>
 
-            <TabsContent value="edit" className="mt-6 space-y-4">
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="template-name">Template Name *</Label>
-                  <Input
-                    id="template-name"
-                    value={templateData.name}
-                    onChange={(e) => handleInputChange('name', e.target.value)}
-                    placeholder="Enter template name"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="template-slug">Slug *</Label>
-                  <Input
-                    id="template-slug"
-                    value={templateData.slug}
-                    onChange={(e) => handleInputChange('slug', e.target.value)}
-                    placeholder="e.g., application_submitted"
-                  />
-                </div>
-              </div>
+          <div>
+            <Label htmlFor="template-subject">Subject</Label>
+            <Input
+              id="template-subject"
+              value={template.subject}
+              onChange={(e) => handleInputChange('subject', e.target.value)}
+              placeholder="Enter email subject..."
+            />
+          </div>
 
-              <div>
-                <Label htmlFor="template-subject">Subject *</Label>
-                <Input
-                  id="template-subject"
-                  value={templateData.subject}
-                  onChange={(e) => handleInputChange('subject', e.target.value)}
-                  placeholder="Enter email subject..."
-                />
-              </div>
-
-              <div>
-                <Label>Available Variables</Label>
-                <div className="flex flex-wrap gap-2 mt-2 mb-3">
-                  {availableVariables.map((variable) => (
-                    <span
-                      key={variable}
-                      className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-md cursor-pointer hover:bg-blue-200"
-                      onClick={() => {
-                        // Add variable to clipboard for easy copying
-                        navigator.clipboard.writeText(`{{${variable}}}`);
-                      }}
-                      title={`Click to copy {{${variable}}}`}
-                    >
-                      {`{{${variable}}}`}
-                    </span>
-                  ))}
-                </div>
-                <p className="text-xs text-gray-500 mb-4">
-                  Click on any variable to copy it to clipboard, then paste it in your template content or subject line
-                </p>
-              </div>
-
-              <div>
-                <Label htmlFor="template-html">HTML Content *</Label>
-                <Textarea
-                  id="template-html"
-                  value={templateData.html_body}
-                  onChange={(e) => handleInputChange('html_body', e.target.value)}
-                  rows={20}
-                  className="font-mono text-sm"
-                  placeholder="Enter HTML content..."
-                />
-              </div>
-
-              <div className="flex items-center space-x-2">
-                <Switch
-                  checked={templateData.is_active}
-                  onCheckedChange={(checked) => handleInputChange('is_active', checked)}
-                />
-                <Label>Active Template</Label>
-              </div>
-            </TabsContent>
-
-            <TabsContent value="preview" className="mt-6 space-y-4">
-              <div>
-                <h4 className="font-medium mb-2">Subject Preview</h4>
-                <p className="text-sm bg-gray-50 p-3 rounded border">
-                  {generateSubjectPreview(templateData.subject)}
-                </p>
-              </div>
-              
-              <div>
-                <h4 className="font-medium mb-2">Content Preview</h4>
-                <div 
-                  className="border rounded-lg p-4 bg-white max-h-96 overflow-y-auto text-sm"
-                  dangerouslySetInnerHTML={{ 
-                    __html: generateEmailPreview({
-                      ...templateData,
-                      id: 'preview',
-                      created_at: new Date().toISOString(),
-                      updated_at: new Date().toISOString()
-                    })
+          <div>
+            <Label>Available Variables</Label>
+            <div className="flex flex-wrap gap-2 mt-2 mb-3">
+              {availableVariables.map((variable) => (
+                <span
+                  key={variable}
+                  className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-md cursor-pointer hover:bg-blue-200"
+                  onClick={() => {
+                    navigator.clipboard.writeText(`{{${variable}}}`);
                   }}
-                />
-              </div>
-            </TabsContent>
-          </Tabs>
+                  title={`Click to copy {{${variable}}}`}
+                >
+                  {`{{${variable}}}`}
+                </span>
+              ))}
+            </div>
+            <p className="text-xs text-gray-500 mb-4">
+              Click on any variable to copy it to clipboard, then paste it in your template content or subject line
+            </p>
+          </div>
+
+          <div>
+            <Label htmlFor="template-html">HTML Content</Label>
+            <Textarea
+              id="template-html"
+              value={template.html_body}
+              onChange={(e) => handleInputChange('html_body', e.target.value)}
+              rows={20}
+              className="font-mono text-sm"
+              placeholder="Enter HTML content..."
+            />
+          </div>
+
+          <div className="flex items-center space-x-2">
+            <Switch
+              checked={template.is_active}
+              onCheckedChange={(checked) => handleInputChange('is_active', checked)}
+            />
+            <Label>Active Template</Label>
+          </div>
         </div>
 
         <div className="flex items-center justify-end space-x-2 pt-4 border-t mt-6">
@@ -391,8 +319,11 @@ const CreateTemplateModal: React.FC<CreateTemplateModalProps> = ({
             <X className="w-4 h-4 mr-2" />
             Cancel
           </Button>
-          <Button onClick={handleCreate}>
-            <Plus className="w-4 h-4 mr-2" />
+          <Button 
+            onClick={handleCreate}
+            disabled={!template.slug || !template.name || !template.subject || !template.html_body}
+          >
+            <Save className="w-4 h-4 mr-2" />
             Create Template
           </Button>
         </div>
