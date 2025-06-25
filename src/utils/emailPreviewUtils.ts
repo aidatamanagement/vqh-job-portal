@@ -17,7 +17,7 @@ export const generateEmailPreview = (template: EmailTemplate): string => {
     trackingToken: 'ABC123-DEF456-GHI789',
     trackingUrl: `${window.location.origin}/track/ABC123-DEF456-GHI789`,
     adminUrl: `${window.location.origin}/admin`,
-    calendlyUrl: 'https://calendly.com/your-company/interview'
+    calendlyUrl: 'https://calendly.com/viaquesthospice/interview-scheduling'
   };
 
   Object.entries(sampleData).forEach(([key, value]) => {
@@ -41,7 +41,7 @@ export const generateSubjectPreview = (subject: string): string => {
     trackingToken: 'ABC123-DEF456-GHI789',
     trackingUrl: `${window.location.origin}/track/ABC123-DEF456-GHI789`,
     adminUrl: `${window.location.origin}/admin`,
-    calendlyUrl: 'https://calendly.com/your-company/interview'
+    calendlyUrl: 'https://calendly.com/viaquesthospice/interview-scheduling'
   };
 
   let previewSubject = subject;

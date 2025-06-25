@@ -63,11 +63,33 @@ export const useEmailAutomation = () => {
         return eventTypeUri;
       }
       
-      // If it's an API URI, try to extract the event type ID and create a scheduling URL
+      // If it's an API URI, try to convert it to a scheduling URL
       if (eventTypeUri.includes('api.calendly.com/event_types/')) {
-        // For now, return the API URI - the admin should configure a direct scheduling URL
-        console.log('API URI detected, returning as-is. Admin should configure direct scheduling URL.');
-        return eventTypeUri;
+        try {
+          // Use the Calendly API to get the event type details
+          const { data: apiData, error: apiError } = await supabase.functions.invoke('calendly-api', {
+            body: { 
+              action: 'getEventType',
+              eventTypeUri: eventTypeUri
+            }
+          });
+
+          if (!apiError && apiData?.success && apiData.data?.resource?.scheduling_url) {
+            console.log('Converted API URI to scheduling URL:', apiData.data.resource.scheduling_url);
+            return apiData.data.resource.scheduling_url;
+          } else {
+            console.log('Failed to get scheduling URL from API, using fallback');
+            // Extract the event type ID and create a generic scheduling URL
+            const matches = eventTypeUri.match(/event_types\/([a-f0-9\-]+)/);
+            if (matches && matches[1]) {
+              const eventTypeId = matches[1];
+              // This is a fallback - the admin should configure the proper scheduling URL
+              return `https://calendly.com/your-company/interviews?event_type=${eventTypeId}`;
+            }
+          }
+        } catch (apiError) {
+          console.error('Error calling Calendly API:', apiError);
+        }
       }
       
       return eventTypeUri;
