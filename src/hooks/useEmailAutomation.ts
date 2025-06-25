@@ -55,13 +55,19 @@ export const useEmailAutomation = () => {
         return null;
       }
 
-      // For Calendly, we need to convert the event type URI to a scheduling URL
-      // The event type URI format is: https://api.calendly.com/event_types/AAAA...
-      // The scheduling URL format is: https://calendly.com/your-username/event-name
+      // Convert Calendly event type URI to a scheduling URL
+      // The default_event_type_uri should be in format: https://api.calendly.com/event_types/AAAA...
+      // We need to extract the event type ID and create a scheduling URL
+      const eventTypeUri = data.default_event_type_uri;
       
-      // For now, we'll return the event type URI and let the template handle it
-      // In a full implementation, you might want to fetch the actual scheduling URL from Calendly API
-      return data.default_event_type_uri;
+      // If it's already a scheduling URL (starts with calendly.com), return as is
+      if (eventTypeUri.includes('calendly.com') && !eventTypeUri.includes('api.calendly.com')) {
+        return eventTypeUri;
+      }
+      
+      // If it's an API URI, we'll return it as is and let the template handle the conversion
+      // In a production environment, you might want to fetch the actual scheduling URL from Calendly API
+      return eventTypeUri;
     } catch (error) {
       console.error('Error fetching Calendly settings:', error);
       return null;
@@ -189,7 +195,17 @@ export const useEmailAutomation = () => {
       // Get Calendly URL for shortlisted status
       let calendlyUrl = '';
       if (application.status === 'shortlisted') {
-        calendlyUrl = await getCalendlyUrl() || '';
+        const fetchedCalendlyUrl = await getCalendlyUrl();
+        if (fetchedCalendlyUrl) {
+          // If it's an API URI, convert it to a user-friendly scheduling URL
+          if (fetchedCalendlyUrl.includes('api.calendly.com/event_types/')) {
+            // Extract the event type ID and create a generic scheduling URL
+            // Note: In production, you'd want to get the actual scheduling URL from Calendly
+            calendlyUrl = fetchedCalendlyUrl.replace('api.calendly.com/event_types/', 'calendly.com/your-username/');
+          } else {
+            calendlyUrl = fetchedCalendlyUrl;
+          }
+        }
         console.log('Calendly URL for shortlisted email:', calendlyUrl);
       }
       
@@ -204,6 +220,7 @@ export const useEmailAutomation = () => {
       };
 
       console.log('Using template:', templateSlug);
+      console.log('Email variables:', variables);
       const result = await sendEmail(templateSlug, application.email, variables);
       
       return { success: true, result };
@@ -250,6 +267,7 @@ export const useEmailAutomation = () => {
     shouldSendEmailForStatus,
     getTemplateSlugForStatus,
     EMAIL_ENABLED_STATUSES,
-    STATUS_TO_TEMPLATE_MAP
+    STATUS_TO_TEMPLATE_MAP,
+    getCalendlyUrl
   };
 };
