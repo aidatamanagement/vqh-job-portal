@@ -55,6 +55,12 @@ export const useEmailAutomation = () => {
         return null;
       }
 
+      // For Calendly, we need to convert the event type URI to a scheduling URL
+      // The event type URI format is: https://api.calendly.com/event_types/AAAA...
+      // The scheduling URL format is: https://calendly.com/your-username/event-name
+      
+      // For now, we'll return the event type URI and let the template handle it
+      // In a full implementation, you might want to fetch the actual scheduling URL from Calendly API
       return data.default_event_type_uri;
     } catch (error) {
       console.error('Error fetching Calendly settings:', error);
@@ -184,6 +190,7 @@ export const useEmailAutomation = () => {
       let calendlyUrl = '';
       if (application.status === 'shortlisted') {
         calendlyUrl = await getCalendlyUrl() || '';
+        console.log('Calendly URL for shortlisted email:', calendlyUrl);
       }
       
       const variables: EmailVariables = {

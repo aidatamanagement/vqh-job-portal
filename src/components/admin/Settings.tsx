@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -34,6 +33,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { UserRole } from '@/types';
 import { getRolePermissions, hasPermission } from '@/utils/rolePermissions';
+import CalendlySettings from './CalendlySettings';
 import {
   Dialog,
   DialogContent,
@@ -545,10 +545,14 @@ const Settings: React.FC = () => {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="animate-fade-in">
-        <TabsList className="grid w-full grid-cols-2">
+        <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="profile" className="flex items-center space-x-2">
             <User className="w-4 h-4" />
             <span>Profile & Security</span>
+          </TabsTrigger>
+          <TabsTrigger value="calendly" className="flex items-center space-x-2">
+            <Calendar className="w-4 h-4" />
+            <span>Calendly</span>
           </TabsTrigger>
           {canManageUsers && (
             <TabsTrigger value="users" className="flex items-center space-x-2">
@@ -814,6 +818,10 @@ const Settings: React.FC = () => {
               </div>
             </Card>
           </div>
+        </TabsContent>
+
+        <TabsContent value="calendly" className="space-y-6">
+          <CalendlySettings />
         </TabsContent>
 
         {canManageUsers && (
