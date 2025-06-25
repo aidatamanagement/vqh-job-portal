@@ -11,7 +11,6 @@ import {
   User, 
   Lock, 
   Settings as SettingsIcon,
-  Shield,
   Plus,
   Trash2,
   Eye,
@@ -21,7 +20,9 @@ import {
   Users,
   Crown,
   Search,
-  Filter
+  Filter,
+  Check,
+  X
 } from 'lucide-react';
 import { useAppContext } from '@/contexts/AppContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -53,6 +54,7 @@ const Settings: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [roleFilter, setRoleFilter] = useState<string>('all');
   const [editingUser, setEditingUser] = useState<AdminUser | null>(null);
+  const [isEditingProfile, setIsEditingProfile] = useState(false);
   
   // Profile form state
   const [profileForm, setProfileForm] = useState({
@@ -120,7 +122,12 @@ const Settings: React.FC = () => {
       }
 
       console.log('Users fetched:', data);
-      setAdminList(data || []);
+      // Cast the role field to UserRole to fix TypeScript error
+      const typedUsers = (data || []).map(user => ({
+        ...user,
+        role: user.role as UserRole
+      }));
+      setAdminList(typedUsers);
     } catch (error) {
       console.error('Error fetching users:', error);
       toast({
@@ -183,6 +190,7 @@ const Settings: React.FC = () => {
         updateUserDisplayName(profileForm.displayName);
       }
 
+      setIsEditingProfile(false);
       toast({
         title: "Profile Updated",
         description: "Your profile information has been successfully updated",
@@ -519,22 +527,16 @@ const Settings: React.FC = () => {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="animate-fade-in">
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="profile" className="flex items-center space-x-2">
             <User className="w-4 h-4" />
             <span>Profile & Security</span>
           </TabsTrigger>
           {canManageUsers && (
-            <>
-              <TabsTrigger value="users" className="flex items-center space-x-2">
-                <Users className="w-4 h-4" />
-                <span>User Management</span>
-              </TabsTrigger>
-              <TabsTrigger value="roles" className="flex items-center space-x-2">
-                <Shield className="w-4 h-4" />
-                <span>Roles & Permissions</span>
-              </TabsTrigger>
-            </>
+            <TabsTrigger value="users" className="flex items-center space-x-2">
+              <Users className="w-4 h-4" />
+              <span>User Management</span>
+            </TabsTrigger>
           )}
         </TabsList>
 
@@ -542,91 +544,138 @@ const Settings: React.FC = () => {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Enhanced Profile Information */}
             <Card className="p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-                <User className="w-5 h-5 mr-2 text-primary" />
-                Profile Information
-              </h3>
-              
-              <form onSubmit={updateProfile} className="space-y-4">
-                <div>
-                  <Label htmlFor="displayName">Display Name</Label>
-                  <Input
-                    id="displayName"
-                    type="text"
-                    value={profileForm.displayName}
-                    onChange={(e) => handleProfileInputChange('displayName', e.target.value)}
-                    className="mt-1"
-                    placeholder="Enter your display name"
-                    disabled={isLoading}
-                  />
-                  <p className="text-xs text-gray-500 mt-1">
-                    This name will be shown in the admin header
-                  </p>
-                </div>
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-lg font-semibold text-gray-900 flex items-center">
+                  <User className="w-5 h-5 mr-2 text-primary" />
+                  Profile Information
+                </h3>
+                {!isEditingProfile ? (
+                  <Button 
+                    onClick={() => setIsEditingProfile(true)}
+                    variant="outline" 
+                    size="sm"
+                    className="flex items-center space-x-2"
+                  >
+                    <Edit className="w-4 h-4" />
+                    <span>Edit</span>
+                  </Button>
+                ) : (
+                  <div className="flex space-x-2">
+                    <Button 
+                      onClick={() => setIsEditingProfile(false)}
+                      variant="outline" 
+                      size="sm"
+                      className="flex items-center space-x-2"
+                    >
+                      <X className="w-4 h-4" />
+                      <span>Cancel</span>
+                    </Button>
+                  </div>
+                )}
+              </div>
 
-                <div>
-                  <Label htmlFor="adminName">Admin Name</Label>
-                  <Input
-                    id="adminName"
-                    type="text"
-                    value={profileForm.adminName}
-                    onChange={(e) => handleProfileInputChange('adminName', e.target.value)}
-                    className="mt-1"
-                    placeholder="Enter your full admin name"
-                    disabled={isLoading}
-                  />
-                  <p className="text-xs text-gray-500 mt-1">
-                    Your official name for administrative purposes
-                  </p>
-                </div>
-
-                <div>
-                  <Label htmlFor="email">Email Address</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    value={profileForm.email}
-                    className="mt-1"
-                    disabled
-                  />
-                  <p className="text-xs text-gray-500 mt-1">
-                    Email cannot be changed
-                  </p>
-                </div>
-                
-                <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+              {!isEditingProfile ? (
+                // View Mode
+                <div className="space-y-4">
                   <div>
-                    <Label className="text-gray-600">Role</Label>
-                    <div className="flex items-center space-x-2 mt-1">
-                      <Badge variant={getRoleBadgeVariant(userProfile?.role as UserRole)}>
-                        {userRoles.find(r => r.value === userProfile?.role)?.label || 'Unknown'}
-                      </Badge>
-                      {userProfile?.role === 'admin' && <Crown className="w-4 h-4 text-yellow-500" />}
+                    <Label className="text-gray-600">Display Name</Label>
+                    <p className="text-lg font-medium text-gray-900 mt-1">
+                      {userProfile?.display_name || 'Not set'}
+                    </p>
+                  </div>
+
+                  <div>
+                    <Label className="text-gray-600">Admin Name</Label>
+                    <p className="text-lg font-medium text-gray-900 mt-1">
+                      {userProfile?.admin_name || 'Not set'}
+                    </p>
+                  </div>
+
+                  <div>
+                    <Label className="text-gray-600">Email Address</Label>
+                    <p className="text-lg font-medium text-gray-900 mt-1">
+                      {user?.email}
+                    </p>
+                  </div>
+                  
+                  <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                    <div>
+                      <Label className="text-gray-600">Role</Label>
+                      <div className="flex items-center space-x-2 mt-1">
+                        <Badge variant={getRoleBadgeVariant(userProfile?.role as UserRole)}>
+                          {userRoles.find(r => r.value === userProfile?.role)?.label || 'Unknown'}
+                        </Badge>
+                        {userProfile?.role === 'admin' && <Crown className="w-4 h-4 text-yellow-500" />}
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-xs text-gray-500">Permissions</p>
+                      <p className="text-sm font-medium text-gray-900">
+                        {userRoles.find(r => r.value === userProfile?.role)?.description || 'Basic access'}
+                      </p>
                     </div>
                   </div>
-                  <div className="text-right">
-                    <p className="text-xs text-gray-500">Permissions</p>
-                    <p className="text-sm font-medium text-gray-900">
-                      {userRoles.find(r => r.value === userProfile?.role)?.description || 'Basic access'}
+                  
+                  <div>
+                    <Label className="text-gray-600">Account Created</Label>
+                    <p className="text-sm text-gray-900 font-medium mt-1">
+                      {new Date(user?.created_at || '').toLocaleDateString()}
                     </p>
                   </div>
                 </div>
-                
-                <div>
-                  <Label className="text-gray-600">Account Created</Label>
-                  <p className="text-sm text-gray-900 font-medium mt-1">
-                    {new Date(user?.created_at || '').toLocaleDateString()}
-                  </p>
-                </div>
+              ) : (
+                // Edit Mode
+                <form onSubmit={updateProfile} className="space-y-4">
+                  <div>
+                    <Label htmlFor="displayName">Display Name</Label>
+                    <Input
+                      id="displayName"
+                      type="text"
+                      value={profileForm.displayName}
+                      onChange={(e) => handleProfileInputChange('displayName', e.target.value)}
+                      className="mt-1"
+                      placeholder="Enter your display name"
+                      disabled={isLoading}
+                    />
+                  </div>
 
-                <Button 
-                  type="submit" 
-                  className="w-full bg-primary hover:bg-primary/90"
-                  disabled={isLoading}
-                >
-                  {isLoading ? 'Updating...' : 'Update Profile'}
-                </Button>
-              </form>
+                  <div>
+                    <Label htmlFor="adminName">Admin Name</Label>
+                    <Input
+                      id="adminName"
+                      type="text"
+                      value={profileForm.adminName}
+                      onChange={(e) => handleProfileInputChange('adminName', e.target.value)}
+                      className="mt-1"
+                      placeholder="Enter your full admin name"
+                      disabled={isLoading}
+                    />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="email">Email Address</Label>
+                    <Input
+                      id="email"
+                      type="email"
+                      value={profileForm.email}
+                      className="mt-1 bg-gray-100"
+                      disabled
+                    />
+                    <p className="text-xs text-gray-500 mt-1">
+                      Email cannot be changed
+                    </p>
+                  </div>
+
+                  <Button 
+                    type="submit" 
+                    className="w-full bg-primary hover:bg-primary/90 flex items-center justify-center space-x-2"
+                    disabled={isLoading}
+                  >
+                    <Check className="w-4 h-4" />
+                    <span>{isLoading ? 'Updating...' : 'Update Profile'}</span>
+                  </Button>
+                </form>
+              )}
             </Card>
 
             {/* Change Password */}
@@ -1023,46 +1072,6 @@ const Settings: React.FC = () => {
                 </div>
               </Card>
             )}
-          </TabsContent>
-        )}
-
-        {canManageUsers && (
-          <TabsContent value="roles" className="space-y-6">
-            <Card className="p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-6">Role Permissions Overview</h3>
-              
-              <div className="grid gap-6">
-                {userRoles.map((role) => {
-                  const permissions = getRolePermissions(role.value);
-                  const permissionEntries = Object.entries(permissions).filter(([_, value]) => value);
-                  
-                  return (
-                    <div key={role.value} className="border rounded-lg p-4">
-                      <div className="flex items-center justify-between mb-4">
-                        <div className="flex items-center space-x-3">
-                          <Badge variant={getRoleBadgeVariant(role.value)} className="text-sm px-3 py-1">
-                            {role.label}
-                          </Badge>
-                          {role.value === 'admin' && <Crown className="w-5 h-5 text-yellow-500" />}
-                        </div>
-                        <p className="text-sm text-gray-600">{role.description}</p>
-                      </div>
-                      
-                      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
-                        {permissionEntries.map(([permission]) => (
-                          <div key={permission} className="flex items-center space-x-2 text-sm text-gray-700">
-                            <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                            <span className="capitalize">
-                              {permission.replace('can', '').replace(/([A-Z])/g, ' $1').trim()}
-                            </span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </Card>
           </TabsContent>
         )}
       </Tabs>
