@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { useEmailSettings } from './useEmailSettings';
 
@@ -14,6 +13,7 @@ interface EmailVariables {
   trackingToken?: string;
   trackingUrl?: string;
   adminUrl?: string;
+  calendlySchedulingUrl?: string;
 }
 
 // Define which statuses should trigger email notifications
@@ -159,6 +159,24 @@ export const useEmailAutomation = () => {
 
       const trackingUrl = trackingToken ? `${window.location.origin}/track/${trackingToken}` : '';
       
+      // Get Calendly scheduling URL for shortlisted candidates
+      let calendlySchedulingUrl = '';
+      if (application.status === 'shortlisted') {
+        try {
+          const { data: calendlySettings } = await supabase
+            .from('calendly_settings')
+            .select('default_event_type_uri')
+            .single();
+          
+          if (calendlySettings?.default_event_type_uri) {
+            calendlySchedulingUrl = calendlySettings.default_event_type_uri;
+            console.log('Added Calendly scheduling URL:', calendlySchedulingUrl);
+          }
+        } catch (error) {
+          console.warn('Could not fetch Calendly settings:', error);
+        }
+      }
+      
       const variables: EmailVariables = {
         firstName: application.firstName,
         lastName: application.lastName,
@@ -166,6 +184,7 @@ export const useEmailAutomation = () => {
         location: job?.location || '',
         trackingToken: trackingToken || '',
         trackingUrl: trackingUrl,
+        calendlySchedulingUrl: calendlySchedulingUrl,
       };
 
       console.log('Using template:', templateSlug);

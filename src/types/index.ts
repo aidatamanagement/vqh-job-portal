@@ -1,4 +1,3 @@
-
 export interface Job {
   id: string;
   title: string;
@@ -132,6 +131,31 @@ export interface TrainingVideo {
   url: string;
   duration?: string;
   view_count: number;
+  created_at: string;
+  updated_at: string;
+}
+
+// Add Interview types
+export interface Interview {
+  id: string;
+  application_id: string;
+  calendly_event_uri: string;
+  calendly_event_id: string;
+  scheduled_time: string;
+  candidate_email: string;
+  interviewer_email?: string;
+  meeting_url?: string;
+  status: 'scheduled' | 'completed' | 'cancelled' | 'rescheduled';
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CalendlySettings {
+  id: string;
+  api_token: string;
+  organization_uri: string;
+  webhook_url?: string;
+  default_event_type_uri?: string;
   created_at: string;
   updated_at: string;
 }

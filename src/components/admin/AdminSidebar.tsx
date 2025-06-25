@@ -1,313 +1,163 @@
-
-import React, { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { 
-  Plus, 
-  Briefcase, 
-  FileText, 
-  Settings as SettingsIcon,
-  Clock,
-  CheckCircle,
-  Mail,
-  BookOpen,
-  Users,
-  MapPin,
-  ClipboardList,
-  Video,
-  ChevronDown,
-  ChevronRight,
-  Home,
-  Layout
-} from 'lucide-react';
+import React from 'react';
+import { BarChart3, Briefcase, Plus, FileText, Mail, BookOpen, Users, MapPin, TrendingUp, Play, Edit, Settings, Calendar } from 'lucide-react';
 import { useAppContext } from '@/contexts/AppContext';
-import { getRolePermissions } from '@/utils/rolePermissions';
-
-type AdminView = 
-  | 'dashboard'
-  | 'post-job' 
-  | 'manage-jobs' 
-  | 'submissions' 
-  | 'settings' 
-  | 'email-management' 
-  | 'guide-training'
-  | 'salespeople'
-  | 'visit-logs'
-  | 'crm-reports'
-  | 'training-videos'
-  | 'content-manager';
 
 interface AdminSidebarProps {
-  currentView: AdminView;
-  onViewChange: (view: AdminView) => void;
+  currentView: string;
+  onViewChange: (view: string) => void;
 }
-
-interface MenuItem {
-  id: string;
-  label: string;
-  icon: React.ComponentType<any>;
-  type: 'single';
-  view: AdminView;
-  visible: boolean;
-}
-
-interface MenuGroup {
-  id: string;
-  label: string;
-  icon: React.ComponentType<any>;
-  type: 'group';
-  visible: boolean;
-  children: Array<{
-    id: string;
-    label: string;
-    icon: React.ComponentType<any>;
-    view: AdminView;
-    badge?: string;
-    visible: boolean;
-  }>;
-}
-
-type MenuConfig = MenuItem | MenuGroup;
 
 const AdminSidebar: React.FC<AdminSidebarProps> = ({ currentView, onViewChange }) => {
-  const { jobs, applications, userProfile } = useAppContext();
-  const [expandedMenu, setExpandedMenu] = useState<string | null>('job-portal');
+  const { userProfile } = useAppContext();
 
-  const activeJobs = jobs.filter(job => job.isActive).length;
-  const totalJobs = jobs.length;
-  const pendingApplications = applications.filter(app => app.status === 'application_submitted').length;
-
-  // Get user permissions
-  const userRole = userProfile?.role || 'recruiter';
-  const permissions = getRolePermissions(userRole);
-
-  const toggleMenu = (menuId: string) => {
-    setExpandedMenu(prev => prev === menuId ? null : menuId);
-  };
-
-  const menuItems: MenuConfig[] = [
+  const menuItems = [
     {
       id: 'dashboard',
       label: 'Dashboard',
-      icon: Home,
-      type: 'single' as const,
-      view: 'dashboard' as AdminView,
-      visible: permissions.canViewDashboard,
+      icon: BarChart3,
+      requiredPermissions: ['canViewDashboard'],
     },
     {
-      id: 'job-portal',
-      label: 'Job Portal',
+      id: 'post-job',
+      label: 'Post Job',
+      icon: Plus,
+      requiredPermissions: ['canCreateJob'],
+    },
+    {
+      id: 'manage-jobs',
+      label: 'Manage Jobs',
       icon: Briefcase,
-      type: 'group' as const,
-      visible: permissions.canManageJobs || permissions.canViewApplications,
-      children: [
-        {
-          id: 'post-job',
-          label: 'Post Job',
-          icon: Plus,
-          view: 'post-job' as AdminView,
-          visible: permissions.canManageJobs,
-        },
-        {
-          id: 'manage-jobs',
-          label: 'Manage Jobs',
-          icon: Briefcase,
-          view: 'manage-jobs' as AdminView,
-          badge: `${activeJobs}/${totalJobs}`,
-          visible: permissions.canManageJobs,
-        },
-        {
-          id: 'submissions',
-          label: 'Submissions',
-          icon: FileText,
-          view: 'submissions' as AdminView,
-          badge: pendingApplications > 0 ? pendingApplications.toString() : undefined,
-          visible: permissions.canViewApplications,
-        },
-      ].filter(child => child.visible),
+      requiredPermissions: ['canViewJobs'],
     },
     {
-      id: 'crm',
-      label: 'CRM',
-      icon: Users,
-      type: 'group' as const,
-      visible: permissions.canViewSalespeople || permissions.canViewVisitLogs,
-      children: [
-        {
-          id: 'salespeople',
-          label: 'Salespeople',
-          icon: Users,
-          view: 'salespeople' as AdminView,
-          visible: permissions.canViewSalespeople,
-        },
-        {
-          id: 'visit-logs',
-          label: 'Visit Logs',
-          icon: MapPin,
-          view: 'visit-logs' as AdminView,
-          visible: permissions.canViewVisitLogs,
-        },
-        {
-          id: 'crm-reports',
-          label: 'Reports',
-          icon: ClipboardList,
-          view: 'crm-reports' as AdminView,
-          visible: permissions.canViewVisitLogs, // Reports require visit logs access
-        },
-      ].filter(child => child.visible),
+      id: 'submissions',
+      label: 'Submissions',
+      icon: FileText,
+      requiredPermissions: ['canViewApplications'],
     },
     {
-      id: 'training',
-      label: 'Training',
+      id: 'interviews',
+      label: 'Interviews',
+      icon: Calendar,
+      requiredPermissions: ['canViewApplications'],
+    },
+    {
+      id: 'email-management',
+      label: 'Email Management',
+      icon: Mail,
+      requiredPermissions: ['canManageEmails'],
+    },
+    {
+      id: 'guide-training',
+      label: 'Guide & Training',
       icon: BookOpen,
-      type: 'group' as const,
-      visible: permissions.canViewTrainingVideos,
-      children: [
-        {
-          id: 'training-videos',
-          label: 'Videos',
-          icon: Video,
-          view: 'training-videos' as AdminView,
-          visible: permissions.canViewTrainingVideos,
-        },
-      ].filter(child => child.visible),
+      requiredPermissions: ['canViewTraining'],
+    },
+    {
+      id: 'salespeople',
+      label: 'Salespeople',
+      icon: Users,
+      requiredPermissions: ['canViewSalespeople'],
+    },
+    {
+      id: 'visit-logs',
+      label: 'Visit Logs',
+      icon: MapPin,
+      requiredPermissions: ['canViewVisitLogs'],
+    },
+    {
+      id: 'crm-reports',
+      label: 'CRM Reports',
+      icon: TrendingUp,
+      requiredPermissions: ['canViewReports'],
+    },
+    {
+      id: 'training-videos',
+      label: 'Training Videos',
+      icon: Play,
+      requiredPermissions: ['canViewTrainingVideos'],
     },
     {
       id: 'content-manager',
       label: 'Content Manager',
-      icon: Layout,
-      type: 'single' as const,
-      view: 'content-manager' as AdminView,
-      visible: permissions.canManageContent,
+      icon: Edit,
+      requiredPermissions: ['canManageContent'],
     },
     {
       id: 'settings',
       label: 'Settings',
-      icon: SettingsIcon,
-      type: 'group' as const,
-      visible: permissions.canManageEmailSettings || permissions.canManageUsers,
-      children: [
-        {
-          id: 'email-management',
-          label: 'Email & Config',
-          icon: Mail,
-          view: 'email-management' as AdminView,
-          visible: permissions.canManageEmailSettings,
-        },
-        {
-          id: 'user-roles',
-          label: 'Users & Roles',
-          icon: Users,
-          view: 'settings' as AdminView,
-          visible: permissions.canManageUsers,
-        },
-      ].filter(child => child.visible),
+      icon: Settings,
+      requiredPermissions: ['canViewSettings'],
     },
-  ].filter(item => item.visible && (item.type === 'single' || item.children.length > 0));
+  ];
+
+  const hasPermission = (requiredPermissions: string[]) => {
+    if (!userProfile || !userProfile.role) {
+      return false;
+    }
+
+    // Map roles to permissions
+    const rolePermissions: { [key: string]: string[] } = {
+      'admin': [
+        'canViewDashboard', 'canCreateJob', 'canViewJobs', 'canViewApplications', 'canManageEmails',
+        'canViewTraining', 'canViewSalespeople', 'canViewVisitLogs', 'canViewReports', 'canViewTrainingVideos',
+        'canManageContent', 'canViewSettings'
+      ],
+      'recruiter': [
+        'canViewDashboard', 'canCreateJob', 'canViewJobs', 'canViewApplications',
+      ],
+      'hr': [
+        'canViewDashboard', 'canViewApplications', 'canManageEmails',
+      ],
+      'trainer': [
+        'canViewDashboard', 'canViewTraining', 'canViewTrainingVideos',
+      ],
+      'content_manager': [
+        'canViewDashboard', 'canManageContent',
+      ],
+    };
+
+    const userPermissions = rolePermissions[userProfile.role] || [];
+    return requiredPermissions.every(permission => userPermissions.includes(permission));
+  };
 
   return (
-    <div className="w-80 lg:w-80 w-72 bg-white border-r border-gray-200 min-h-screen">
-      <div className="p-4 lg:p-6">
-        {/* Navigation Menu */}
-        <nav className="space-y-1 lg:space-y-2">
-          {menuItems.map((item) => {
-            if (item.type === 'single') {
-              const Icon = item.icon;
-              const isActive = currentView === item.view;
-              
-              return (
-                <Button
-                  key={item.id}
-                  variant={isActive ? "default" : "ghost"}
-                  onClick={() => onViewChange(item.view)}
-                  className={`w-full justify-start p-3 lg:p-4 h-auto ${
-                    isActive 
-                      ? 'bg-primary text-white hover:bg-primary/90' 
-                      : 'text-gray-700 hover:bg-gray-100'
-                  }`}
-                >
-                  <div className="flex items-center space-x-2 lg:space-x-3">
-                    <Icon className={`w-4 h-4 lg:w-5 lg:h-5 ${isActive ? 'text-white' : 'text-gray-500'}`} />
-                    <div className={`font-medium text-sm lg:text-base ${isActive ? 'text-white' : 'text-gray-900'}`}>
-                      {item.label}
-                    </div>
-                  </div>
-                </Button>
-              );
-            }
-
-            // Group menu
-            const Icon = item.icon;
-            const isExpanded = expandedMenu === item.id;
-            
-            return (
-              <div key={item.id} className="space-y-1">
-                <Button
-                  variant="ghost"
-                  onClick={() => toggleMenu(item.id)}
-                  className="w-full justify-between p-3 lg:p-4 h-auto text-gray-700 hover:bg-gray-100"
-                >
-                  <div className="flex items-center space-x-2 lg:space-x-3">
-                    <Icon className="w-4 h-4 lg:w-5 lg:h-5 text-gray-500" />
-                    <div className="font-medium text-sm lg:text-base text-gray-900">
-                      {item.label}
-                    </div>
-                  </div>
-                  {isExpanded ? (
-                    <ChevronDown className="w-4 h-4 text-gray-500" />
-                  ) : (
-                    <ChevronRight className="w-4 h-4 text-gray-500" />
-                  )}
-                </Button>
-                
-                {isExpanded && (
-                  <div className="ml-4 space-y-1">
-                    {item.children?.map((child) => {
-                      const ChildIcon = child.icon;
-                      const isChildActive = currentView === child.view;
-                      
-                      return (
-                        <Button
-                          key={child.id}
-                          variant={isChildActive ? "default" : "ghost"}
-                          onClick={() => onViewChange(child.view)}
-                          className={`w-full justify-start p-2 lg:p-3 h-auto ${
-                            isChildActive 
-                              ? 'bg-primary text-white hover:bg-primary/90' 
-                              : 'text-gray-600 hover:bg-gray-50'
-                          }`}
-                        >
-                          <div className="flex items-center justify-between w-full">
-                            <div className="flex items-center space-x-2">
-                              <ChildIcon className={`w-4 h-4 ${isChildActive ? 'text-white' : 'text-gray-400'}`} />
-                              <div className={`font-medium text-sm ${isChildActive ? 'text-white' : 'text-gray-700'}`}>
-                                {child.label}
-                              </div>
-                            </div>
-                            {child.badge && (
-                              <Badge 
-                                variant={isChildActive ? "secondary" : "outline"}
-                                className={`text-xs ${
-                                  isChildActive 
-                                    ? 'bg-white/20 text-white border-white/30' 
-                                    : 'bg-primary/10 text-primary border-primary/20'
-                                }`}
-                              >
-                                {child.badge}
-                              </Badge>
-                            )}
-                          </div>
-                        </Button>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-            );
-          })}
-        </nav>
+    <aside className="w-64 bg-gray-800 text-white min-h-screen flex flex-col py-4">
+      <div className="px-4 mb-8">
+        <h2 className="text-2xl font-bold">Admin Panel</h2>
+        <p className="text-gray-400">Manage your content</p>
       </div>
-    </div>
+      <nav className="flex-1">
+        <ul>
+          {menuItems.map(item => (
+            hasPermission(item.requiredPermissions) && (
+              <li key={item.id} className="mb-1">
+                <button
+                  onClick={() => onViewChange(item.id)}
+                  className={`
+                    w-full text-left py-3 px-4 rounded-md
+                    hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-600
+                    ${currentView === item.id ? 'bg-gray-700' : ''}
+                    flex items-center space-x-3
+                  `}
+                >
+                  <item.icon className="h-5 w-5" />
+                  <span>{item.label}</span>
+                </button>
+              </li>
+            )
+          ))}
+        </ul>
+      </nav>
+      <div className="mt-auto px-4 py-2">
+        {userProfile && (
+          <div className="text-center">
+            <p className="text-sm text-gray-400">Logged in as:</p>
+            <p className="text-white font-semibold">{userProfile.admin_name || userProfile.email}</p>
+          </div>
+        )}
+      </div>
+    </aside>
   );
 };
 
