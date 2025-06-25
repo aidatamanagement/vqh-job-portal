@@ -42,11 +42,22 @@ export const useStatusUpdate = () => {
       try {
         const emailResult = await sendStatusUpdateEmail(
           {
-            ...updatedApplication,
-            appliedPosition: updatedApplication.applied_position || '',
+            id: updatedApplication.id,
+            jobId: updatedApplication.job_id,
             firstName: updatedApplication.first_name,
             lastName: updatedApplication.last_name,
+            email: updatedApplication.email,
+            phone: updatedApplication.phone || '',
+            appliedPosition: updatedApplication.applied_position,
+            cityState: updatedApplication.city_state || '',
+            earliestStartDate: updatedApplication.earliest_start_date || '',
+            coverLetter: updatedApplication.cover_letter || '',
+            additionalDocsUrls: updatedApplication.additional_docs_urls || [],
+            status: updatedApplication.status as any,
+            notes: '',
             trackingToken: updatedApplication.tracking_token,
+            createdAt: updatedApplication.created_at || '',
+            updatedAt: updatedApplication.updated_at || '',
           },
           { location: updatedApplication.jobs?.location || '' }
         );

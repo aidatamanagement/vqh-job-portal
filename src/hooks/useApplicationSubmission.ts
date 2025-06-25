@@ -46,14 +46,22 @@ export const useApplicationSubmission = () => {
       try {
         const emailResult = await sendApplicationConfirmation(
           {
-            ...application,
-            appliedPosition: application.applied_position || applicationData.appliedPosition,
+            id: application.id,
+            jobId: application.job_id,
             firstName: application.first_name,
             lastName: application.last_name,
             email: application.email,
-            phone: application.phone,
-            earliestStartDate: application.earliest_start_date,
+            phone: application.phone || '',
+            appliedPosition: application.applied_position,
+            cityState: application.city_state || '',
+            earliestStartDate: application.earliest_start_date || '',
+            coverLetter: application.cover_letter || '',
+            additionalDocsUrls: application.additional_docs_urls || [],
+            status: application.status as any,
+            notes: '',
             trackingToken: application.tracking_token,
+            createdAt: application.created_at || '',
+            updatedAt: application.updated_at || '',
           },
           jobData
         );
