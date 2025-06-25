@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useAppContext } from '@/contexts/AppContext';
 import AdminHeader from '@/components/admin/AdminHeader';
@@ -98,7 +99,7 @@ const AdminDashboard: React.FC = () => {
           <AdminSidebar 
             currentView={currentView} 
             onViewChange={(view) => {
-              setCurrentView(view);
+              setCurrentView(view as AdminView);
               setSidebarOpen(false); // Close sidebar on mobile after selection
             }} 
           />
