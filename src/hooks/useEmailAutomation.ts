@@ -11,7 +11,7 @@ interface EmailVariables {
   earliestStartDate?: string;
   applicationDate?: string;
   trackingToken?: string;
-  trackingUrl?: string;
+  trackingURL?: string;
   adminUrl?: string;
   calendlyUrl?: string;
 }
@@ -143,7 +143,7 @@ export const useEmailAutomation = () => {
     trackingToken?: string
   ) => {
     try {
-      const trackingUrl = trackingToken ? `${window.location.origin}/track/${trackingToken}` : '';
+      const trackingURL = trackingToken ? `${window.location.origin}/track/${trackingToken}` : '';
       const adminUrl = `${window.location.origin}/admin`;
       
       // Get Calendly URL for all emails
@@ -159,7 +159,7 @@ export const useEmailAutomation = () => {
         earliestStartDate: application.earliestStartDate || '',
         applicationDate: new Date().toLocaleDateString(),
         trackingToken: trackingToken || '',
-        trackingUrl: trackingUrl,
+        trackingURL: trackingURL,
         adminUrl: adminUrl,
         calendlyUrl: calendlyUrl
       };
@@ -221,7 +221,7 @@ export const useEmailAutomation = () => {
         return { success: false, message: `No email template configured for status: ${application.status}` };
       }
 
-      const trackingUrl = trackingToken ? `${window.location.origin}/track/${trackingToken}` : '';
+      const trackingURL = trackingToken ? `${window.location.origin}/track/${trackingToken}` : '';
       
       // Get Calendly URL for all status emails
       const calendlyUrl = await getCalendlyUrl() || '';
@@ -233,7 +233,7 @@ export const useEmailAutomation = () => {
         position: application.appliedPosition,
         location: job?.location || '',
         trackingToken: trackingToken || '',
-        trackingUrl: trackingUrl,
+        trackingURL: trackingURL,
         calendlyUrl: calendlyUrl,
       };
 

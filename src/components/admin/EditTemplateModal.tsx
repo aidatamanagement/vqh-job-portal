@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import {
   Dialog,
@@ -33,7 +32,7 @@ const availableVariables = [
   'earliestStartDate',
   'applicationDate',
   'trackingToken',
-  'trackingUrl',
+  'trackingURL',
   'adminUrl',
   'calendlyUrl'
 ];

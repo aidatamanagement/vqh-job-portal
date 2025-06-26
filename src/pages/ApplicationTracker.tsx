@@ -1,5 +1,6 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import ApplicationSearch from '@/components/tracking/ApplicationSearch';
 import ApplicationTimeline from '@/components/tracking/ApplicationTimeline';
@@ -38,14 +39,24 @@ interface MappedApplicationData {
 }
 
 const ApplicationTracker: React.FC = () => {
+  const { token: urlToken } = useParams<{ token: string }>();
   const [token, setToken] = useState('');
   const [application, setApplication] = useState<ApplicationData | null>(null);
   const [mappedApplication, setMappedApplication] = useState<MappedApplicationData | null>(null);
   const [loading, setLoading] = useState(false);
   const [notFound, setNotFound] = useState(false);
 
-  const handleSearch = async () => {
-    if (!token.trim()) return;
+  // Auto-populate token from URL and search automatically
+  useEffect(() => {
+    if (urlToken) {
+      setToken(urlToken);
+      handleSearch(urlToken);
+    }
+  }, [urlToken]);
+
+  const handleSearch = async (searchToken?: string) => {
+    const tokenToSearch = searchToken || token;
+    if (!tokenToSearch.trim()) return;
 
     setLoading(true);
     setNotFound(false);
@@ -56,7 +67,7 @@ const ApplicationTracker: React.FC = () => {
       const { data, error } = await supabase
         .from('job_applications')
         .select('*')
-        .eq('tracking_token', token.trim())
+        .eq('tracking_token', tokenToSearch.trim())
         .single();
 
       if (error || !data) {
@@ -96,7 +107,7 @@ const ApplicationTracker: React.FC = () => {
         <ApplicationSearch
           token={token}
           onTokenChange={setToken}
-          onSearch={handleSearch}
+          onSearch={() => handleSearch()}
           loading={loading}
         />
 
