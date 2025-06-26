@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { useEmailSettings } from './useEmailSettings';
 
@@ -12,6 +13,7 @@ interface EmailVariables {
   applicationDate?: string;
   trackingToken?: string;
   trackingURL?: string;
+  trackingUrl?: string; // Backward compatibility
   adminUrl?: string;
   calendlyUrl?: string;
 }
