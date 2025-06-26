@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { useEmailSettings } from './useEmailSettings';
 
@@ -12,6 +13,7 @@ interface EmailVariables {
   applicationDate?: string;
   trackingToken?: string;
   trackingUrl?: string;
+  trackingLink?: string; // New variable for HTML link
   adminUrl?: string;
   calendlyUrl?: string;
 }
@@ -144,6 +146,7 @@ export const useEmailAutomation = () => {
   ) => {
     try {
       const trackingUrl = trackingToken ? `${window.location.origin}/track/${trackingToken}` : '';
+      const trackingLink = trackingToken ? `<a href="${window.location.origin}/track/${trackingToken}" style="color: #0066cc; text-decoration: none;">Track your application here</a>` : '';
       const adminUrl = `${window.location.origin}/admin`;
       
       // Get Calendly URL for all emails
@@ -160,6 +163,7 @@ export const useEmailAutomation = () => {
         applicationDate: new Date().toLocaleDateString(),
         trackingToken: trackingToken || '',
         trackingUrl: trackingUrl,
+        trackingLink: trackingLink,
         adminUrl: adminUrl,
         calendlyUrl: calendlyUrl
       };
@@ -222,6 +226,7 @@ export const useEmailAutomation = () => {
       }
 
       const trackingUrl = trackingToken ? `${window.location.origin}/track/${trackingToken}` : '';
+      const trackingLink = trackingToken ? `<a href="${window.location.origin}/track/${trackingToken}" style="color: #0066cc; text-decoration: none;">Track your application here</a>` : '';
       
       // Get Calendly URL for all status emails
       const calendlyUrl = await getCalendlyUrl() || '';
@@ -234,6 +239,7 @@ export const useEmailAutomation = () => {
         location: job?.location || '',
         trackingToken: trackingToken || '',
         trackingUrl: trackingUrl,
+        trackingLink: trackingLink,
         calendlyUrl: calendlyUrl,
       };
 
