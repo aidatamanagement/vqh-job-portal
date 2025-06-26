@@ -159,10 +159,10 @@ const EditTemplateModal: React.FC<EditTemplateModalProps> = ({
               <div className="text-xs text-gray-600 mb-4 space-y-1">
                 <p>Click on any variable to copy it to clipboard, then paste it in your template</p>
                 <p className="text-green-600">
-                  <strong>{{trackingLink}}</strong> creates a styled, clickable link: "Track your application here"
+                  <strong>{'{{trackingLink}}'}</strong> creates a styled, clickable link: "Track your application here"
                 </p>
                 <p className="text-blue-600">
-                  <strong>{{trackingUrl}}</strong> provides just the URL without styling
+                  <strong>{'{{trackingUrl}}'}</strong> provides just the URL without styling
                 </p>
               </div>
             </div>
