@@ -16,7 +16,6 @@ export const generateEmailPreview = (template: EmailTemplate): string => {
     applicationDate: new Date().toLocaleDateString(),
     trackingToken: 'ABC123-DEF456-GHI789',
     trackingUrl: `${window.location.origin}/track/ABC123-DEF456-GHI789`,
-    trackingLink: `<a href="${window.location.origin}/track/ABC123-DEF456-GHI789" style="color: #0066cc; text-decoration: none;">Track your application here</a>`,
     adminUrl: `${window.location.origin}/admin`,
     calendlyUrl: 'https://calendly.com/viaquesthospice/interview-scheduling'
   };
@@ -41,7 +40,6 @@ export const generateSubjectPreview = (subject: string): string => {
     applicationDate: new Date().toLocaleDateString(),
     trackingToken: 'ABC123-DEF456-GHI789',
     trackingUrl: `${window.location.origin}/track/ABC123-DEF456-GHI789`,
-    trackingLink: `<a href="${window.location.origin}/track/ABC123-DEF456-GHI789" style="color: #0066cc; text-decoration: none;">Track your application here</a>`,
     adminUrl: `${window.location.origin}/admin`,
     calendlyUrl: 'https://calendly.com/viaquesthospice/interview-scheduling'
   };

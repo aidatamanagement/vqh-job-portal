@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import {
   Dialog,
@@ -33,7 +34,6 @@ const availableVariables = [
   'applicationDate',
   'trackingToken',
   'trackingUrl',
-  'trackingLink',
   'adminUrl',
   'calendlyUrl'
 ];
@@ -140,31 +140,20 @@ const EditTemplateModal: React.FC<EditTemplateModalProps> = ({
                 {availableVariables.map((variable) => (
                   <span
                     key={variable}
-                    className={`px-2 py-1 text-xs rounded-md cursor-pointer hover:bg-blue-200 ${
-                      variable === 'trackingLink' 
-                        ? 'bg-green-100 text-green-800 border border-green-300' 
-                        : 'bg-blue-100 text-blue-800'
-                    }`}
+                    className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-md cursor-pointer hover:bg-blue-200"
                     onClick={() => {
                       // Add variable to clipboard for easy copying
                       navigator.clipboard.writeText(`{{${variable}}}`);
                     }}
-                    title={`Click to copy {{${variable}}}${variable === 'trackingLink' ? ' - Creates a clickable tracking link' : ''}`}
+                    title={`Click to copy {{${variable}}}`}
                   >
                     {`{{${variable}}}`}
-                    {variable === 'trackingLink' && ' 🔗'}
                   </span>
                 ))}
               </div>
-              <div className="text-xs text-gray-600 mb-4 space-y-1">
-                <p>Click on any variable to copy it to clipboard, then paste it in your template</p>
-                <p className="text-green-600">
-                  <strong>{'{{trackingLink}}'}</strong> creates a styled, clickable link: "Track your application here"
-                </p>
-                <p className="text-blue-600">
-                  <strong>{'{{trackingUrl}}'}</strong> provides just the URL without styling
-                </p>
-              </div>
+              <p className="text-xs text-gray-500 mb-4">
+                Click on any variable to copy it to clipboard, then paste it in your template content or subject line
+              </p>
             </div>
 
             <div>
