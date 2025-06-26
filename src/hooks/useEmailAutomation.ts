@@ -160,6 +160,7 @@ export const useEmailAutomation = () => {
         applicationDate: new Date().toLocaleDateString(),
         trackingToken: trackingToken || '',
         trackingURL: trackingURL,
+        trackingUrl: trackingURL, // Backward compatibility
         adminUrl: adminUrl,
         calendlyUrl: calendlyUrl
       };
@@ -234,6 +235,7 @@ export const useEmailAutomation = () => {
         location: job?.location || '',
         trackingToken: trackingToken || '',
         trackingURL: trackingURL,
+        trackingUrl: trackingURL, // Backward compatibility
         calendlyUrl: calendlyUrl,
       };
 

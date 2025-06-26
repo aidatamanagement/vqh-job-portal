@@ -62,9 +62,17 @@ const handler = async (req: Request): Promise<Response> => {
 
     console.log('Template found:', template.subject);
 
-    // Replace template variables
+    // Replace template variables - ensure backward compatibility for trackingUrl/trackingURL
     let subject = template.subject;
     let htmlContent = template.html_body;
+
+    // Add backward compatibility for trackingUrl if trackingURL exists
+    if (variables.trackingURL && !variables.trackingUrl) {
+      variables.trackingUrl = variables.trackingURL;
+    }
+    if (variables.trackingUrl && !variables.trackingURL) {
+      variables.trackingURL = variables.trackingUrl;
+    }
 
     Object.entries(variables).forEach(([key, value]) => {
       const placeholder = `{{${key}}}`;

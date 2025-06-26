@@ -33,6 +33,7 @@ const availableVariables = [
   'applicationDate',
   'trackingToken',
   'trackingURL',
+  'trackingUrl',
   'adminUrl',
   'calendlyUrl'
 ];
