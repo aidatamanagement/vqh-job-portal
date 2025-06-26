@@ -18,7 +18,8 @@ import {
   AlertTriangle,
   CheckCircle,
   Settings,
-  Plus
+  Plus,
+  Zap
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -53,6 +54,8 @@ const Interviews: React.FC = () => {
   const [isCalendlyConfigured, setIsCalendlyConfigured] = useState(false);
   const [isCheckingConfig, setIsCheckingConfig] = useState(true);
   const [isSyncing, setIsSyncing] = useState(false);
+  const [isAutoSyncing, setIsAutoSyncing] = useState(false);
+  const [lastAutoSync, setLastAutoSync] = useState<Date | null>(null);
   const { toast } = useToast();
   const { getEvents, getInvitees } = useCalendlyApi();
 
@@ -60,6 +63,76 @@ const Interviews: React.FC = () => {
     checkCalendlyConfiguration();
     loadInterviews();
   }, []);
+
+  // Set up real-time subscription for interviews table
+  useEffect(() => {
+    if (!isCalendlyConfigured) return;
+
+    console.log('Setting up real-time subscription for interviews...');
+    
+    const channel = supabase
+      .channel('interviews-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'interviews'
+        },
+        (payload) => {
+          console.log('New interview created via real-time:', payload);
+          // Reload interviews to get the complete data with joins
+          loadInterviews();
+          toast({
+            title: "New Interview",
+            description: "A new interview has been scheduled automatically",
+          });
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'interviews'
+        },
+        (payload) => {
+          console.log('Interview updated via real-time:', payload);
+          // Reload interviews to get the updated data
+          loadInterviews();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      console.log('Cleaning up real-time subscription');
+      supabase.removeChannel(channel);
+    };
+  }, [isCalendlyConfigured]);
+
+  // Set up periodic auto-sync as fallback
+  useEffect(() => {
+    if (!isCalendlyConfigured) return;
+
+    console.log('Setting up periodic auto-sync...');
+    
+    // Auto-sync every 10 minutes
+    const autoSyncInterval = setInterval(() => {
+      console.log('Running periodic auto-sync...');
+      performAutoSync();
+    }, 10 * 60 * 1000); // 10 minutes
+
+    // Initial auto-sync after 30 seconds
+    const initialSyncTimeout = setTimeout(() => {
+      console.log('Running initial auto-sync...');
+      performAutoSync();
+    }, 30 * 1000); // 30 seconds
+
+    return () => {
+      clearInterval(autoSyncInterval);
+      clearTimeout(initialSyncTimeout);
+    };
+  }, [isCalendlyConfigured]);
 
   const checkCalendlyConfiguration = async () => {
     try {
@@ -87,6 +160,8 @@ const Interviews: React.FC = () => {
 
   const loadInterviews = async () => {
     try {
+      console.log('Loading interviews from database...');
+
       const { data, error } = await supabase
         .from('interviews')
         .select(`
@@ -105,7 +180,7 @@ const Interviews: React.FC = () => {
         console.error('Error loading interviews:', error);
         toast({
           title: "Error",
-          description: "Failed to load interviews",
+          description: "Failed to load interviews. Please try again.",
           variant: "destructive",
         });
         return;
@@ -122,11 +197,12 @@ const Interviews: React.FC = () => {
       }));
 
       setInterviews(flattenedInterviews);
+      console.log(`Loaded ${flattenedInterviews.length} interviews`);
     } catch (error) {
       console.error('Error loading interviews:', error);
       toast({
         title: "Error",
-        description: "Failed to load interviews",
+        description: "Failed to load interviews. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -134,17 +210,44 @@ const Interviews: React.FC = () => {
     }
   };
 
-  const syncWithCalendly = async () => {
-    if (!isCalendlyConfigured) {
-      toast({
-        title: "Configuration Required",
-        description: "Please configure Calendly settings first",
-        variant: "destructive",
-      });
+  const performAutoSync = async () => {
+    if (isAutoSyncing || isSyncing) {
+      console.log('Sync already in progress, skipping auto-sync');
       return;
     }
 
-    setIsSyncing(true);
+    setIsAutoSyncing(true);
+    try {
+      console.log('Starting automatic sync...');
+      await syncWithCalendlyInternal(true);
+      setLastAutoSync(new Date());
+    } catch (error) {
+      console.error('Auto-sync failed:', error);
+    } finally {
+      setIsAutoSyncing(false);
+    }
+  };
+
+  const syncWithCalendly = async () => {
+    await syncWithCalendlyInternal(false);
+  };
+
+  const syncWithCalendlyInternal = async (isAutoSync: boolean = false) => {
+    if (!isCalendlyConfigured) {
+      if (!isAutoSync) {
+        toast({
+          title: "Configuration Required",
+          description: "Please configure Calendly settings first",
+          variant: "destructive",
+        });
+      }
+      return;
+    }
+
+    if (!isAutoSync) {
+      setIsSyncing(true);
+    }
+
     try {
       // Get organization URI from settings
       const { data: settings } = await supabase
@@ -153,27 +256,31 @@ const Interviews: React.FC = () => {
         .single();
 
       if (!settings?.organization_uri) {
-        toast({
-          title: "Configuration Error",
-          description: "Organization URI not found in settings",
-          variant: "destructive",
-        });
+        if (!isAutoSync) {
+          toast({
+            title: "Configuration Error",
+            description: "Organization URI not found in settings",
+            variant: "destructive",
+          });
+        }
         return;
       }
 
-      console.log('Fetching Calendly events...');
+      console.log(`${isAutoSync ? 'Auto-' : ''}Fetching Calendly events...`);
       const eventsResult = await getEvents(settings.organization_uri);
       
       if (!eventsResult.success || !eventsResult.events) {
-        toast({
-          title: "Sync Failed",
-          description: eventsResult.error || "Failed to fetch events from Calendly",
-          variant: "destructive",
-        });
+        if (!isAutoSync) {
+          toast({
+            title: "Sync Failed",
+            description: eventsResult.error || "Failed to fetch events from Calendly",
+            variant: "destructive",
+          });
+        }
         return;
       }
 
-      console.log(`Found ${eventsResult.events.length} Calendly events`);
+      console.log(`Found ${eventsResult.events.length} Calendly events for ${isAutoSync ? 'auto-' : ''}sync`);
       let syncedCount = 0;
       let skippedCount = 0;
 
@@ -195,23 +302,19 @@ const Interviews: React.FC = () => {
             .single();
 
           if (existingInterview) {
-            console.log(`Interview already exists for event ${eventId}, skipping`);
             skippedCount++;
             continue;
           }
 
           // Get invitees for this event
-          console.log(`Fetching invitees for event ${event.uri}`);
           const inviteesResult = await getInvitees(event.uri);
           
           if (!inviteesResult.success || !inviteesResult.invitees || inviteesResult.invitees.length === 0) {
-            console.warn(`No invitees found for event ${eventId}, skipping`);
             skippedCount++;
             continue;
           }
 
           const invitee = inviteesResult.invitees[0]; // Get the first invitee
-          console.log(`Found invitee: ${invitee.email} for event ${eventId}`);
 
           // Try to find a matching job application by email
           const { data: applications, error: appError } = await supabase
@@ -221,14 +324,7 @@ const Interviews: React.FC = () => {
             .order('created_at', { ascending: false })
             .limit(1);
 
-          if (appError) {
-            console.error(`Error finding application for ${invitee.email}:`, appError);
-            skippedCount++;
-            continue;
-          }
-
-          if (!applications || applications.length === 0) {
-            console.log(`No application found for email: ${invitee.email}, skipping event ${eventId}`);
+          if (appError || !applications || applications.length === 0) {
             skippedCount++;
             continue;
           }
@@ -243,7 +339,7 @@ const Interviews: React.FC = () => {
               calendly_event_id: eventId,
               calendly_event_uri: event.uri,
               candidate_email: invitee.email,
-              interviewer_email: null, // We don't have this from the events API
+              interviewer_email: null,
               scheduled_time: event.start_time,
               meeting_url: event.location?.join_url || null,
               status: event.status === 'active' ? 'scheduled' : event.status,
@@ -267,30 +363,41 @@ const Interviews: React.FC = () => {
       }
 
       if (syncedCount > 0) {
-        toast({
-          title: "Sync Successful",
-          description: `Synced ${syncedCount} new interviews from Calendly${skippedCount > 0 ? `. ${skippedCount} events were skipped (already exist or missing data).` : '.'}`,
-        });
+        const message = `${isAutoSync ? 'Auto-synced' : 'Synced'} ${syncedCount} new interviews from Calendly${skippedCount > 0 ? `. ${skippedCount} events were skipped.` : '.'}`;
+        
+        if (!isAutoSync) {
+          toast({
+            title: "Sync Successful",
+            description: message,
+          });
+        } else {
+          console.log(message);
+        }
+        
         // Reload interviews to show new records
         await loadInterviews();
-      } else {
+      } else if (!isAutoSync) {
         toast({
           title: "Sync Complete",
           description: skippedCount > 0 
-            ? `Found ${eventsResult.events.length} Calendly events, but ${skippedCount} were skipped (already exist or missing invitee data)`
+            ? `Found ${eventsResult.events.length} Calendly events, but ${skippedCount} were skipped (already exist or missing data)`
             : `Found ${eventsResult.events.length} Calendly events, but none could be synced`,
           variant: "default",
         });
       }
     } catch (error) {
-      console.error('Error syncing with Calendly:', error);
-      toast({
-        title: "Sync Error",
-        description: "An unexpected error occurred during sync",
-        variant: "destructive",
-      });
+      console.error(`Error during ${isAutoSync ? 'auto-' : ''}sync:`, error);
+      if (!isAutoSync) {
+        toast({
+          title: "Sync Error",
+          description: "An unexpected error occurred during sync",
+          variant: "destructive",
+        });
+      }
     } finally {
-      setIsSyncing(false);
+      if (!isAutoSync) {
+        setIsSyncing(false);
+      }
     }
   };
 
@@ -399,13 +506,26 @@ const Interviews: React.FC = () => {
           </div>
           <div>
             <h1 className="font-bold text-gray-900" style={{ fontSize: '1.3rem' }}>Interviews</h1>
-            <p className="text-gray-600 text-sm">Manage scheduled interviews and sync with Calendly</p>
+            <div className="flex items-center gap-2 text-sm text-gray-600">
+              <span>Auto-sync enabled with real-time updates</span>
+              {isAutoSyncing && (
+                <div className="flex items-center gap-1 text-blue-600">
+                  <Zap className="w-3 h-3" />
+                  <span>Auto-syncing...</span>
+                </div>
+              )}
+              {lastAutoSync && (
+                <span className="text-xs text-gray-500">
+                  Last sync: {lastAutoSync.toLocaleTimeString()}
+                </span>
+              )}
+            </div>
           </div>
         </div>
         
         <Button
           onClick={syncWithCalendly}
-          disabled={isSyncing}
+          disabled={isSyncing || isAutoSyncing}
           className="flex items-center gap-2"
         >
           {isSyncing ? (
@@ -413,9 +533,30 @@ const Interviews: React.FC = () => {
           ) : (
             <RefreshCw className="w-4 h-4" />
           )}
-          Sync with Calendly
+          Manual Sync
         </Button>
       </div>
+
+      {/* Auto-sync Status Alert */}
+      <Alert className="border-green-200 bg-green-50">
+        <CheckCircle className="h-4 w-4 text-green-600" />
+        <AlertDescription>
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-green-800 text-sm">
+                <strong>Auto-sync Active:</strong> New interviews will appear automatically when booked via Calendly. 
+                Background sync runs every 10 minutes to catch any missed events.
+              </p>
+            </div>
+            {isAutoSyncing && (
+              <div className="flex items-center gap-2 text-green-700">
+                <RefreshCw className="w-4 h-4 animate-spin" />
+                <span className="text-sm">Syncing...</span>
+              </div>
+            )}
+          </div>
+        </AlertDescription>
+      </Alert>
 
       {/* Filters */}
       <Card>
@@ -450,17 +591,6 @@ const Interviews: React.FC = () => {
         </CardContent>
       </Card>
 
-      {/* Additional Info Alert */}
-      <Alert className="border-blue-200 bg-blue-50">
-        <AlertTriangle className="h-4 w-4 text-blue-600" />
-        <AlertDescription>
-          <p className="text-blue-800 text-sm">
-            <strong>Note:</strong> Interviews are automatically created when candidates book through Calendly links. 
-            The sync function fetches existing scheduled events and creates interview records for those with matching job applications.
-          </p>
-        </AlertDescription>
-      </Alert>
-
       {/* Interviews List */}
       <div className="space-y-4">
         {isLoading ? (
@@ -482,8 +612,8 @@ const Interviews: React.FC = () => {
               </p>
               {interviews.length === 0 && (
                 <div className="text-sm text-gray-400 space-y-2">
-                  <p>Interviews are automatically created when candidates book through Calendly links sent in shortlisted emails.</p>
-                  <p>You can also use the "Sync with Calendly" button to import existing scheduled events.</p>
+                  <p>Interviews are automatically created when candidates book through Calendly links or via the webhook.</p>
+                  <p>Auto-sync is active and will detect new interviews automatically.</p>
                 </div>
               )}
             </CardContent>
