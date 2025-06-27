@@ -18,6 +18,25 @@ export const useDataFetching = (user: User | null, userProfile: any | null) => {
   const isFetchingMasterData = useRef(false);
   const isMounted = useRef(true);
 
+  // Helper function to map old status values to new ones
+  const mapStatusToNewFlow = (status: string): JobApplication['status'] => {
+    switch (status) {
+      case 'interview_scheduled':
+      case 'decisioning':
+        return 'interviewed';
+      case 'application_submitted':
+      case 'under_review':
+      case 'shortlisted':
+      case 'interviewed':
+      case 'hired':
+      case 'rejected':
+      case 'waiting_list':
+        return status as JobApplication['status'];
+      default:
+        return 'application_submitted';
+    }
+  };
+
   // Fetch jobs from database
   const fetchJobs = useCallback(async () => {
     if (isFetchingJobs.current) return;
@@ -92,7 +111,7 @@ export const useDataFetching = (user: User | null, userProfile: any | null) => {
         earliestStartDate: app.earliest_start_date,
         cityState: app.city_state,
         coverLetter: app.cover_letter,
-        status: app.status as 'application_submitted' | 'under_review' | 'shortlisted' | 'interview_scheduled' | 'decisioning' | 'hired' | 'rejected',
+        status: mapStatusToNewFlow(app.status),
         additionalDocsUrls: app.additional_docs_urls || [],
         trackingToken: app.tracking_token,
         createdAt: app.created_at,

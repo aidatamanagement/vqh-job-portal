@@ -18,7 +18,7 @@ interface ApplicationData {
   applied_position: string;
   earliest_start_date: string;
   city_state: string;
-  status: 'application_submitted' | 'under_review' | 'shortlisted' | 'interview_scheduled' | 'decisioning' | 'hired' | 'rejected';
+  status: 'application_submitted' | 'under_review' | 'shortlisted' | 'interviewed' | 'hired' | 'rejected' | 'waiting_list';
   created_at: string;
   updated_at: string;
   job_id: string;
@@ -46,6 +46,25 @@ const ApplicationTracker: React.FC = () => {
   const [mappedApplication, setMappedApplication] = useState<MappedApplicationData | null>(null);
   const [loading, setLoading] = useState(false);
   const [notFound, setNotFound] = useState(false);
+
+  // Helper function to map old status values to new ones
+  const mapStatusToNewFlow = (status: string): ApplicationData['status'] => {
+    switch (status) {
+      case 'interview_scheduled':
+      case 'decisioning':
+        return 'interviewed';
+      case 'application_submitted':
+      case 'under_review':
+      case 'shortlisted':
+      case 'interviewed':
+      case 'hired':
+      case 'rejected':
+      case 'waiting_list':
+        return status as ApplicationData['status'];
+      default:
+        return 'application_submitted';
+    }
+  };
 
   // Auto-populate token from URL and search automatically
   useEffect(() => {
@@ -76,12 +95,19 @@ const ApplicationTracker: React.FC = () => {
         setNotFound(true);
       } else {
         console.log('Found application:', data);
-        setApplication(data as ApplicationData);
+        
+        // Map the status to the new flow
+        const mappedData: ApplicationData = {
+          ...data,
+          status: mapStatusToNewFlow(data.status)
+        };
+        
+        setApplication(mappedData);
         
         // Create mapped version for legacy components
         const mapped: MappedApplicationData = {
-          ...data,
-          status: mapDbStatusToTracking(data.status)
+          ...mappedData,
+          status: mapDbStatusToTracking(mappedData.status)
         };
         setMappedApplication(mapped);
       }
