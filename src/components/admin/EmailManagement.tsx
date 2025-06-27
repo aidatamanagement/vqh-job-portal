@@ -1,9 +1,8 @@
 
 import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Mail, MailCheck, Settings } from 'lucide-react';
+import { Mail, Settings } from 'lucide-react';
 import EmailTemplates from './EmailTemplates';
-import EmailLogs from './EmailLogs';
 import EmailSettings from './EmailSettings';
 
 const EmailManagement: React.FC = () => {
@@ -18,19 +17,15 @@ const EmailManagement: React.FC = () => {
         </div>
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Email Management</h1>
-          <p className="text-sm text-gray-600">Manage email templates, delivery logs, and configuration settings</p>
+          <p className="text-sm text-gray-600">Manage email templates and configuration settings</p>
         </div>
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="templates" className="flex items-center space-x-2">
             <Mail className="w-4 h-4" />
             <span>Templates</span>
-          </TabsTrigger>
-          <TabsTrigger value="logs" className="flex items-center space-x-2">
-            <MailCheck className="w-4 h-4" />
-            <span>Logs</span>
           </TabsTrigger>
           <TabsTrigger value="settings" className="flex items-center space-x-2">
             <Settings className="w-4 h-4" />
@@ -40,10 +35,6 @@ const EmailManagement: React.FC = () => {
 
         <TabsContent value="templates" className="mt-6">
           <EmailTemplates />
-        </TabsContent>
-
-        <TabsContent value="logs" className="mt-6">
-          <EmailLogs />
         </TabsContent>
 
         <TabsContent value="settings" className="mt-6">
