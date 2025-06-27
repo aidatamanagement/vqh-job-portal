@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { JobApplication } from '@/types';
 import { useSubmissions } from './hooks/useSubmissions';
@@ -57,6 +56,7 @@ const Submissions: React.FC = () => {
         await refreshSubmissions();
         
         // Update the selected application if it's currently being viewed
+        // This prevents the modal from closing and reopening
         if (selectedApplication && selectedApplication.id === id) {
           setSelectedApplication(prev => prev ? { ...prev, status: newStatus } : null);
         }
