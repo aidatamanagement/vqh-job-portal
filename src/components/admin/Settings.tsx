@@ -117,10 +117,11 @@ const Settings: React.FC = () => {
     setIsLoadingAdmins(true);
     
     try {
+      // Fetch all users with admin roles and above (not regular 'user' role)
       const { data, error } = await supabase
         .from('profiles')
         .select('id, email, admin_name, display_name, role, created_at, updated_at')
-        .neq('role', 'user')
+        .in('role', ['admin', 'recruiter', 'hr', 'trainer', 'content_manager'])
         .order('created_at', { ascending: false });
 
       if (error) {
@@ -329,17 +330,18 @@ const Settings: React.FC = () => {
     setIsLoading(true);
 
     try {
-      console.log('Creating new user via Admin API:', newAdminForm.email, newAdminForm.role);
+      console.log('Creating new user via regular signup:', newAdminForm.email, newAdminForm.role);
       
-      // Use Admin API to create user without logging them in
-      const { data: authData, error: authError } = await supabase.auth.admin.createUser({
+      // Use regular signup but with auto-confirmation
+      const { data: authData, error: authError } = await supabase.auth.signUp({
         email: newAdminForm.email,
         password: newAdminForm.password,
-        email_confirm: true, // Auto-confirm email
-        user_metadata: {
-          display_name: newAdminForm.fullName,
-          admin_name: newAdminForm.fullName,
-          role: newAdminForm.role
+        options: {
+          data: {
+            display_name: newAdminForm.fullName,
+            admin_name: newAdminForm.fullName,
+            role: newAdminForm.role
+          }
         }
       });
 
@@ -388,7 +390,7 @@ const Settings: React.FC = () => {
 
       toast({
         title: "User Added",
-        description: `New ${newAdminForm.role} ${newAdminForm.fullName} (${newAdminForm.email}) has been added successfully`,
+        description: `New ${newAdminForm.role} ${newAdminForm.fullName} (${newAdminForm.email}) has been added successfully. They will need to check their email to confirm their account.`,
       });
     } catch (error) {
       console.error('Error creating user:', error);
@@ -945,7 +947,7 @@ const Settings: React.FC = () => {
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="text-lg font-semibold text-gray-900 flex items-center">
                     <Users className="w-5 h-5 mr-2 text-primary" />
-                    Users ({filteredUsers.length})
+                    All Users ({filteredUsers.length})
                   </h3>
                 </div>
 
