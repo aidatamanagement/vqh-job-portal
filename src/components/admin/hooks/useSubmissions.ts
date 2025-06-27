@@ -163,6 +163,7 @@ export const useSubmissions = () => {
     deletingApplication,
     deleteApplication,
     updateApplicationStatus,
-    fetchSubmissions
+    fetchSubmissions,
+    refreshSubmissions: fetchSubmissions // Add alias for refreshSubmissions
   };
 };

@@ -225,7 +225,7 @@ const ApplicationDetailsModal: React.FC<ApplicationDetailsModalProps> = ({
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => onOpenFileViviewer(docUrl, `Additional Document ${index + 1}`)}
+                      onClick={() => onOpenFileViewer(docUrl, `Additional Document ${index + 1}`)}
                       className="text-xs px-2 py-1"
                     >
                       <ExternalLink className="w-3 h-3 mr-1" />

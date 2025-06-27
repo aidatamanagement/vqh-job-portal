@@ -3,13 +3,15 @@ import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useEmailNotifications } from './useEmailNotifications';
 
+type ApplicationStatus = 'application_submitted' | 'under_review' | 'shortlisted' | 'interviewed' | 'hired' | 'rejected' | 'waiting_list';
+
 export const useStatusUpdate = () => {
   const [isUpdating, setIsUpdating] = useState(false);
   const { sendStatusUpdateEmail } = useEmailNotifications();
 
   const updateApplicationStatus = async (
     applicationId: string,
-    newStatus: string,
+    newStatus: ApplicationStatus,
     notes?: string
   ) => {
     setIsUpdating(true);
@@ -63,7 +65,7 @@ export const useStatusUpdate = () => {
               firstName: updatedApplication.first_name,
               lastName: updatedApplication.last_name,
               appliedPosition: updatedApplication.applied_position,
-              status: updatedApplication.status,
+              status: updatedApplication.status as ApplicationStatus,
               // Add other required fields
               jobId: updatedApplication.job_id,
               phone: updatedApplication.phone,
