@@ -330,52 +330,39 @@ const Settings: React.FC = () => {
     setIsLoading(true);
 
     try {
-      console.log('Creating new user via regular signup:', newAdminForm.email, newAdminForm.role);
+      console.log('Creating new user via edge function:', newAdminForm.email, newAdminForm.role);
       
-      // Use regular signup but with auto-confirmation
-      const { data: authData, error: authError } = await supabase.auth.signUp({
-        email: newAdminForm.email,
-        password: newAdminForm.password,
-        options: {
-          data: {
-            display_name: newAdminForm.fullName,
-            admin_name: newAdminForm.fullName,
-            role: newAdminForm.role
-          }
+      // Use edge function to create user without affecting current session
+      const { data, error } = await supabase.functions.invoke('create-user', {
+        body: {
+          email: newAdminForm.email,
+          password: newAdminForm.password,
+          fullName: newAdminForm.fullName,
+          role: newAdminForm.role
         }
       });
 
-      if (authError) {
-        console.error('Auth error:', authError);
+      if (error) {
+        console.error('Edge function error:', error);
         toast({
           title: "Error",
-          description: authError.message,
+          description: error.message || "Failed to create user account",
           variant: "destructive",
         });
         return;
       }
 
-      console.log('Auth data:', authData);
-
-      // Update profile with role and name if user was created
-      if (authData.user) {
-        console.log('Updating profile for user:', authData.user.id);
-        
-        const { error: profileError } = await supabase
-          .from('profiles')
-          .update({
-            role: newAdminForm.role,
-            admin_name: newAdminForm.fullName,
-            display_name: newAdminForm.fullName
-          })
-          .eq('id', authData.user.id);
-
-        if (profileError) {
-          console.error('Error updating profile:', profileError);
-        } else {
-          console.log('Profile updated successfully');
-        }
+      if (data.error) {
+        console.error('User creation error:', data.error);
+        toast({
+          title: "Error",
+          description: data.error,
+          variant: "destructive",
+        });
+        return;
       }
+
+      console.log('User created successfully:', data);
 
       setNewAdminForm({
         email: '',
@@ -390,7 +377,7 @@ const Settings: React.FC = () => {
 
       toast({
         title: "User Added",
-        description: `New ${newAdminForm.role} ${newAdminForm.fullName} (${newAdminForm.email}) has been added successfully. They will need to check their email to confirm their account.`,
+        description: `New ${newAdminForm.role} ${newAdminForm.fullName} (${newAdminForm.email}) has been added successfully. They can now log in with their credentials.`,
       });
     } catch (error) {
       console.error('Error creating user:', error);
