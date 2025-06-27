@@ -3,7 +3,6 @@ import { useState, useEffect } from 'react';
 import { JobApplication } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
-import { useEmailAutomation } from '@/hooks/useEmailAutomation';
 import {
   getResumeUrl,
   deleteApplicationFiles,
@@ -15,8 +14,6 @@ export const useSubmissions = () => {
   const [submissions, setSubmissions] = useState<JobApplication[]>([]);
   const [loading, setLoading] = useState(true);
   const [deletingApplication, setDeletingApplication] = useState<string | null>(null);
-
-  const { sendStatusChangeNotification, shouldSendEmailForStatus } = useEmailAutomation();
 
   // Fetch submissions from Supabase
   const fetchSubmissions = async () => {
@@ -55,7 +52,7 @@ export const useSubmissions = () => {
         coverLetter: item.cover_letter || '',
         resumeUrl: getResumeUrl(item.id),
         additionalDocsUrls: item.additional_docs_urls || [],
-        status: item.status as 'application_submitted' | 'under_review' | 'shortlisted' | 'interview_scheduled' | 'decisioning' | 'hired' | 'rejected',
+        status: item.status as 'application_submitted' | 'under_review' | 'shortlisted' | 'interviewed' | 'hired' | 'rejected' | 'waiting_list',
         notes: '',
         trackingToken: item.tracking_token,
         createdAt: item.created_at,
@@ -126,72 +123,13 @@ export const useSubmissions = () => {
     }
   };
 
-  // Update application status in Supabase with comprehensive email automation
-  const updateApplicationStatus = async (id: string, newStatus: 'application_submitted' | 'under_review' | 'shortlisted' | 'interview_scheduled' | 'decisioning' | 'hired' | 'rejected') => {
+  // Update application status in Supabase (simplified - no email automation)
+  const updateApplicationStatus = async (id: string, newStatus: 'application_submitted' | 'under_review' | 'shortlisted' | 'interviewed' | 'hired' | 'rejected' | 'waiting_list') => {
     try {
       console.log('Updating application status:', { id, newStatus });
 
       // Update status in database
       await updateApplicationStatusInDatabase(id, newStatus);
-
-      // Find the application to get details for email
-      const application = submissions.find(app => app.id === id);
-      
-      if (!application) {
-        console.warn('Application not found for email notification:', id);
-      }
-
-      // Send email notification for status changes (if configured)
-      if (application && shouldSendEmailForStatus(newStatus)) {
-        try {
-          console.log('Sending status update email for:', { 
-            email: application.email, 
-            status: newStatus,
-            position: application.appliedPosition 
-          });
-
-          // Get job details for location information
-          const { data: jobData } = await supabase
-            .from('jobs')
-            .select('location')
-            .eq('id', application.jobId)
-            .single();
-
-          await sendStatusChangeNotification(
-            {
-              email: application.email,
-              firstName: application.firstName,
-              lastName: application.lastName,
-              appliedPosition: application.appliedPosition,
-              status: newStatus
-            },
-            jobData ? { location: jobData.location } : undefined,
-            application.trackingToken
-          );
-
-          console.log('Status update email sent successfully');
-          
-          toast({
-            title: "Status Updated",
-            description: `Application status updated to ${newStatus.replace('_', ' ')} and notification email sent to applicant`,
-          });
-
-        } catch (emailError) {
-          console.warn('Failed to send status update email:', emailError);
-          // Don't throw error - email failure shouldn't prevent status update
-          toast({
-            title: "Status Updated",
-            description: `Application status updated to ${newStatus.replace('_', ' ')}. Note: Email notification may have failed to send.`,
-            variant: "destructive",
-          });
-        }
-      } else {
-        // Status updated but no email configured
-        toast({
-          title: "Status Updated",
-          description: `Application status has been updated to ${newStatus.replace('_', ' ')}`,
-        });
-      }
 
       // Update local state
       setSubmissions(prev => prev.map(app => 
@@ -199,6 +137,11 @@ export const useSubmissions = () => {
           ? { ...app, status: newStatus, updatedAt: new Date().toISOString() }
           : app
       ));
+
+      toast({
+        title: "Status Updated",
+        description: `Application status has been updated to ${newStatus.replace('_', ' ')}`,
+      });
 
     } catch (error) {
       console.error('Error in updateApplicationStatus:', error);

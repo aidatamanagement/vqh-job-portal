@@ -23,14 +23,14 @@ const StatusTransitionValidator: React.FC<StatusTransitionValidatorProps> = ({
         return 'Under Review';
       case 'shortlisted':
         return 'Shortlisted';
-      case 'interview_scheduled':
-        return 'Interview Scheduled';
-      case 'decisioning':
-        return 'Final Decision';
+      case 'interviewed':
+        return 'Interviewed';
       case 'hired':
         return 'Hired';
       case 'rejected':
         return 'Rejected';
+      case 'waiting_list':
+        return 'Waiting List';
       default:
         return status;
     }
@@ -39,12 +39,12 @@ const StatusTransitionValidator: React.FC<StatusTransitionValidatorProps> = ({
   const getValidTransitions = (status: string): string[] => {
     const transitions: Record<string, string[]> = {
       'application_submitted': ['under_review', 'rejected'],
-      'under_review': ['shortlisted', 'rejected'],
-      'shortlisted': ['interview_scheduled', 'rejected'],
-      'interview_scheduled': ['decisioning', 'rejected'],
-      'decisioning': ['hired', 'rejected'],
+      'under_review': ['shortlisted', 'rejected', 'waiting_list'],
+      'shortlisted': ['interviewed', 'rejected', 'waiting_list'],
+      'interviewed': ['hired', 'rejected', 'waiting_list'],
       'hired': [],
-      'rejected': []
+      'rejected': [],
+      'waiting_list': ['under_review', 'shortlisted', 'interviewed', 'hired', 'rejected']
     };
     return transitions[status] || [];
   };

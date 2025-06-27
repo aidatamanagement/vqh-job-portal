@@ -21,7 +21,7 @@ const StatusMessage: React.FC<StatusMessageProps> = ({ status }) => {
     );
   }
 
-  if (status === 'shortlisted' || status === 'interview_scheduled' || status === 'decisioning') {
+  if (status === 'shortlisted' || status === 'interviewed') {
     return (
       <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mt-6">
         <div className="flex items-center gap-2">
@@ -30,6 +30,20 @@ const StatusMessage: React.FC<StatusMessageProps> = ({ status }) => {
         </div>
         <p className="text-blue-700 text-sm mt-1">
           Great news! Your application is progressing through our selection process. We'll keep you updated on next steps.
+        </p>
+      </div>
+    );
+  }
+
+  if (status === 'waiting_list') {
+    return (
+      <div className="bg-orange-50 border border-orange-200 rounded-lg p-4 mt-6">
+        <div className="flex items-center gap-2">
+          <Clock className="w-4 h-4 text-orange-600" />
+          <p className="text-orange-800 font-medium">On Waiting List</p>
+        </div>
+        <p className="text-orange-700 text-sm mt-1">
+          You have been placed on our waiting list. We'll contact you if a suitable position becomes available.
         </p>
       </div>
     );

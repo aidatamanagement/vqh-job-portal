@@ -14,8 +14,10 @@ const StatusBadge: React.FC<StatusBadgeProps> = ({ status }) => {
       case 'rejected':
         return 'destructive' as const;
       case 'shortlisted':
-      case 'interview_scheduled':
+      case 'interviewed':
         return 'default' as const;
+      case 'waiting_list':
+        return 'secondary' as const;
       default:
         return 'secondary' as const;
     }
@@ -29,14 +31,14 @@ const StatusBadge: React.FC<StatusBadgeProps> = ({ status }) => {
         return 'Under Review';
       case 'shortlisted':
         return 'Shortlisted';
-      case 'interview_scheduled':
-        return 'Interview Scheduled';
-      case 'decisioning':
-        return 'Final Decision';
+      case 'interviewed':
+        return 'Interviewed';
       case 'hired':
         return 'Hired';
       case 'rejected':
         return 'Not Selected';
+      case 'waiting_list':
+        return 'Waiting List';
       default:
         return status;
     }

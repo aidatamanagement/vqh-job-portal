@@ -13,7 +13,7 @@ import StatusTransitionValidator from '../StatusTransitionValidator';
 interface ApplicationDetailsModalProps {
   selectedApplication: JobApplication | null;
   onClose: () => void;
-  onUpdateStatus: (id: string, status: 'application_submitted' | 'under_review' | 'shortlisted' | 'interview_scheduled' | 'decisioning' | 'hired' | 'rejected') => void;
+  onUpdateStatus: (id: string, status: 'application_submitted' | 'under_review' | 'shortlisted' | 'interviewed' | 'hired' | 'rejected' | 'waiting_list') => void;
   onDeleteApplication: (applicationId: string) => void;
   onOpenFileViewer: (url: string, name: string) => void;
   deletingApplication: string | null;
@@ -36,21 +36,21 @@ const ApplicationDetailsModal: React.FC<ApplicationDetailsModalProps> = ({
     { value: 'application_submitted', label: 'Application Submitted' },
     { value: 'under_review', label: 'Under Review' },
     { value: 'shortlisted', label: 'Shortlisted' },
-    { value: 'interview_scheduled', label: 'Interview Scheduled' },
-    { value: 'decisioning', label: 'Decisioning' },
+    { value: 'interviewed', label: 'Interviewed' },
     { value: 'hired', label: 'Hired' },
     { value: 'rejected', label: 'Rejected' },
+    { value: 'waiting_list', label: 'Waiting List' },
   ];
 
   const validateTransition = (currentStatus: string, newStatus: string): boolean => {
     const validTransitions: Record<string, string[]> = {
       'application_submitted': ['under_review', 'rejected'],
-      'under_review': ['shortlisted', 'rejected'],
-      'shortlisted': ['interview_scheduled', 'rejected'],
-      'interview_scheduled': ['decisioning', 'rejected'],
-      'decisioning': ['hired', 'rejected'],
+      'under_review': ['shortlisted', 'rejected', 'waiting_list'],
+      'shortlisted': ['interviewed', 'rejected', 'waiting_list'],
+      'interviewed': ['hired', 'rejected', 'waiting_list'],
       'hired': [],
-      'rejected': []
+      'rejected': [],
+      'waiting_list': ['under_review', 'shortlisted', 'interviewed', 'hired', 'rejected']
     };
 
     if (currentStatus === newStatus) return false;
@@ -82,11 +82,11 @@ const ApplicationDetailsModal: React.FC<ApplicationDetailsModalProps> = ({
         return `${baseClasses} bg-red-100 text-red-800 border-red-300`;
       case 'shortlisted':
         return `${baseClasses} bg-blue-100 text-blue-800 border-blue-300`;
-      case 'interview_scheduled':
+      case 'interviewed':
         return `${baseClasses} bg-purple-100 text-purple-800 border-purple-300`;
       case 'under_review':
         return `${baseClasses} bg-yellow-100 text-yellow-800 border-yellow-300`;
-      case 'decisioning':
+      case 'waiting_list':
         return `${baseClasses} bg-orange-100 text-orange-800 border-orange-300`;
       case 'application_submitted':
         return `${baseClasses} bg-gray-100 text-gray-800 border-gray-300`;

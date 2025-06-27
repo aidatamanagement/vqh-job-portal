@@ -56,16 +56,16 @@ const SubmissionsStatusTabs: React.FC<SubmissionsStatusTabsProps> = ({
             {getStatusCount(submissions, 'shortlisted')}
           </Badge>
         </TabsTrigger>
-        <TabsTrigger value="interview_scheduled" className="flex flex-col sm:flex-row items-center gap-1 sm:gap-2 p-2 text-xs sm:text-sm">
-          <span>Interview</span>
+        <TabsTrigger value="interviewed" className="flex flex-col sm:flex-row items-center gap-1 sm:gap-2 p-2 text-xs sm:text-sm">
+          <span>Interviewed</span>
           <Badge variant="secondary" className="text-xs">
-            {getStatusCount(submissions, 'interview_scheduled')}
+            {getStatusCount(submissions, 'interviewed')}
           </Badge>
         </TabsTrigger>
-        <TabsTrigger value="decisioning" className="flex flex-col sm:flex-row items-center gap-1 sm:gap-2 p-2 text-xs sm:text-sm">
-          <span>Decision</span>
+        <TabsTrigger value="waiting_list" className="flex flex-col sm:flex-row items-center gap-1 sm:gap-2 p-2 text-xs sm:text-sm">
+          <span>Waiting</span>
           <Badge variant="secondary" className="text-xs">
-            {getStatusCount(submissions, 'decisioning')}
+            {getStatusCount(submissions, 'waiting_list')}
           </Badge>
         </TabsTrigger>
         <TabsTrigger value="hired" className="flex flex-col sm:flex-row items-center gap-1 sm:gap-2 p-2 text-xs sm:text-sm">
@@ -118,18 +118,18 @@ const SubmissionsStatusTabs: React.FC<SubmissionsStatusTabsProps> = ({
         />
       </TabsContent>
 
-      <TabsContent value="interview_scheduled" className="mt-6">
+      <TabsContent value="interviewed" className="mt-6">
         <SubmissionsTable
-          submissions={getSubmissionsByStatus(filteredSubmissions, 'interview_scheduled')}
+          submissions={getSubmissionsByStatus(filteredSubmissions, 'interviewed')}
           onViewApplication={onViewApplication}
           onDeleteApplication={onDeleteApplication}
           deletingApplication={deletingApplication}
         />
       </TabsContent>
 
-      <TabsContent value="decisioning" className="mt-6">
+      <TabsContent value="waiting_list" className="mt-6">
         <SubmissionsTable
-          submissions={getSubmissionsByStatus(filteredSubmissions, 'decisioning')}
+          submissions={getSubmissionsByStatus(filteredSubmissions, 'waiting_list')}
           onViewApplication={onViewApplication}
           onDeleteApplication={onDeleteApplication}
           deletingApplication={deletingApplication}

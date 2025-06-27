@@ -20,7 +20,7 @@ export interface ApplicationData {
   applied_position: string;
   earliest_start_date: string;
   city_state: string;
-  status: 'application_submitted' | 'under_review' | 'shortlisted' | 'interview_scheduled' | 'decisioning' | 'hired' | 'rejected';
+  status: 'application_submitted' | 'under_review' | 'shortlisted' | 'interviewed' | 'hired' | 'rejected' | 'waiting_list';
   created_at: string;
   updated_at: string;
   job_id: string;
@@ -31,10 +31,10 @@ export const getTimelineSteps = (application: ApplicationData): TimelineStepData
     'application_submitted',
     'under_review',
     'shortlisted',
-    'interview_scheduled',
-    'decisioning',
+    'interviewed',
     'hired',
-    'rejected'
+    'rejected',
+    'waiting_list'
   ];
 
   const statusIndex = statusOrder.indexOf(application.status);
@@ -63,7 +63,7 @@ export const getTimelineSteps = (application: ApplicationData): TimelineStepData
   }
 
   // Shortlisted
-  if (statusIndex >= 2 && application.status !== 'rejected') {
+  if (statusIndex >= 2 && application.status !== 'rejected' && application.status !== 'waiting_list') {
     steps.push({
       id: 'shortlisted',
       title: 'Shortlisted',
@@ -74,26 +74,14 @@ export const getTimelineSteps = (application: ApplicationData): TimelineStepData
     });
   }
 
-  // Interview Scheduled
-  if (statusIndex >= 3 && application.status !== 'rejected') {
+  // Interviewed
+  if (statusIndex >= 3 && application.status !== 'rejected' && application.status !== 'waiting_list') {
     steps.push({
-      id: 'interview_scheduled',
-      title: 'Interview Scheduled',
-      description: 'Interview has been scheduled',
+      id: 'interviewed',
+      title: 'Interviewed',
+      description: 'Interview has been completed',
       icon: React.createElement(Calendar, { className: "w-4 h-4" }),
       status: statusIndex > 3 ? 'completed' : 'current',
-      date: application.updated_at
-    });
-  }
-
-  // Decisioning
-  if (statusIndex >= 4 && application.status !== 'rejected') {
-    steps.push({
-      id: 'decisioning',
-      title: 'Final Decision',
-      description: 'Final decision is being made',
-      icon: React.createElement(FileCheck, { className: "w-4 h-4" }),
-      status: statusIndex > 4 ? 'completed' : 'current',
       date: application.updated_at
     });
   }
@@ -117,6 +105,15 @@ export const getTimelineSteps = (application: ApplicationData): TimelineStepData
       status: 'current',
       date: application.updated_at
     });
+  } else if (application.status === 'waiting_list') {
+    steps.push({
+      id: 'waiting_list',
+      title: 'On Waiting List',
+      description: 'You have been placed on our waiting list for future consideration',
+      icon: React.createElement(Clock, { className: "w-4 h-4" }),
+      status: 'current',
+      date: application.updated_at
+    });
   }
 
   return steps;
@@ -129,8 +126,10 @@ export const getStatusIcon = (status: string) => {
     case 'rejected':
       return React.createElement(XCircle, { className: "w-5 h-5 text-red-600" });
     case 'shortlisted':
-    case 'interview_scheduled':
+    case 'interviewed':
       return React.createElement(Users, { className: "w-5 h-5 text-blue-600" });
+    case 'waiting_list':
+      return React.createElement(Clock, { className: "w-5 h-5 text-orange-600" });
     default:
       return React.createElement(Clock, { className: "w-5 h-5 text-yellow-600" });
   }

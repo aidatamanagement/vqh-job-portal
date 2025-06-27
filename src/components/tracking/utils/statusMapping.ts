@@ -19,8 +19,8 @@ export const mapDbStatusToTracking = (dbStatus: string): 'waiting' | 'approved' 
     case 'application_submitted':
     case 'under_review':
     case 'shortlisted':
-    case 'interview_scheduled':
-    case 'decisioning':
+    case 'interviewed':
+    case 'waiting_list':
       return 'waiting';
     case 'hired':
       return 'approved';
@@ -39,14 +39,14 @@ export const getDisplayStatus = (dbStatus: string): string => {
       return 'Under Review';
     case 'shortlisted':
       return 'Shortlisted';
-    case 'interview_scheduled':
-      return 'Interview Scheduled';
-    case 'decisioning':
-      return 'Final Decision';
+    case 'interviewed':
+      return 'Interviewed';
     case 'hired':
       return 'Hired';
     case 'rejected':
       return 'Not Selected';
+    case 'waiting_list':
+      return 'Waiting List';
     default:
       return 'Unknown Status';
   }

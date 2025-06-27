@@ -1,12 +1,9 @@
 
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useEmailNotifications } from './useEmailNotifications';
-import { JobApplication } from '@/types';
 
 export const useStatusUpdate = () => {
   const [isUpdating, setIsUpdating] = useState(false);
-  const { sendStatusUpdateEmail } = useEmailNotifications();
 
   const updateApplicationStatus = async (
     applicationId: string,
@@ -37,36 +34,6 @@ export const useStatusUpdate = () => {
       }
 
       console.log('Application status updated successfully:', updatedApplication);
-
-      // Send status update email
-      try {
-        const emailResult = await sendStatusUpdateEmail(
-          {
-            id: updatedApplication.id,
-            jobId: updatedApplication.job_id,
-            firstName: updatedApplication.first_name,
-            lastName: updatedApplication.last_name,
-            email: updatedApplication.email,
-            phone: updatedApplication.phone || '',
-            appliedPosition: updatedApplication.applied_position,
-            cityState: updatedApplication.city_state || '',
-            earliestStartDate: updatedApplication.earliest_start_date || '',
-            coverLetter: updatedApplication.cover_letter || '',
-            additionalDocsUrls: updatedApplication.additional_docs_urls || [],
-            status: updatedApplication.status as any,
-            notes: '',
-            trackingToken: updatedApplication.tracking_token,
-            createdAt: updatedApplication.created_at || '',
-            updatedAt: updatedApplication.updated_at || '',
-          },
-          { location: updatedApplication.jobs?.location || '' }
-        );
-        
-        console.log('Status update email result:', emailResult);
-      } catch (emailError) {
-        console.error('Email sending failed but status was updated:', emailError);
-        // Don't throw here - status was updated successfully
-      }
 
       return { success: true, application: updatedApplication };
     } catch (error) {

@@ -22,10 +22,10 @@ export const getStatusBadgeVariant = (status: string) => {
     case 'rejected':
       return 'destructive';
     case 'shortlisted':
-    case 'interview_scheduled':
+    case 'interviewed':
       return 'default';
     case 'under_review':
-    case 'decisioning':
+    case 'waiting_list':
       return 'secondary';
     default:
       return 'secondary';
@@ -40,14 +40,14 @@ export const getStatusText = (status: string) => {
       return 'Under Review';
     case 'shortlisted':
       return 'Shortlisted';
-    case 'interview_scheduled':
-      return 'Interview Scheduled';
-    case 'decisioning':
-      return 'Decisioning';
+    case 'interviewed':
+      return 'Interviewed';
     case 'hired':
       return 'Hired';
     case 'rejected':
       return 'Rejected';
+    case 'waiting_list':
+      return 'Waiting List';
     default:
       return status;
   }
@@ -148,7 +148,7 @@ export const deleteApplicationFromDatabase = async (applicationId: string) => {
 
 export const updateApplicationStatusInDatabase = async (
   id: string, 
-  newStatus: 'application_submitted' | 'under_review' | 'shortlisted' | 'interview_scheduled' | 'decisioning' | 'hired' | 'rejected'
+  newStatus: 'application_submitted' | 'under_review' | 'shortlisted' | 'interviewed' | 'hired' | 'rejected' | 'waiting_list'
 ) => {
   console.log('Updating application status:', { id, newStatus });
 
