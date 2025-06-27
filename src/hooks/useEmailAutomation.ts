@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { useEmailSettings } from './useEmailSettings';
 
@@ -18,26 +17,26 @@ interface EmailVariables {
   calendlyUrl?: string;
 }
 
-// Define which statuses should trigger email notifications
+// Define which statuses should trigger email notifications - updated for new status flow
 const EMAIL_ENABLED_STATUSES = {
   'application_submitted': true,
   'under_review': true,
   'shortlisted': true,
-  'interview_scheduled': true,
-  'decisioning': true,
+  'interviewed': true,
   'hired': true,
   'rejected': true,
+  'waiting_list': true,
 } as const;
 
-// Map application statuses to email template slugs
+// Map application statuses to email template slugs - updated for new status flow
 const STATUS_TO_TEMPLATE_MAP = {
   'application_submitted': 'application_submitted',
   'under_review': 'under_review',
   'shortlisted': 'shortlisted',
-  'interview_scheduled': 'interview_scheduled',
-  'decisioning': 'decisioning',
+  'interviewed': 'interviewed',
   'hired': 'hired',
   'rejected': 'application_rejected',
+  'waiting_list': 'waiting_list',
 } as const;
 
 export const useEmailAutomation = () => {
@@ -259,7 +258,7 @@ export const useEmailAutomation = () => {
       firstName: string;
       lastName: string;
       appliedPosition: string;
-      status: 'application_submitted' | 'under_review' | 'shortlisted' | 'interview_scheduled' | 'decisioning' | 'hired' | 'rejected';
+      status: 'application_submitted' | 'under_review' | 'shortlisted' | 'interviewed' | 'hired' | 'rejected' | 'waiting_list';
     },
     job?: {
       location?: string;

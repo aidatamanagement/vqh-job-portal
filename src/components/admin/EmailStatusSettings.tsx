@@ -20,24 +20,26 @@ const EmailStatusSettings: React.FC = () => {
     setLocalSettings(settings);
   }, [settings]);
 
+  // Updated status labels for new status flow
   const statusLabels = {
     'application_submitted': 'Application Submitted',
     'under_review': 'Under Review',
     'shortlisted': 'Shortlisted',
-    'interview_scheduled': 'Interview Scheduled',
-    'decisioning': 'Final Decision',
+    'interviewed': 'Interviewed',
     'hired': 'Hired',
     'rejected': 'Rejected',
+    'waiting_list': 'Waiting List',
   };
 
+  // Updated status descriptions for new status flow
   const statusDescriptions = {
     'application_submitted': 'Confirmation email sent when application is first submitted',
     'under_review': 'Notification when application moves to review stage',
     'shortlisted': 'Congratulations email when candidate is shortlisted',
-    'interview_scheduled': 'Interview scheduling confirmation',
-    'decisioning': 'Status update during final decision phase',
+    'interviewed': 'Follow-up email after interview completion',
     'hired': 'Welcome email for successful candidates',
     'rejected': 'Professional rejection notification',
+    'waiting_list': 'Notification when candidate is placed on waiting list',
   };
 
   const handleSaveSettings = async () => {

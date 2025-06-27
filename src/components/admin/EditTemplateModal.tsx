@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import {
   Dialog,
@@ -22,6 +23,7 @@ interface EditTemplateModalProps {
   onSave: (template: EmailTemplate) => void;
 }
 
+// Updated available variables for the new status flow
 const availableVariables = [
   'firstName',
   'lastName', 
