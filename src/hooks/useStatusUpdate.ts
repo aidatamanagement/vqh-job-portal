@@ -33,6 +33,8 @@ export const useStatusUpdate = () => {
         throw fetchError;
       }
 
+      console.log('Current application data:', currentApplication);
+
       // Update the application status
       const { data: updatedApplication, error } = await supabase
         .from('job_applications')
@@ -66,12 +68,11 @@ export const useStatusUpdate = () => {
               lastName: updatedApplication.last_name,
               appliedPosition: updatedApplication.applied_position,
               status: updatedApplication.status as ApplicationStatus,
-              // Add other required fields
               jobId: updatedApplication.job_id,
-              phone: updatedApplication.phone,
-              cityState: updatedApplication.city_state,
-              coverLetter: updatedApplication.cover_letter,
-              earliestStartDate: updatedApplication.earliest_start_date,
+              phone: updatedApplication.phone || '',
+              cityState: updatedApplication.city_state || '',
+              coverLetter: updatedApplication.cover_letter || '',
+              earliestStartDate: updatedApplication.earliest_start_date || '',
               additionalDocsUrls: updatedApplication.additional_docs_urls || [],
               trackingToken: updatedApplication.tracking_token,
               createdAt: updatedApplication.created_at,

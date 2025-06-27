@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -53,14 +52,19 @@ const StatusUpdateSection: React.FC<StatusUpdateSectionProps> = ({
     if (!selectedStatus || selectedStatus === application.status || !isTransitionValid) return;
     
     try {
-      console.log('Updating status from modal:', selectedStatus);
+      console.log('Updating status from modal:', { 
+        applicationId: application.id, 
+        currentStatus: application.status, 
+        newStatus: selectedStatus 
+      });
+      
       const result = await updateApplicationStatus(application.id, selectedStatus as ApplicationStatus);
       
       if (result.success) {
         onUpdateStatus(application.id, selectedStatus as ApplicationStatus);
         
         toast({
-          title: "Status Updated",
+          title: "Status Updated Successfully",
           description: `Application status has been updated to ${getStatusText(selectedStatus)}. Email notification sent to candidate.`,
         });
         
@@ -69,8 +73,8 @@ const StatusUpdateSection: React.FC<StatusUpdateSectionProps> = ({
     } catch (error) {
       console.error('Failed to update status:', error);
       toast({
-        title: "Error",
-        description: "Failed to update application status. Please try again.",
+        title: "Update Failed",
+        description: `Failed to update application status: ${error instanceof Error ? error.message : 'Unknown error'}`,
         variant: "destructive",
       });
     }
