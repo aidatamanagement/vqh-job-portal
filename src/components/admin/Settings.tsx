@@ -26,10 +26,7 @@ import {
   Camera,
   Calendar,
   Mail,
-  Clock,
-  AlertCircle,
-  RefreshCw,
-  CheckCircle
+  Clock
 } from 'lucide-react';
 import { useAppContext } from '@/contexts/AppContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -52,9 +49,6 @@ interface AdminUser {
   admin_name: string | null;
   display_name: string | null;
   role: UserRole;
-  email_confirmed: boolean;
-  email_confirmed_at: string | null;
-  last_login_at: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -124,10 +118,10 @@ const Settings: React.FC = () => {
     setIsLoadingAdmins(true);
     
     try {
-      // Fetch all users from profiles table with email confirmation status
+      // Fetch all users from profiles table
       const { data, error } = await supabase
         .from('profiles')
-        .select('id, email, admin_name, display_name, role, email_confirmed, email_confirmed_at, last_login_at, created_at, updated_at')
+        .select('id, email, admin_name, display_name, role, created_at, updated_at')
         .order('created_at', { ascending: false });
 
       if (error) {
@@ -144,8 +138,7 @@ const Settings: React.FC = () => {
       // Cast the role field to UserRole to fix TypeScript error
       const typedUsers = (data || []).map(user => ({
         ...user,
-        role: user.role as UserRole,
-        email_confirmed: user.email_confirmed ?? false
+        role: user.role as UserRole
       }));
       setAdminList(typedUsers);
     } catch (error) {
@@ -337,39 +330,52 @@ const Settings: React.FC = () => {
     setIsLoading(true);
 
     try {
-      console.log('Creating new user via edge function:', newAdminForm.email, newAdminForm.role);
+      console.log('Creating new user via regular signup:', newAdminForm.email, newAdminForm.role);
       
-      // Use edge function to create user without affecting current session
-      const { data, error } = await supabase.functions.invoke('create-user', {
-        body: {
-          email: newAdminForm.email,
-          password: newAdminForm.password,
-          fullName: newAdminForm.fullName,
-          role: newAdminForm.role
+      // Use regular signup but with auto-confirmation
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email: newAdminForm.email,
+        password: newAdminForm.password,
+        options: {
+          data: {
+            display_name: newAdminForm.fullName,
+            admin_name: newAdminForm.fullName,
+            role: newAdminForm.role
+          }
         }
       });
 
-      if (error) {
-        console.error('Edge function error:', error);
+      if (authError) {
+        console.error('Auth error:', authError);
         toast({
           title: "Error",
-          description: error.message || "Failed to create user account",
+          description: authError.message,
           variant: "destructive",
         });
         return;
       }
 
-      if (data.error) {
-        console.error('User creation error:', data.error);
-        toast({
-          title: "Error",
-          description: data.error,
-          variant: "destructive",
-        });
-        return;
-      }
+      console.log('Auth data:', authData);
 
-      console.log('User created successfully:', data);
+      // Update profile with role and name if user was created
+      if (authData.user) {
+        console.log('Updating profile for user:', authData.user.id);
+        
+        const { error: profileError } = await supabase
+          .from('profiles')
+          .update({
+            role: newAdminForm.role,
+            admin_name: newAdminForm.fullName,
+            display_name: newAdminForm.fullName
+          })
+          .eq('id', authData.user.id);
+
+        if (profileError) {
+          console.error('Error updating profile:', profileError);
+        } else {
+          console.log('Profile updated successfully');
+        }
+      }
 
       setNewAdminForm({
         email: '',
@@ -384,59 +390,13 @@ const Settings: React.FC = () => {
 
       toast({
         title: "User Added",
-        description: `New ${newAdminForm.role} ${newAdminForm.fullName} (${newAdminForm.email}) has been added successfully. They must confirm their email before they can log in.`,
+        description: `New ${newAdminForm.role} ${newAdminForm.fullName} (${newAdminForm.email}) has been added successfully. They will need to check their email to confirm their account.`,
       });
     } catch (error) {
       console.error('Error creating user:', error);
       toast({
         title: "Error",
         description: "Failed to create user account",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const resendConfirmationEmail = async (userId: string, email: string) => {
-    setIsLoading(true);
-    
-    try {
-      const { data, error } = await supabase.functions.invoke('resend-confirmation', {
-        body: {
-          userId: userId,
-          email: email
-        }
-      });
-
-      if (error) {
-        console.error('Resend confirmation error:', error);
-        toast({
-          title: "Error",
-          description: "Failed to resend confirmation email",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      if (data.error) {
-        toast({
-          title: "Error",
-          description: data.error,
-          variant: "destructive",
-        });
-        return;
-      }
-
-      toast({
-        title: "Email Sent",
-        description: "Confirmation email has been resent successfully",
-      });
-    } catch (error) {
-      console.error('Error resending confirmation email:', error);
-      toast({
-        title: "Error",
-        description: "Failed to resend confirmation email",
         variant: "destructive",
       });
     } finally {
@@ -1069,44 +1029,14 @@ const Settings: React.FC = () => {
                               {userRoles.find(r => r.value === userItem.role)?.label || userItem.role}
                             </Badge>
                             {userItem.role === 'admin' && <Crown className="w-4 h-4 text-yellow-500" />}
-                            
-                            {/* Email Confirmation Status */}
-                            {userItem.email_confirmed ? (
-                              <div className="flex items-center space-x-1">
-                                <CheckCircle className="w-4 h-4 text-green-500" />
-                                <span className="text-xs text-green-600">Verified</span>
-                              </div>
-                            ) : (
-                              <div className="flex items-center space-x-1">
-                                <AlertCircle className="w-4 h-4 text-yellow-500" />
-                                <span className="text-xs text-yellow-600">Pending</span>
-                              </div>
-                            )}
                           </div>
                           <p className="text-sm text-gray-600">{userItem.email}</p>
-                          <div className="flex items-center space-x-4 text-xs text-gray-500 mt-1">
-                            <span>Added {new Date(userItem.created_at).toLocaleDateString()}</span>
-                            {userItem.last_login_at && (
-                              <span>Last login {new Date(userItem.last_login_at).toLocaleDateString()}</span>
-                            )}
-                          </div>
+                          <p className="text-xs text-gray-500">
+                            Added {new Date(userItem.created_at).toLocaleDateString()}
+                          </p>
                         </div>
                         
                         <div className="flex items-center space-x-2">
-                          {/* Resend Confirmation Email Button */}
-                          {!userItem.email_confirmed && (
-                            <Button
-                              onClick={() => resendConfirmationEmail(userItem.id, userItem.email)}
-                              variant="ghost"
-                              size="sm"
-                              className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
-                              disabled={isLoading}
-                              title="Resend confirmation email"
-                            >
-                              <RefreshCw className="w-4 h-4" />
-                            </Button>
-                          )}
-                          
                           {userItem.id !== user?.id && isAdmin && (
                             <>
                               <Button
