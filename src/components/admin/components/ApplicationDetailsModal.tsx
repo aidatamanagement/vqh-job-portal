@@ -9,6 +9,8 @@ import { FileText, Download, ExternalLink, Trash2 } from 'lucide-react';
 import { JobApplication } from '@/types';
 import { formatDate, getStatusBadgeVariant, getStatusText } from '../utils/submissionsUtils';
 import StatusTransitionValidator from '../StatusTransitionValidator';
+import { useStatusUpdate } from '@/hooks/useStatusUpdate';
+import { toast } from '@/hooks/use-toast';
 
 interface ApplicationDetailsModalProps {
   selectedApplication: JobApplication | null;
@@ -28,7 +30,7 @@ const ApplicationDetailsModal: React.FC<ApplicationDetailsModalProps> = ({
   deletingApplication
 }) => {
   const [selectedStatus, setSelectedStatus] = useState<string>('');
-  const [isUpdating, setIsUpdating] = useState(false);
+  const { updateApplicationStatus, isUpdating } = useStatusUpdate();
 
   if (!selectedApplication) return null;
 
@@ -62,12 +64,28 @@ const ApplicationDetailsModal: React.FC<ApplicationDetailsModalProps> = ({
   const handleStatusUpdate = async () => {
     if (!selectedStatus || selectedStatus === selectedApplication.status || !isTransitionValid) return;
     
-    setIsUpdating(true);
     try {
-      await onUpdateStatus(selectedApplication.id, selectedStatus as any);
-      setSelectedStatus(''); // Reset selection after successful update
-    } finally {
-      setIsUpdating(false);
+      console.log('Updating status from modal:', selectedStatus);
+      const result = await updateApplicationStatus(selectedApplication.id, selectedStatus);
+      
+      if (result.success) {
+        // Update the parent component
+        onUpdateStatus(selectedApplication.id, selectedStatus as any);
+        
+        toast({
+          title: "Status Updated",
+          description: `Application status has been updated to ${getStatusText(selectedStatus)}. Email notification sent to candidate.`,
+        });
+        
+        setSelectedStatus(''); // Reset selection after successful update
+      }
+    } catch (error) {
+      console.error('Failed to update status:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update application status. Please try again.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -207,7 +225,7 @@ const ApplicationDetailsModal: React.FC<ApplicationDetailsModalProps> = ({
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => onOpenFileViewer(docUrl, `Additional Document ${index + 1}`)}
+                      onClick={() => onOpenFileViviewer(docUrl, `Additional Document ${index + 1}`)}
                       className="text-xs px-2 py-1"
                     >
                       <ExternalLink className="w-3 h-3 mr-1" />
