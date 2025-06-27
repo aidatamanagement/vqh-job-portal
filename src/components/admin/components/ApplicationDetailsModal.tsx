@@ -12,6 +12,8 @@ import StatusTransitionValidator from '../StatusTransitionValidator';
 import { useStatusUpdate } from '@/hooks/useStatusUpdate';
 import { toast } from '@/hooks/use-toast';
 
+type ApplicationStatus = 'application_submitted' | 'under_review' | 'shortlisted' | 'interviewed' | 'hired' | 'rejected' | 'waiting_list';
+
 interface ApplicationDetailsModalProps {
   selectedApplication: JobApplication | null;
   onClose: () => void;
@@ -66,11 +68,11 @@ const ApplicationDetailsModal: React.FC<ApplicationDetailsModalProps> = ({
     
     try {
       console.log('Updating status from modal:', selectedStatus);
-      const result = await updateApplicationStatus(selectedApplication.id, selectedStatus);
+      const result = await updateApplicationStatus(selectedApplication.id, selectedStatus as ApplicationStatus);
       
       if (result.success) {
         // Update the parent component
-        onUpdateStatus(selectedApplication.id, selectedStatus as any);
+        onUpdateStatus(selectedApplication.id, selectedStatus as ApplicationStatus);
         
         toast({
           title: "Status Updated",
