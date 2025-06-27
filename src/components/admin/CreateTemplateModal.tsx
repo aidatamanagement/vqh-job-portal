@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import {
   Dialog,
@@ -61,30 +62,15 @@ const templatePresets = {
 <p>We look forward to speaking with you!</p>
 <p>Best regards,<br>HR Team</p>`
   },
-  'interviewed': {
-    name: 'Interview Completed - Follow Up',
-    subject: 'Thank you for interviewing for {{position}}',
-    html_body: `<h2>Thank you for your interview!</h2>
+  'interview_scheduled': {
+    name: 'Interview Scheduled',
+    subject: 'Interview Scheduled - {{position}}',
+    html_body: `<h2>Interview Scheduled</h2>
 <p>Dear {{firstName}} {{lastName}},</p>
-<p>Thank you for taking the time to interview for the <strong>{{position}}</strong> position at our {{location}} location.</p>
-<p>We were impressed with your qualifications and enjoyed learning more about your experience and career goals.</p>
-<p>We are currently reviewing all candidates and will be in touch with you regarding next steps within the next few business days.</p>
-<p>If you have any questions in the meantime, please don't hesitate to reach out.</p>
+<p>Your interview for the <strong>{{position}}</strong> position has been scheduled.</p>
+<p>Please check your email for detailed interview information including date, time, and location.</p>
 <p>Track your application: <a href="{{trackingUrl}}">View Status</a></p>
-<p>Thank you again for your time and interest in our organization.</p>
-<p>Best regards,<br>HR Team</p>`
-  },
-  'waiting_list': {
-    name: 'Application Status - Waiting List',
-    subject: 'Application Update - {{position}} at {{location}}',
-    html_body: `<h2>Application Status Update</h2>
-<p>Dear {{firstName}} {{lastName}},</p>
-<p>Thank you for your continued interest in the <strong>{{position}}</strong> position at our {{location}} location.</p>
-<p>After careful consideration of all candidates, we have decided to place your application on our waiting list for this position.</p>
-<p>This means that while we were impressed with your qualifications, we are currently moving forward with other candidates. However, should circumstances change or additional positions become available, we will contact you immediately.</p>
-<p>We encourage you to continue checking our career opportunities for other positions that may match your skills and experience.</p>
-<p>Track your application: <a href="{{trackingUrl}}">View Status</a></p>
-<p>Thank you for your patience and continued interest in our organization.</p>
+<p>We look forward to meeting with you!</p>
 <p>Best regards,<br>HR Team</p>`
   },
   'hired': {
@@ -136,8 +122,7 @@ const availableVariables = [
   'applicationDate',
   'trackingToken',
   'trackingUrl',
-  'adminUrl',
-  'calendlyUrl'
+  'adminUrl'
 ];
 
 const CreateTemplateModal: React.FC<CreateTemplateModalProps> = ({
@@ -228,16 +213,10 @@ const CreateTemplateModal: React.FC<CreateTemplateModalProps> = ({
                     <span>Shortlisted Candidate</span>
                   </div>
                 </SelectItem>
-                <SelectItem value="interviewed">
+                <SelectItem value="interview_scheduled">
                   <div className="flex items-center space-x-2">
                     <Sparkles className="w-4 h-4" />
-                    <span>Interview Completed - Follow Up</span>
-                  </div>
-                </SelectItem>
-                <SelectItem value="waiting_list">
-                  <div className="flex items-center space-x-2">
-                    <Sparkles className="w-4 h-4" />
-                    <span>Application Status - Waiting List</span>
+                    <span>Interview Scheduled</span>
                   </div>
                 </SelectItem>
                 <SelectItem value="hired">
