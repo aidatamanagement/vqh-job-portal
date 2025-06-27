@@ -2,29 +2,23 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import {
   Calendar,
-  Clock,
-  User,
-  Mail,
-  Phone,
-  MapPin,
-  ExternalLink,
   RefreshCw,
   Search,
   Filter,
   AlertTriangle,
   CheckCircle,
   Settings,
-  Plus,
+  Trash2,
   Zap
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useCalendlyApi } from '@/hooks/useCalendlyApi';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import InterviewsTable from './components/InterviewsTable';
 
 interface Interview {
   id: string;
@@ -56,6 +50,7 @@ const Interviews: React.FC = () => {
   const [isSyncing, setIsSyncing] = useState(false);
   const [isAutoSyncing, setIsAutoSyncing] = useState(false);
   const [lastAutoSync, setLastAutoSync] = useState<Date | null>(null);
+  const [isCleaningUp, setIsCleaningUp] = useState(false);
   const { toast } = useToast();
   const { getEvents, getInvitees } = useCalendlyApi();
 
@@ -174,6 +169,7 @@ const Interviews: React.FC = () => {
             city_state
           )
         `)
+        .gte('created_at', new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()) // Only last 30 days
         .order('scheduled_time', { ascending: false });
 
       if (error) {
@@ -207,6 +203,88 @@ const Interviews: React.FC = () => {
       });
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const cleanupOldInterviews = async () => {
+    setIsCleaningUp(true);
+    try {
+      const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+      
+      const { error } = await supabase
+        .from('interviews')
+        .delete()
+        .lt('created_at', thirtyDaysAgo.toISOString());
+
+      if (error) {
+        console.error('Error cleaning up old interviews:', error);
+        toast({
+          title: "Cleanup Failed",
+          description: "Failed to clean up old interviews.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      toast({
+        title: "Cleanup Complete",
+        description: "Old interview records have been removed.",
+      });
+
+      // Reload interviews after cleanup
+      await loadInterviews();
+    } catch (error) {
+      console.error('Error during cleanup:', error);
+      toast({
+        title: "Cleanup Error",
+        description: "An error occurred during cleanup.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsCleaningUp(false);
+    }
+  };
+
+  const updateInterviewStatus = async (interviewId: string, completed: boolean) => {
+    try {
+      const newStatus = completed ? 'completed' : 'scheduled';
+      
+      const { error } = await supabase
+        .from('interviews')
+        .update({ 
+          status: newStatus,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', interviewId);
+
+      if (error) {
+        console.error('Error updating interview status:', error);
+        toast({
+          title: "Update Failed",
+          description: "Failed to update interview status.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Update local state
+      setInterviews(prev => prev.map(interview => 
+        interview.id === interviewId 
+          ? { ...interview, status: newStatus }
+          : interview
+      ));
+
+      toast({
+        title: "Status Updated",
+        description: `Interview marked as ${completed ? 'completed' : 'scheduled'}.`,
+      });
+    } catch (error) {
+      console.error('Error updating interview status:', error);
+      toast({
+        title: "Update Error",
+        description: "An error occurred while updating the status.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -401,21 +479,6 @@ const Interviews: React.FC = () => {
     }
   };
 
-  const getStatusBadgeVariant = (status: string) => {
-    switch (status.toLowerCase()) {
-      case 'scheduled':
-        return 'default';
-      case 'completed':
-        return 'secondary';
-      case 'cancelled':
-        return 'destructive';
-      case 'no_show':
-        return 'outline';
-      default:
-        return 'outline';
-    }
-  };
-
   const filteredInterviews = interviews.filter(interview => {
     const matchesSearch = 
       interview.candidate_email.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -507,7 +570,7 @@ const Interviews: React.FC = () => {
           <div>
             <h1 className="font-bold text-gray-900" style={{ fontSize: '1.3rem' }}>Interviews</h1>
             <div className="flex items-center gap-2 text-sm text-gray-600">
-              <span>Auto-sync enabled with real-time updates</span>
+              <span>Showing last 30 days</span>
               {isAutoSyncing && (
                 <div className="flex items-center gap-1 text-blue-600">
                   <Zap className="w-3 h-3" />
@@ -523,18 +586,34 @@ const Interviews: React.FC = () => {
           </div>
         </div>
         
-        <Button
-          onClick={syncWithCalendly}
-          disabled={isSyncing || isAutoSyncing}
-          className="flex items-center gap-2"
-        >
-          {isSyncing ? (
-            <RefreshCw className="w-4 h-4 animate-spin" />
-          ) : (
-            <RefreshCw className="w-4 h-4" />
-          )}
-          Manual Sync
-        </Button>
+        <div className="flex gap-2">
+          <Button
+            onClick={cleanupOldInterviews}
+            disabled={isCleaningUp}
+            variant="outline"
+            className="flex items-center gap-2"
+          >
+            {isCleaningUp ? (
+              <RefreshCw className="w-4 h-4 animate-spin" />
+            ) : (
+              <Trash2 className="w-4 h-4" />
+            )}
+            Cleanup Old Records
+          </Button>
+          
+          <Button
+            onClick={syncWithCalendly}
+            disabled={isSyncing || isAutoSyncing}
+            className="flex items-center gap-2"
+          >
+            {isSyncing ? (
+              <RefreshCw className="w-4 h-4 animate-spin" />
+            ) : (
+              <RefreshCw className="w-4 h-4" />
+            )}
+            Manual Sync
+          </Button>
+        </div>
       </div>
 
       {/* Auto-sync Status Alert */}
@@ -544,8 +623,7 @@ const Interviews: React.FC = () => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-green-800 text-sm">
-                <strong>Auto-sync Active:</strong> New interviews will appear automatically when booked via Calendly. 
-                Background sync runs every 10 minutes to catch any missed events.
+                <strong>Auto-sync Active:</strong> New interviews appear automatically. Records older than 30 days are automatically cleaned up.
               </p>
             </div>
             {isAutoSyncing && (
@@ -591,140 +669,12 @@ const Interviews: React.FC = () => {
         </CardContent>
       </Card>
 
-      {/* Interviews List */}
-      <div className="space-y-4">
-        {isLoading ? (
-          <Card>
-            <CardContent className="flex justify-center items-center py-8">
-              <RefreshCw className="w-6 h-6 animate-spin mr-2" />
-              <span>Loading interviews...</span>
-            </CardContent>
-          </Card>
-        ) : filteredInterviews.length === 0 ? (
-          <Card>
-            <CardContent className="text-center py-8">
-              <Calendar className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">No Interviews Found</h3>
-              <p className="text-gray-500 mb-4">
-                {interviews.length === 0 
-                  ? "No interviews have been scheduled yet." 
-                  : "No interviews match your current filters."}
-              </p>
-              {interviews.length === 0 && (
-                <div className="text-sm text-gray-400 space-y-2">
-                  <p>Interviews are automatically created when candidates book through Calendly links or via the webhook.</p>
-                  <p>Auto-sync is active and will detect new interviews automatically.</p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        ) : (
-          filteredInterviews.map((interview) => (
-            <Card key={interview.id} className="hover:shadow-md transition-shadow">
-              <CardContent className="pt-6">
-                <div className="flex flex-col lg:flex-row gap-6">
-                  {/* Candidate Info */}
-                  <div className="flex-1">
-                    <div className="flex items-start justify-between mb-4">
-                      <div>
-                        <h3 className="text-lg font-semibold text-gray-900">
-                          {interview.first_name} {interview.last_name}
-                        </h3>
-                        <p className="text-gray-600">{interview.applied_position}</p>
-                      </div>
-                      <Badge variant={getStatusBadgeVariant(interview.status)}>
-                        {interview.status.replace('_', ' ').toUpperCase()}
-                      </Badge>
-                    </div>
-                    
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
-                      <div className="flex items-center gap-2">
-                        <Mail className="w-4 h-4 text-gray-400" />
-                        <span>{interview.candidate_email}</span>
-                      </div>
-                      
-                      {interview.phone && (
-                        <div className="flex items-center gap-2">
-                          <Phone className="w-4 h-4 text-gray-400" />
-                          <span>{interview.phone}</span>
-                        </div>
-                      )}
-                      
-                      {interview.city_state && (
-                        <div className="flex items-center gap-2">
-                          <MapPin className="w-4 h-4 text-gray-400" />
-                          <span>{interview.city_state}</span>
-                        </div>
-                      )}
-                      
-                      {interview.interviewer_email && (
-                        <div className="flex items-center gap-2">
-                          <User className="w-4 h-4 text-gray-400" />
-                          <span>Interviewer: {interview.interviewer_email}</span>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                  
-                  {/* Interview Details */}
-                  <div className="lg:w-80 space-y-3">
-                    <div className="flex items-center gap-2 text-sm">
-                      <Clock className="w-4 h-4 text-gray-400" />
-                      <span>
-                        {new Date(interview.scheduled_time).toLocaleDateString('en-US', {
-                          weekday: 'long',
-                          year: 'numeric',
-                          month: 'long',
-                          day: 'numeric',
-                        })}
-                      </span>
-                    </div>
-                    
-                    <div className="flex items-center gap-2 text-sm">
-                      <Clock className="w-4 h-4 text-gray-400" />
-                      <span>
-                        {new Date(interview.scheduled_time).toLocaleTimeString('en-US', {
-                          hour: '2-digit',
-                          minute: '2-digit',
-                        })}
-                      </span>
-                    </div>
-                    
-                    <div className="flex gap-2">
-                      {interview.meeting_url && (
-                        <Button
-                          onClick={() => window.open(interview.meeting_url, '_blank')}
-                          variant="outline"
-                          size="sm"
-                          className="flex items-center gap-2"
-                        >
-                          <ExternalLink className="w-3 h-3" />
-                          Join Meeting
-                        </Button>
-                      )}
-                      
-                      <Button
-                        onClick={() => window.open(interview.calendly_event_uri, '_blank')}
-                        variant="ghost"
-                        size="sm"
-                        className="flex items-center gap-2"
-                      >
-                        <Calendar className="w-3 h-3" />
-                        View in Calendly
-                      </Button>
-                    </div>
-                    
-                    <div className="text-xs text-gray-500">
-                      <p>Scheduled: {new Date(interview.created_at).toLocaleDateString()}</p>
-                      <p>Event ID: {interview.calendly_event_id}</p>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))
-        )}
-      </div>
+      {/* Interviews Table */}
+      <InterviewsTable
+        interviews={filteredInterviews}
+        isLoading={isLoading}
+        onUpdateStatus={updateInterviewStatus}
+      />
     </div>
   );
 };
