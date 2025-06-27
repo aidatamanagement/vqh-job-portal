@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -328,18 +329,17 @@ const Settings: React.FC = () => {
     setIsLoading(true);
 
     try {
-      console.log('Creating new user:', newAdminForm.email, newAdminForm.role);
+      console.log('Creating new user via Admin API:', newAdminForm.email, newAdminForm.role);
       
-      // Create new user account
-      const { data: authData, error: authError } = await supabase.auth.signUp({
+      // Use Admin API to create user without logging them in
+      const { data: authData, error: authError } = await supabase.auth.admin.createUser({
         email: newAdminForm.email,
         password: newAdminForm.password,
-        options: {
-          data: {
-            display_name: newAdminForm.fullName,
-            admin_name: newAdminForm.fullName,
-            role: newAdminForm.role
-          }
+        email_confirm: true, // Auto-confirm email
+        user_metadata: {
+          display_name: newAdminForm.fullName,
+          admin_name: newAdminForm.fullName,
+          role: newAdminForm.role
         }
       });
 
