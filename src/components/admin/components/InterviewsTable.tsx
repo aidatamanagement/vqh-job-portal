@@ -63,17 +63,14 @@ const InterviewsTable: React.FC<InterviewsTableProps> = ({
 
   const formatDateTime = (dateString: string) => {
     const date = new Date(dateString);
-    return {
-      date: date.toLocaleDateString('en-US', {
-        month: 'short',
-        day: 'numeric',
-        year: 'numeric',
-      }),
-      time: date.toLocaleTimeString('en-US', {
-        hour: '2-digit',
-        minute: '2-digit',
-      }),
-    };
+    return date.toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+    }) + ' at ' + date.toLocaleTimeString('en-US', {
+      hour: '2-digit',
+      minute: '2-digit',
+    });
   };
 
   const getStatusBadgeVariant = (status: string) => {
@@ -119,18 +116,18 @@ const InterviewsTable: React.FC<InterviewsTableProps> = ({
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="w-16">Status</TableHead>
+                <TableHead className="w-16">Done</TableHead>
                 <TableHead>Name</TableHead>
                 <TableHead>Position</TableHead>
                 <TableHead>Email</TableHead>
-                <TableHead>Date</TableHead>
-                <TableHead>Time</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Date & Time</TableHead>
                 <TableHead className="w-20">Details</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {interviews.map((interview) => {
-                const { date, time } = formatDateTime(interview.scheduled_time);
+                const dateTime = formatDateTime(interview.scheduled_time);
                 const isCompleted = interview.status === 'completed';
                 const isUpdating = updatingStatuses.has(interview.id);
 
@@ -155,8 +152,12 @@ const InterviewsTable: React.FC<InterviewsTableProps> = ({
                     </TableCell>
                     <TableCell>{interview.applied_position}</TableCell>
                     <TableCell>{interview.candidate_email}</TableCell>
-                    <TableCell>{date}</TableCell>
-                    <TableCell>{time}</TableCell>
+                    <TableCell>
+                      <Badge variant={getStatusBadgeVariant(interview.status)}>
+                        {interview.status.replace('_', ' ').toUpperCase()}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>{dateTime}</TableCell>
                     <TableCell>
                       <Button
                         variant="ghost"

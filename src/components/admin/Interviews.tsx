@@ -206,6 +206,40 @@ const Interviews: React.FC = () => {
     }
   };
 
+  const deleteCancelledInterviews = async () => {
+    try {
+      const { error } = await supabase
+        .from('interviews')
+        .delete()
+        .eq('status', 'cancelled');
+
+      if (error) {
+        console.error('Error deleting cancelled interviews:', error);
+        toast({
+          title: "Deletion Failed",
+          description: "Failed to delete cancelled interviews.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      toast({
+        title: "Deletion Complete",
+        description: "All cancelled interviews have been removed.",
+      });
+
+      // Reload interviews after deletion
+      await loadInterviews();
+    } catch (error) {
+      console.error('Error during deletion:', error);
+      toast({
+        title: "Deletion Error",
+        description: "An error occurred during deletion.",
+        variant: "destructive",
+      });
+    }
+  };
+
   const cleanupOldInterviews = async () => {
     setIsCleaningUp(true);
     try {
@@ -587,6 +621,15 @@ const Interviews: React.FC = () => {
         </div>
         
         <div className="flex gap-2">
+          <Button
+            onClick={deleteCancelledInterviews}
+            variant="outline"
+            className="flex items-center gap-2 text-red-600 hover:text-red-700 hover:bg-red-50"
+          >
+            <Trash2 className="w-4 h-4" />
+            Delete Cancelled
+          </Button>
+          
           <Button
             onClick={cleanupOldInterviews}
             disabled={isCleaningUp}
