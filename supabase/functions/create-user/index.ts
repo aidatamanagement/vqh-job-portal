@@ -40,15 +40,20 @@ serve(async (req) => {
       );
     }
 
-    // Create user using admin client
+    // Generate the site URL for email confirmation
+    const siteUrl = supabaseUrl.replace('.supabase.co', '.supabase.co');
+    const confirmUrl = `${siteUrl}/auth/confirm`;
+
+    // Create user using admin client with email confirmation required
     const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
       email,
       password,
-      email_confirm: true, // Auto-confirm the email
+      email_confirm: false, // Require email confirmation
       user_metadata: {
         display_name: fullName,
         admin_name: fullName,
-        role: role
+        role: role,
+        full_name: fullName
       }
     });
 
@@ -81,7 +86,8 @@ serve(async (req) => {
       .update({
         role: role,
         admin_name: fullName,
-        display_name: fullName
+        display_name: fullName,
+        email_confirmed: false
       })
       .eq('id', authData.user.id);
 
@@ -92,6 +98,35 @@ serve(async (req) => {
       console.log('Profile updated successfully');
     }
 
+    // Send welcome email with login instructions
+    try {
+      const loginUrl = `${siteUrl.replace('supabase.co', 'supabase.co')}/admin/login`;
+      
+      const { error: emailError } = await supabaseAdmin.functions.invoke('send-email', {
+        body: {
+          templateSlug: 'new-user-welcome',
+          recipientEmail: email,
+          variables: {
+            fullName: fullName,
+            email: email,
+            role: role,
+            temporaryPassword: 'Please check your email for login instructions',
+            loginUrl: loginUrl
+          }
+        }
+      });
+
+      if (emailError) {
+        console.error('Welcome email error:', emailError);
+        // Continue even if email fails
+      } else {
+        console.log('Welcome email sent successfully');
+      }
+    } catch (emailError) {
+      console.error('Failed to send welcome email:', emailError);
+      // Continue even if email fails
+    }
+
     return new Response(
       JSON.stringify({ 
         success: true, 
@@ -99,8 +134,11 @@ serve(async (req) => {
           id: authData.user.id,
           email: authData.user.email,
           role: role,
-          fullName: fullName
-        }
+          fullName: fullName,
+          emailConfirmed: false,
+          requiresConfirmation: true
+        },
+        message: 'User created successfully. They will receive an email confirmation link.'
       }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
