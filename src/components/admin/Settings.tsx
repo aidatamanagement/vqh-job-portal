@@ -104,6 +104,7 @@ const Settings: React.FC = () => {
   ];
 
   const canManageUsers = hasPermission(userProfile?.role as UserRole, 'canManageUsers');
+  const isAdmin = userProfile?.role === 'admin';
 
   // Fetch admin users on component mount
   useEffect(() => {
@@ -458,6 +459,16 @@ const Settings: React.FC = () => {
       return;
     }
 
+    // Only allow admins to remove users
+    if (!isAdmin) {
+      toast({
+        title: "Permission Denied",
+        description: "Only administrators can remove users",
+        variant: "destructive",
+      });
+      return;
+    }
+
     if (window.confirm(`Are you sure you want to remove user ${userEmail}?`)) {
       setIsLoading(true);
       
@@ -499,6 +510,16 @@ const Settings: React.FC = () => {
   };
 
   const startEditUser = (userToEdit: AdminUser) => {
+    // Only allow admins to edit users
+    if (!isAdmin) {
+      toast({
+        title: "Permission Denied",
+        description: "Only administrators can edit users",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setEditingUser(userToEdit);
     setEditUserForm({
       fullName: userToEdit.admin_name || userToEdit.display_name || '',
@@ -828,121 +849,123 @@ const Settings: React.FC = () => {
         {canManageUsers && (
           <TabsContent value="users" className="space-y-6">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* Add New User */}
-              <Card className="p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-                  <UserPlus className="w-5 h-5 mr-2 text-primary" />
-                  Add New User
-                </h3>
-                
-                <form onSubmit={addNewUser} className="space-y-4">
-                  <div>
-                    <Label htmlFor="newUserRole">Role *</Label>
-                    <Select 
-                      value={newAdminForm.role} 
-                      onValueChange={(value: UserRole) => handleNewAdminInputChange('role', value)}
+              {/* Add New User - Only show for admins */}
+              {isAdmin && (
+                <Card className="p-6">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                    <UserPlus className="w-5 h-5 mr-2 text-primary" />
+                    Add New User
+                  </h3>
+                  
+                  <form onSubmit={addNewUser} className="space-y-4">
+                    <div>
+                      <Label htmlFor="newUserRole">Role *</Label>
+                      <Select 
+                        value={newAdminForm.role} 
+                        onValueChange={(value: UserRole) => handleNewAdminInputChange('role', value)}
+                      >
+                        <SelectTrigger className="mt-1">
+                          <SelectValue placeholder="Select role" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {userRoles.map((role) => (
+                            <SelectItem key={role.value} value={role.value}>
+                              <div className="flex items-center justify-between w-full">
+                                <span>{role.label}</span>
+                                {role.value === 'admin' && <Crown className="w-4 h-4 text-yellow-500 ml-2" />}
+                              </div>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <p className="text-xs text-gray-500 mt-1">
+                        {userRoles.find(r => r.value === newAdminForm.role)?.description}
+                      </p>
+                    </div>
+
+                    <div>
+                      <Label htmlFor="fullName">Full Name *</Label>
+                      <Input
+                        id="fullName"
+                        type="text"
+                        value={newAdminForm.fullName}
+                        onChange={(e) => handleNewAdminInputChange('fullName', e.target.value)}
+                        className="mt-1"
+                        placeholder="Enter user's full name"
+                        disabled={isLoading}
+                      />
+                    </div>
+
+                    <div>
+                      <Label htmlFor="newUserEmail">Email Address *</Label>
+                      <Input
+                        id="newUserEmail"
+                        type="email"
+                        value={newAdminForm.email}
+                        onChange={(e) => handleNewAdminInputChange('email', e.target.value)}
+                        className="mt-1"
+                        placeholder="user@hospicecare.com"
+                        disabled={isLoading}
+                      />
+                    </div>
+
+                    <div>
+                      <Label htmlFor="newUserPassword">Password *</Label>
+                      <div className="relative mt-1">
+                        <Input
+                          id="newUserPassword"
+                          type={showAdminPassword ? 'text' : 'password'}
+                          value={newAdminForm.password}
+                          onChange={(e) => handleNewAdminInputChange('password', e.target.value)}
+                          className="pr-10"
+                          placeholder="Minimum 8 characters"
+                          disabled={isLoading}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowAdminPassword(!showAdminPassword)}
+                          className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                        >
+                          {showAdminPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                        </button>
+                      </div>
+                    </div>
+
+                    <div>
+                      <Label htmlFor="newUserConfirmPassword">Confirm Password *</Label>
+                      <div className="relative mt-1">
+                        <Input
+                          id="newUserConfirmPassword"
+                          type={showAdminConfirmPassword ? 'text' : 'password'}
+                          value={newAdminForm.confirmPassword}
+                          onChange={(e) => handleNewAdminInputChange('confirmPassword', e.target.value)}
+                          className="pr-10"
+                          disabled={isLoading}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowAdminConfirmPassword(!showAdminConfirmPassword)}
+                          className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                        >
+                          {showAdminConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                        </button>
+                      </div>
+                    </div>
+
+                    <Button 
+                      type="submit" 
+                      className="w-full bg-primary hover:bg-primary/90"
+                      disabled={isLoading}
                     >
-                      <SelectTrigger className="mt-1">
-                        <SelectValue placeholder="Select role" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {userRoles.map((role) => (
-                          <SelectItem key={role.value} value={role.value}>
-                            <div className="flex items-center justify-between w-full">
-                              <span>{role.label}</span>
-                              {role.value === 'admin' && <Crown className="w-4 h-4 text-yellow-500 ml-2" />}
-                            </div>
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <p className="text-xs text-gray-500 mt-1">
-                      {userRoles.find(r => r.value === newAdminForm.role)?.description}
-                    </p>
-                  </div>
-
-                  <div>
-                    <Label htmlFor="fullName">Full Name *</Label>
-                    <Input
-                      id="fullName"
-                      type="text"
-                      value={newAdminForm.fullName}
-                      onChange={(e) => handleNewAdminInputChange('fullName', e.target.value)}
-                      className="mt-1"
-                      placeholder="Enter user's full name"
-                      disabled={isLoading}
-                    />
-                  </div>
-
-                  <div>
-                    <Label htmlFor="newUserEmail">Email Address *</Label>
-                    <Input
-                      id="newUserEmail"
-                      type="email"
-                      value={newAdminForm.email}
-                      onChange={(e) => handleNewAdminInputChange('email', e.target.value)}
-                      className="mt-1"
-                      placeholder="user@hospicecare.com"
-                      disabled={isLoading}
-                    />
-                  </div>
-
-                  <div>
-                    <Label htmlFor="newUserPassword">Password *</Label>
-                    <div className="relative mt-1">
-                      <Input
-                        id="newUserPassword"
-                        type={showAdminPassword ? 'text' : 'password'}
-                        value={newAdminForm.password}
-                        onChange={(e) => handleNewAdminInputChange('password', e.target.value)}
-                        className="pr-10"
-                        placeholder="Minimum 8 characters"
-                        disabled={isLoading}
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowAdminPassword(!showAdminPassword)}
-                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                      >
-                        {showAdminPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                      </button>
-                    </div>
-                  </div>
-
-                  <div>
-                    <Label htmlFor="newUserConfirmPassword">Confirm Password *</Label>
-                    <div className="relative mt-1">
-                      <Input
-                        id="newUserConfirmPassword"
-                        type={showAdminConfirmPassword ? 'text' : 'password'}
-                        value={newAdminForm.confirmPassword}
-                        onChange={(e) => handleNewAdminInputChange('confirmPassword', e.target.value)}
-                        className="pr-10"
-                        disabled={isLoading}
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowAdminConfirmPassword(!showAdminConfirmPassword)}
-                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                      >
-                        {showAdminConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                      </button>
-                    </div>
-                  </div>
-
-                  <Button 
-                    type="submit" 
-                    className="w-full bg-primary hover:bg-primary/90"
-                    disabled={isLoading}
-                  >
-                    <Plus className="w-4 h-4 mr-2" />
-                    {isLoading ? 'Adding...' : 'Add User'}
-                  </Button>
-                </form>
-              </Card>
+                      <Plus className="w-4 h-4 mr-2" />
+                      {isLoading ? 'Adding...' : 'Add User'}
+                    </Button>
+                  </form>
+                </Card>
+              )}
 
               {/* Current Users */}
-              <Card className="p-6">
+              <Card className={`p-6 ${isAdmin ? '' : 'lg:col-span-2'}`}>
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="text-lg font-semibold text-gray-900 flex items-center">
                     <Users className="w-5 h-5 mr-2 text-primary" />
@@ -1014,7 +1037,7 @@ const Settings: React.FC = () => {
                         </div>
                         
                         <div className="flex items-center space-x-2">
-                          {userItem.id !== user?.id && (
+                          {userItem.id !== user?.id && isAdmin && (
                             <>
                               <Button
                                 onClick={() => startEditUser(userItem)}
@@ -1044,8 +1067,8 @@ const Settings: React.FC = () => {
               </Card>
             </div>
 
-            {/* Edit User Modal */}
-            {editingUser && (
+            {/* Edit User Modal - Only show for admins */}
+            {editingUser && isAdmin && (
               <Card className="p-6">
                 <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
                   <Edit className="w-5 h-5 mr-2 text-primary" />
