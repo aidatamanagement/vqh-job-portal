@@ -10,6 +10,8 @@ interface SubmissionsFiltersProps {
   setSearchTerm: (term: string) => void;
   positionFilter: string;
   setPositionFilter: (filter: string) => void;
+  statusFilter: string;
+  setStatusFilter: (filter: string) => void;
   uniquePositions: string[];
 }
 
@@ -18,13 +20,16 @@ const SubmissionsFilters: React.FC<SubmissionsFiltersProps> = ({
   setSearchTerm,
   positionFilter,
   setPositionFilter,
+  statusFilter,
+  setStatusFilter,
   uniquePositions
 }) => {
-  const hasActiveFilters = searchTerm !== '' || positionFilter !== 'all';
+  const hasActiveFilters = searchTerm !== '' || positionFilter !== 'all' || statusFilter !== 'all';
 
   const clearAllFilters = () => {
     setSearchTerm('');
     setPositionFilter('all');
+    setStatusFilter('all');
   };
 
   return (
@@ -44,13 +49,29 @@ const SubmissionsFilters: React.FC<SubmissionsFiltersProps> = ({
 
         <Select value={positionFilter} onValueChange={setPositionFilter}>
           <SelectTrigger className="w-full sm:w-48">
-            <SelectValue placeholder="Filter by position" />
+            <SelectValue placeholder="All Positions" />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Positions</SelectItem>
             {uniquePositions.map(position => (
               <SelectItem key={position} value={position}>{position}</SelectItem>
             ))}
+          </SelectContent>
+        </Select>
+
+        <Select value={statusFilter} onValueChange={setStatusFilter}>
+          <SelectTrigger className="w-full sm:w-48">
+            <SelectValue placeholder="All Statuses" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Statuses</SelectItem>
+            <SelectItem value="application_submitted">Application Submitted</SelectItem>
+            <SelectItem value="under_review">Under Review</SelectItem>
+            <SelectItem value="shortlisted">Shortlisted</SelectItem>
+            <SelectItem value="interviewed">Interviewed</SelectItem>
+            <SelectItem value="hired">Hired</SelectItem>
+            <SelectItem value="rejected">Rejected</SelectItem>
+            <SelectItem value="waiting_list">Waiting List</SelectItem>
           </SelectContent>
         </Select>
 

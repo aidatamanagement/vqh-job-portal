@@ -72,13 +72,14 @@ const Submissions: React.FC = () => {
         setSearchTerm={setSearchTerm}
         positionFilter={positionFilter}
         setPositionFilter={setPositionFilter}
+        statusFilter={statusFilter}
+        setStatusFilter={setStatusFilter}
         uniquePositions={uniquePositions}
       />
 
-      {/* Status Tabs with Counts */}
+      {/* Submissions Table */}
       <SubmissionsStatusTabs
         statusFilter={statusFilter}
-        setStatusFilter={setStatusFilter}
         filteredSubmissions={filteredSubmissions}
         onViewApplication={setSelectedApplication}
         onDeleteApplication={handleDeleteApplication}
