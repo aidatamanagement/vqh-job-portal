@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -101,6 +100,7 @@ const Settings: React.FC = () => {
     { label: 'HR Manager', value: 'hr', description: 'People and visit management' },
     { label: 'Trainer', value: 'trainer', description: 'Training content management' },
     { label: 'Content Manager', value: 'content_manager', description: 'Content and media management' },
+    { label: 'User', value: 'user', description: 'Basic user access' },
   ];
 
   const canManageUsers = hasPermission(userProfile?.role as UserRole, 'canManageUsers');
@@ -117,11 +117,10 @@ const Settings: React.FC = () => {
     setIsLoadingAdmins(true);
     
     try {
-      // Fetch all users with admin roles and above (not regular 'user' role)
+      // Fetch all users from profiles table
       const { data, error } = await supabase
         .from('profiles')
         .select('id, email, admin_name, display_name, role, created_at, updated_at')
-        .in('role', ['admin', 'recruiter', 'hr', 'trainer', 'content_manager'])
         .order('created_at', { ascending: false });
 
       if (error) {
