@@ -12,9 +12,7 @@ import {
   CheckCircle,
   Settings,
   Trash2,
-  Zap,
-  Users,
-  Clock
+  Zap
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -245,12 +243,16 @@ const Interviews: React.FC = () => {
   const cleanupOldInterviews = async () => {
     setIsCleaningUp(true);
     try {
-      const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+      // Calculate 12 hours ago from current time
+      const twelveHoursAgo = new Date(Date.now() - 12 * 60 * 60 * 1000);
+      
+      console.log('Cleaning up old scheduled and cancelled interviews...');
+      console.log('Cutoff time (12 hours ago):', twelveHoursAgo.toISOString());
       
       const { error } = await supabase
         .from('interviews')
         .delete()
-        .lt('created_at', thirtyDaysAgo.toISOString());
+        .or(`and(scheduled_time.lt.${twelveHoursAgo.toISOString()},status.eq.scheduled),and(scheduled_time.lt.${twelveHoursAgo.toISOString()},status.eq.cancelled)`);
 
       if (error) {
         console.error('Error cleaning up old interviews:', error);
@@ -264,7 +266,7 @@ const Interviews: React.FC = () => {
 
       toast({
         title: "Cleanup Complete",
-        description: "Old interview records have been removed.",
+        description: "Old scheduled and cancelled interviews have been removed.",
       });
 
       // Reload interviews after cleanup
@@ -394,11 +396,17 @@ const Interviews: React.FC = () => {
         return;
       }
 
-      console.log(`Found ${eventsResult.events.length} Calendly events for ${isAutoSync ? 'auto-' : ''}sync`);
+      // Filter out events older than current time
+      const currentTime = new Date();
+      const futureEvents = eventsResult.events.filter(event => 
+        new Date(event.start_time) >= currentTime
+      );
+
+      console.log(`Found ${eventsResult.events.length} total Calendly events, ${futureEvents.length} future events for ${isAutoSync ? 'auto-' : ''}sync`);
       let syncedCount = 0;
       let updatedCount = 0;
 
-      for (const event of eventsResult.events) {
+      for (const event of futureEvents) {
         try {
           // Extract event ID from URI
           const eventId = event.uri.split('/').pop();
@@ -500,7 +508,7 @@ const Interviews: React.FC = () => {
       } else if (!isAutoSync) {
         toast({
           title: "Sync Complete",
-          description: `Found ${eventsResult.events.length} Calendly events, but none could be processed (missing job applications)`,
+          description: `Found ${futureEvents.length} future Calendly events, but none could be processed (missing job applications)`,
           variant: "default",
         });
       }
@@ -613,7 +621,7 @@ const Interviews: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      {/* Enhanced Header with Stats */}
+      {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-3">
           <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
@@ -622,18 +630,7 @@ const Interviews: React.FC = () => {
           <div>
             <h1 className="font-bold text-gray-900" style={{ fontSize: '1.3rem' }}>Scheduled Interviews</h1>
             <div className="flex items-center gap-4 text-sm text-gray-600">
-              <div className="flex items-center gap-1">
-                <Users className="w-4 h-4" />
-                <span>{stats.total} total</span>
-              </div>
-              <div className="flex items-center gap-1">
-                <Clock className="w-4 h-4" />
-                <span>{stats.scheduled} scheduled</span>
-              </div>
-              <div className="flex items-center gap-1">
-                <CheckCircle className="w-4 h-4" />
-                <span>{stats.completed} completed</span>
-              </div>
+              <span>{interviews.length} total interviews</span>
               {isAutoSyncing && (
                 <div className="flex items-center gap-1 text-blue-600">
                   <Zap className="w-3 h-3" />
@@ -651,15 +648,6 @@ const Interviews: React.FC = () => {
         
         <div className="flex gap-2">
           <Button
-            onClick={deleteCancelledInterviews}
-            variant="outline"
-            className="flex items-center gap-2 text-red-600 hover:text-red-700 hover:bg-red-50"
-          >
-            <Trash2 className="w-4 h-4" />
-            Delete Cancelled
-          </Button>
-          
-          <Button
             onClick={cleanupOldInterviews}
             disabled={isCleaningUp}
             variant="outline"
@@ -670,7 +658,7 @@ const Interviews: React.FC = () => {
             ) : (
               <Trash2 className="w-4 h-4" />
             )}
-            Cleanup Old Records
+            Cleanup
           </Button>
           
           <Button
@@ -683,7 +671,7 @@ const Interviews: React.FC = () => {
             ) : (
               <RefreshCw className="w-4 h-4" />
             )}
-            Manual Sync
+            Manual Scan
           </Button>
         </div>
       </div>
@@ -695,7 +683,7 @@ const Interviews: React.FC = () => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-green-800 text-sm">
-                <strong>Auto-sync Active:</strong> New interviews appear automatically. Records older than 30 days are automatically cleaned up.
+                <strong>Auto-sync Active:</strong> New interviews appear automatically. Manual scan fetches only future events.
               </p>
             </div>
             {isAutoSyncing && (
@@ -708,7 +696,7 @@ const Interviews: React.FC = () => {
         </AlertDescription>
       </Alert>
 
-      {/* Enhanced Filters */}
+      {/* Filters */}
       <Card>
         <CardContent className="pt-6">
           <div className="flex flex-col sm:flex-row gap-4">
@@ -741,7 +729,7 @@ const Interviews: React.FC = () => {
         </CardContent>
       </Card>
 
-      {/* Enhanced Interviews Table */}
+      {/* Interviews Table */}
       <InterviewsTable
         interviews={filteredInterviews}
         isLoading={isLoading}
