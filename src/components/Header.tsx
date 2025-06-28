@@ -50,20 +50,20 @@ const Header: React.FC = () => {
             <h1 className="text-xl md:text-2xl font-bold text-gray-900">ViaQuest Hospice</h1>
             <p className="text-xs md:text-sm text-gray-600">Compassionate Career Opportunities</p>
           </div>
-          <div className="sm:hidden">
+          <div className="block sm:hidden">
             <h1 className="text-lg font-bold text-gray-900">ViaQuest Hospice</h1>
           </div>
         </div>
 
         {/* Authentication Controls */}
-        <div className="flex items-center space-x-2 md:space-x-4">
+        <div className="flex items-center justify-center space-x-2 md:space-x-4">
           {isAuthenticated ? (
             <>
               {/* Mobile Menu for Authenticated Users */}
               <div className="md:hidden">
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="outline" size="sm">
+                    <Button variant="outline" size="sm" className="flex items-center justify-center">
                       <Menu className="w-4 h-4" />
                     </Button>
                   </DropdownMenuTrigger>
@@ -86,7 +86,7 @@ const Header: React.FC = () => {
               <div className="hidden md:flex items-center space-x-4">
                 {/* Admin Access */}
                 {userProfile?.role === 'admin' && (
-                  <Button variant="outline" size="sm" onClick={handleAdminClick} className="flex items-center space-x-2">
+                  <Button variant="outline" size="sm" onClick={handleAdminClick} className="flex items-center justify-center space-x-2">
                     <Settings className="w-4 h-4" />
                     <span className="hidden lg:inline">
                       {userProfile?.display_name || userProfile?.email || 'Admin'}
@@ -96,14 +96,14 @@ const Header: React.FC = () => {
                 )}
 
                 {/* Logout Button */}
-                <Button variant="outline" size="sm" onClick={handleLogout} className="flex items-center space-x-2 hover:bg-red-50 hover:border-red-200 hover:text-red-700">
+                <Button variant="outline" size="sm" onClick={handleLogout} className="flex items-center justify-center space-x-2 hover:bg-red-50 hover:border-red-200 hover:text-red-700">
                   <LogOut className="w-4 h-4" />
                   <span className="hidden lg:inline">Logout</span>
                 </Button>
               </div>
             </>
           ) : (
-            <Button onClick={handleAdminLoginClick} className="bg-primary hover:bg-primary/90 flex items-center space-x-2 text-sm md:text-base px-3 md:px-4 py-2">
+            <Button onClick={handleAdminLoginClick} className="bg-primary hover:bg-primary/90 flex items-center justify-center space-x-2 text-sm md:text-base px-3 md:px-4 py-2">
               <Lock className="w-4 h-4" />
               <span className="hidden sm:inline">Admin Login</span>
               <span className="sm:hidden">Login</span>
