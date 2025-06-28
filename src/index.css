@@ -416,41 +416,18 @@ body {
   margin: 2rem 0;
 }
 
-/* Improved line break and empty paragraph handling */
+/* Line breaks */
 .job-description-content br {
-  display: block;
-  margin: 0.5rem 0;
-  content: "";
+  line-height: 1.7;
 }
 
-/* Handle empty paragraphs - convert them to line breaks */
+/* Handle empty paragraphs with line breaks */
 .job-description-content p:empty {
-  display: block;
-  height: 1rem;
-  margin: 0;
+  margin-bottom: 1rem;
 }
 
-.job-description-content p:empty::before {
-  content: "";
-  display: block;
-  height: 1rem;
-}
-
-/* Handle paragraphs with only br tags */
 .job-description-content p br:only-child {
-  display: block;
-  margin: 0.5rem 0;
-}
-
-/* Remove excessive spacing between consecutive empty paragraphs */
-.job-description-content p:empty + p:empty {
-  display: none;
-}
-
-/* Ensure proper spacing between content and line breaks */
-.job-description-content p + br,
-.job-description-content br + p {
-  margin-top: 0.5rem;
+  line-height: 2;
 }
 
 /* Spinner animation */
