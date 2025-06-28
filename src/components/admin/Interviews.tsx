@@ -396,7 +396,7 @@ const Interviews: React.FC = () => {
 
       console.log(`Found ${eventsResult.events.length} Calendly events for ${isAutoSync ? 'auto-' : ''}sync`);
       let syncedCount = 0;
-      let skippedCount = 0;
+      let updatedCount = 0;
 
       for (const event of eventsResult.events) {
         try {
@@ -404,19 +404,6 @@ const Interviews: React.FC = () => {
           const eventId = event.uri.split('/').pop();
           if (!eventId) {
             console.warn('Could not extract event ID from URI:', event.uri);
-            skippedCount++;
-            continue;
-          }
-
-          // Check if interview already exists
-          const { data: existingInterview } = await supabase
-            .from('interviews')
-            .select('id')
-            .eq('calendly_event_id', eventId)
-            .single();
-
-          if (existingInterview) {
-            skippedCount++;
             continue;
           }
 
@@ -424,7 +411,6 @@ const Interviews: React.FC = () => {
           const inviteesResult = await getInvitees(event.uri);
           
           if (!inviteesResult.success || !inviteesResult.invitees || inviteesResult.invitees.length === 0) {
-            skippedCount++;
             continue;
           }
 
@@ -439,45 +425,66 @@ const Interviews: React.FC = () => {
             .limit(1);
 
           if (appError || !applications || applications.length === 0) {
-            skippedCount++;
             continue;
           }
 
           const application = applications[0];
 
-          // Create interview record
-          const { data: interview, error: interviewError } = await supabase
+          // Check if interview already exists
+          const { data: existingInterview } = await supabase
             .from('interviews')
-            .insert({
-              application_id: application.id,
-              calendly_event_id: eventId,
-              calendly_event_uri: event.uri,
-              candidate_email: invitee.email,
-              interviewer_email: null,
-              scheduled_time: event.start_time,
-              meeting_url: event.location?.join_url || null,
-              status: event.status === 'active' ? 'scheduled' : event.status,
-            })
-            .select()
+            .select('id, status, scheduled_time')
+            .eq('calendly_event_id', eventId)
             .single();
 
-          if (interviewError) {
-            console.error(`Error creating interview for event ${eventId}:`, interviewError);
-            skippedCount++;
-            continue;
-          }
+          if (existingInterview) {
+            // Update existing interview with latest data from Calendly
+            const { error: updateError } = await supabase
+              .from('interviews')
+              .update({
+                scheduled_time: event.start_time,
+                meeting_url: event.location?.join_url || null,
+                status: event.status === 'active' ? 'scheduled' : event.status,
+                updated_at: new Date().toISOString()
+              })
+              .eq('id', existingInterview.id);
 
-          console.log(`Successfully synced interview for event ${eventId}`);
-          syncedCount++;
+            if (!updateError) {
+              updatedCount++;
+              console.log(`Updated existing interview for event ${eventId}`);
+            }
+          } else {
+            // Create new interview record
+            const { data: interview, error: interviewError } = await supabase
+              .from('interviews')
+              .insert({
+                application_id: application.id,
+                calendly_event_id: eventId,
+                calendly_event_uri: event.uri,
+                candidate_email: invitee.email,
+                interviewer_email: null,
+                scheduled_time: event.start_time,
+                meeting_url: event.location?.join_url || null,
+                status: event.status === 'active' ? 'scheduled' : event.status,
+              })
+              .select()
+              .single();
+
+            if (!interviewError) {
+              syncedCount++;
+              console.log(`Successfully synced new interview for event ${eventId}`);
+            }
+          }
 
         } catch (eventError) {
           console.error(`Error processing event ${event.uri}:`, eventError);
-          skippedCount++;
         }
       }
 
-      if (syncedCount > 0) {
-        const message = `${isAutoSync ? 'Auto-synced' : 'Synced'} ${syncedCount} new interviews from Calendly${skippedCount > 0 ? `. ${skippedCount} events were skipped.` : '.'}`;
+      const totalProcessed = syncedCount + updatedCount;
+      
+      if (totalProcessed > 0) {
+        const message = `${isAutoSync ? 'Auto-synced' : 'Synced'} ${totalProcessed} interviews from Calendly (${syncedCount} new, ${updatedCount} updated)`;
         
         if (!isAutoSync) {
           toast({
@@ -488,14 +495,12 @@ const Interviews: React.FC = () => {
           console.log(message);
         }
         
-        // Reload interviews to show new records
+        // Reload interviews to show updated records
         await loadInterviews();
       } else if (!isAutoSync) {
         toast({
           title: "Sync Complete",
-          description: skippedCount > 0 
-            ? `Found ${eventsResult.events.length} Calendly events, but ${skippedCount} were skipped (already exist or missing data)`
-            : `Found ${eventsResult.events.length} Calendly events, but none could be synced`,
+          description: `Found ${eventsResult.events.length} Calendly events, but none could be processed (missing job applications)`,
           variant: "default",
         });
       }
