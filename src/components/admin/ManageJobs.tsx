@@ -18,7 +18,7 @@ const ManageJobs: React.FC = () => {
   const [filterStatus, setFilterStatus] = useState('all');
   const [editingJob, setEditingJob] = useState<Job | null>(null);
   const [previewingJob, setPreviewingJob] = useState<Job | null>(null);
-  const [jobForm, setJobForm] = useState<Partial<Job>>({});
+  const [jobForm, setJobForm] = useState<Partial<Job> & { customFacility?: string }>({});
 
   // Check if any filters are active
   const hasActiveFilters = searchTerm !== '' || filterPosition !== 'all' || filterLocation !== 'all' || filterStatus !== 'all';
