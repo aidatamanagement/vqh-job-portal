@@ -21,8 +21,6 @@ import {
   Crown,
   Search,
   Filter,
-  Check,
-  X,
   Camera,
   Calendar,
   Mail,
@@ -32,7 +30,7 @@ import { useAppContext } from '@/contexts/AppContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { UserRole } from '@/types';
-import { getRolePermissions, hasPermission } from '@/utils/rolePermissions';
+import { hasPermission } from '@/utils/rolePermissions';
 import CalendlySettings from './CalendlySettings';
 import {
   Dialog,
@@ -85,13 +83,13 @@ const Settings: React.FC = () => {
     password: '',
     confirmPassword: '',
     fullName: '',
-    role: 'admin' as UserRole,
+    role: 'recruiter' as UserRole,
   });
 
   // Edit user form state
   const [editUserForm, setEditUserForm] = useState({
     fullName: '',
-    role: 'admin' as UserRole,
+    role: 'recruiter' as UserRole,
   });
 
   const userRoles: { label: string; value: UserRole; description: string }[] = [
@@ -100,7 +98,6 @@ const Settings: React.FC = () => {
     { label: 'HR Manager', value: 'hr', description: 'People and visit management' },
     { label: 'Trainer', value: 'trainer', description: 'Training content management' },
     { label: 'Content Manager', value: 'content_manager', description: 'Content and media management' },
-    { label: 'User', value: 'user', description: 'Basic user access' },
   ];
 
   const canManageUsers = hasPermission(userProfile?.role as UserRole, 'canManageUsers');
@@ -421,7 +418,7 @@ const Settings: React.FC = () => {
         password: '',
         confirmPassword: '',
         fullName: '',
-        role: 'admin',
+        role: 'recruiter',
       });
 
       // Refresh user list
@@ -512,10 +509,10 @@ const Settings: React.FC = () => {
       setIsLoading(true);
       
       try {
-        // Update the profile role to 'user' instead of deleting
+        // Update the profile role to 'recruiter' instead of deleting
         const { error } = await supabase
           .from('profiles')
-          .update({ role: 'user' })
+          .update({ role: 'recruiter' })
           .eq('id', userId);
 
         if (error) {
