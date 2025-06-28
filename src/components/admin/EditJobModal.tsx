@@ -13,17 +13,19 @@ import {
   AlertTriangle,
   Clock
 } from 'lucide-react';
-import { Job, JobPosition, JobLocation } from '@/types';
+import { Job, JobPosition, JobLocation, JobFacility } from '@/types';
 
 interface EditJobModalProps {
   editingJob: Job | null;
-  jobForm: Partial<Job>;
+  jobForm: Partial<Job> & { customFacility?: string };
   positions: JobPosition[];
   locations: JobLocation[];
+  facilities: JobFacility[];
   onClose: () => void;
   onInputChange: (field: string, value: string | string[] | boolean) => void;
   onFacilityToggle: (facility: string) => void;
   onSave: () => void;
+  onAddCustomFacility?: () => void;
 }
 
 const EditJobModal: React.FC<EditJobModalProps> = ({
@@ -31,13 +33,13 @@ const EditJobModal: React.FC<EditJobModalProps> = ({
   jobForm,
   positions,
   locations,
+  facilities,
   onClose,
   onInputChange,
   onFacilityToggle,
   onSave,
+  onAddCustomFacility,
 }) => {
-  const defaultFacilities = ['Full-time', 'Part-time', 'Remote', 'Flexible Schedule', 'Benefits', 'Training Provided'];
-
   return (
     <Dialog open={!!editingJob} onOpenChange={onClose}>
       <DialogContent className="w-[95vw] max-w-3xl max-h-[90vh] overflow-y-auto mx-auto">
@@ -149,43 +151,64 @@ const EditJobModal: React.FC<EditJobModalProps> = ({
 
             <div>
               <Label className="text-sm font-medium">Employment Type & Benefits</Label>
-              <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                {defaultFacilities.map((facility) => (
-                  <div key={facility} className="flex items-center space-x-2">
-                    <Checkbox
-                      id={`edit-${facility}`}
-                      checked={(jobForm.facilities || []).includes(facility)}
-                      onCheckedChange={() => onFacilityToggle(facility)}
-                    />
-                    <Label htmlFor={`edit-${facility}`} className="text-sm">
-                      {facility}
-                    </Label>
-                  </div>
-                ))}
-              </div>
-
-              {(jobForm.facilities || []).length > 0 && (
-                <div className="flex flex-wrap gap-2 mt-3">
-                  {(jobForm.facilities || []).map((facility) => (
-                    <Badge
-                      key={facility}
-                      variant="secondary"
-                      className="bg-primary/10 text-primary border-primary/20 flex items-center gap-1 text-xs"
-                    >
-                      {facility}
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        className="h-auto p-0 ml-1 hover:bg-transparent"
-                        onClick={() => onFacilityToggle(facility)}
-                      >
-                        <X className="w-3 h-3" />
-                      </Button>
-                    </Badge>
+              <div className="mt-3 space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                  {facilities.map((facility) => (
+                    <div key={facility.id} className="flex items-center space-x-2">
+                      <Checkbox
+                        id={`edit-${facility.id}`}
+                        checked={(jobForm.facilities || []).includes(facility.name)}
+                        onCheckedChange={() => onFacilityToggle(facility.name)}
+                      />
+                      <Label htmlFor={`edit-${facility.id}`} className="text-sm">
+                        {facility.name}
+                      </Label>
+                    </div>
                   ))}
                 </div>
-              )}
+
+                {/* Custom facility */}
+                <div className="flex space-x-2">
+                  <Input
+                    value={jobForm.customFacility || ''}
+                    onChange={(e) => onInputChange('customFacility', e.target.value)}
+                    placeholder="Add custom benefit or requirement"
+                    className="flex-1"
+                  />
+                  <Button
+                    type="button"
+                    onClick={onAddCustomFacility}
+                    variant="outline"
+                    size="sm"
+                    disabled={!jobForm.customFacility?.trim()}
+                  >
+                    Add
+                  </Button>
+                </div>
+
+                {(jobForm.facilities || []).length > 0 && (
+                  <div className="flex flex-wrap gap-2 mt-3">
+                    {(jobForm.facilities || []).map((facility) => (
+                      <Badge
+                        key={facility}
+                        variant="secondary"
+                        className="bg-primary/10 text-primary border-primary/20 flex items-center gap-1 text-xs"
+                      >
+                        {facility}
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="h-auto p-0 ml-1 hover:bg-transparent"
+                          onClick={() => onFacilityToggle(facility)}
+                        >
+                          <X className="w-3 h-3" />
+                        </Button>
+                      </Badge>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
 
             <div className="flex flex-col sm:flex-row justify-end space-y-2 sm:space-y-0 sm:space-x-4 pt-4 sm:pt-6 border-t">
