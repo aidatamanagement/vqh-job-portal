@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -172,7 +171,6 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
       icon: Plus,
       color: 'bg-blue-500 hover:bg-blue-600',
       onClick: () => onNavigate('post-job'),
-      description: 'Create a new job posting',
       permission: 'canManageJobs' as const
     },
     {
@@ -180,7 +178,6 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
       icon: Eye,
       color: 'bg-green-500 hover:bg-green-600',
       onClick: () => onNavigate('submissions'),
-      description: 'Check pending applications',
       permission: 'canViewApplications' as const
     },
     {
@@ -188,7 +185,6 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
       icon: UserPlus,
       color: 'bg-purple-500 hover:bg-purple-600',
       onClick: () => onNavigate('salespeople'),
-      description: 'Manage sales team',
       permission: 'canManageSalespeople' as const
     },
     {
@@ -196,7 +192,6 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
       icon: Video,
       color: 'bg-orange-500 hover:bg-orange-600',
       onClick: () => onNavigate('training-videos'),
-      description: 'Add training content',
       permission: 'canManageTrainingVideos' as const
     },
   ];
@@ -222,7 +217,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
       {quickActions.length > 0 && (
         <Card className="w-full">
           <CardHeader>
-            <CardTitle className="flex items-center">
+            <CardTitle className="flex items-center text-lg">
               <Target className="w-5 h-5 mr-2" />
               Quick Actions
             </CardTitle>
@@ -242,7 +237,6 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
                       <Icon className="w-5 h-5" />
                       <div className="text-left">
                         <div className="font-medium">{action.label}</div>
-                        <div className="text-xs opacity-90">{action.description}</div>
                       </div>
                     </div>
                   </Button>
