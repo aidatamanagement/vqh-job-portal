@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -164,70 +165,6 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
     });
   }
 
-  // Generate recent activities based on permissions
-  const generateRecentActivities = () => {
-    const activities = [];
-
-    // Add recent job activities
-    if (permissions.canManageJobs) {
-      const recentJobs = jobs.slice(0, 2).map(job => ({
-        type: 'job',
-        title: `New job posted: ${job.title}`,
-        subtitle: job.location,
-        time: new Date(job.createdAt).toLocaleDateString(),
-        icon: Briefcase,
-        color: 'text-blue-600',
-        bg: 'bg-blue-50',
-      }));
-      activities.push(...recentJobs);
-    }
-
-    // Add recent applications
-    if (permissions.canViewApplications) {
-      const recentApplications = applications.slice(0, 2).map(app => ({
-        type: 'application',
-        title: app.status === 'hired' ? `Application hired: ${app.firstName} ${app.lastName}` : `New application received: ${app.firstName} ${app.lastName}`,
-        subtitle: app.appliedPosition,
-        time: new Date(app.createdAt).toLocaleDateString(),
-        icon: app.status === 'hired' ? CheckCircle : FileText,
-        color: app.status === 'hired' ? 'text-green-600' : 'text-indigo-600',
-        bg: app.status === 'hired' ? 'bg-green-50' : 'bg-indigo-50',
-      }));
-      activities.push(...recentApplications);
-    }
-
-    // Add recent visit logs
-    if (permissions.canViewVisitLogs) {
-      const recentVisits = visitLogs.slice(0, 2).map(visit => ({
-        type: 'visit',
-        title: 'Sales visit completed',
-        subtitle: `${visit.salesperson_name} at ${visit.location_name}`,
-        time: new Date(visit.visit_date).toLocaleDateString(),
-        icon: MapPin,
-        color: 'text-purple-600',
-        bg: 'bg-purple-50',
-      }));
-      activities.push(...recentVisits);
-    }
-
-    // Add training activities
-    if (permissions.canViewTrainingVideos && trainingVideos.length > 0) {
-      activities.push({
-        type: 'training',
-        title: 'New training video added',
-        subtitle: trainingVideos[0].title,
-        time: new Date(trainingVideos[0].created_at).toLocaleDateString(),
-        icon: Award,
-        color: 'text-orange-600',
-        bg: 'bg-orange-50',
-      });
-    }
-
-    return activities.slice(0, 5); // Return only the 5 most recent
-  };
-
-  const recentActivities = generateRecentActivities();
-
   // Filter quick actions based on permissions
   const allQuickActions = [
     {
@@ -280,6 +217,41 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
           </p>
         </div>
       </div>
+
+      {/* Quick Actions - Moved after page title with full width */}
+      {quickActions.length > 0 && (
+        <Card className="w-full">
+          <CardHeader>
+            <CardTitle className="flex items-center">
+              <Target className="w-5 h-5 mr-2" />
+              Quick Actions
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+              {quickActions.map((action, index) => {
+                const Icon = action.icon;
+                return (
+                  <Button
+                    key={index}
+                    onClick={action.onClick}
+                    className={`justify-start h-auto p-4 ${action.color} text-white`}
+                    variant="default"
+                  >
+                    <div className="flex items-center space-x-3">
+                      <Icon className="w-5 h-5" />
+                      <div className="text-left">
+                        <div className="font-medium">{action.label}</div>
+                        <div className="text-xs opacity-90">{action.description}</div>
+                      </div>
+                    </div>
+                  </Button>
+                );
+              })}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Summary Cards */}
       {summaryCards.length > 0 && (
@@ -339,114 +311,6 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
               </CardContent>
             </Card>
           ))}
-        </div>
-      )}
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Recent Activity */}
-        {recentActivities.length > 0 && (
-          <Card className="lg:col-span-2">
-            <CardHeader className="flex flex-row items-center justify-between">
-              <CardTitle className="flex items-center">
-                <Clock className="w-5 h-5 mr-2" />
-                Recent Activity
-              </CardTitle>
-              {permissions.canViewApplications && (
-                <Button variant="ghost" size="sm" onClick={() => onNavigate('submissions')}>
-                  View All
-                </Button>
-              )}
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {recentActivities.map((activity, index) => {
-                  const Icon = activity.icon;
-                  return (
-                    <div key={index} className="flex items-start space-x-4 p-3 rounded-lg hover:bg-gray-50 transition-colors">
-                      <div className={`p-2 rounded-full ${activity.bg}`}>
-                        <Icon className={`w-4 h-4 ${activity.color}`} />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-gray-900">{activity.title}</p>
-                        <p className="text-xs text-gray-600 mt-1">{activity.subtitle}</p>
-                        <p className="text-xs text-gray-500 mt-1">{activity.time}</p>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Quick Actions */}
-        {quickActions.length > 0 && (
-          <Card className={recentActivities.length === 0 ? "lg:col-span-3" : ""}>
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <Target className="w-5 h-5 mr-2" />
-                Quick Actions
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                {quickActions.map((action, index) => {
-                  const Icon = action.icon;
-                  return (
-                    <Button
-                      key={index}
-                      onClick={action.onClick}
-                      className={`w-full justify-start h-auto p-4 ${action.color} text-white`}
-                      variant="default"
-                    >
-                      <div className="flex items-center space-x-3">
-                        <Icon className="w-5 h-5" />
-                        <div className="text-left">
-                          <div className="font-medium">{action.label}</div>
-                          <div className="text-xs opacity-90">{action.description}</div>
-                        </div>
-                      </div>
-                    </Button>
-                  );
-                })}
-              </div>
-            </CardContent>
-          </Card>
-        )}
-      </div>
-
-      {/* Charts Placeholder - Only show if user has relevant permissions */}
-      {(permissions.canViewApplications || permissions.canManageJobs) && (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <Card className="lg:col-span-2">
-            <CardHeader>
-              <CardTitle>Application Trends (Last 30 Days)</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="h-64 flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-50 rounded-lg border-2 border-dashed border-blue-200">
-                <div className="text-center">
-                  <TrendingUp className="w-12 h-12 text-blue-400 mx-auto mb-3" />
-                  <p className="text-gray-600 font-medium">Interactive Line Chart</p>
-                  <p className="text-sm text-gray-500">Applications over time with trend analysis</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Job Categories</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="h-64 flex items-center justify-center bg-gradient-to-br from-green-50 to-emerald-50 rounded-lg border-2 border-dashed border-green-200">
-                <div className="text-center">
-                  <Building className="w-12 h-12 text-green-400 mx-auto mb-3" />
-                  <p className="text-gray-600 font-medium">Pie Chart</p>
-                  <p className="text-sm text-gray-500">Job distribution by category</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
         </div>
       )}
     </div>
