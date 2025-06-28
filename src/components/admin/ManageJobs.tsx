@@ -11,7 +11,7 @@ import EditJobModal from './EditJobModal';
 import JobPreviewModal from './JobPreviewModal';
 
 const ManageJobs: React.FC = () => {
-  const { jobs, applications, positions, locations, updateJob, deleteJob, isDataLoading } = useAppContext();
+  const { jobs, applications, positions, locations, facilities, updateJob, deleteJob, isDataLoading } = useAppContext();
   const [searchTerm, setSearchTerm] = useState('');
   const [filterPosition, setFilterPosition] = useState('all');
   const [filterLocation, setFilterLocation] = useState('all');
@@ -271,6 +271,7 @@ const ManageJobs: React.FC = () => {
         jobForm={jobForm}
         positions={positions}
         locations={locations}
+        facilities={facilities}
         onClose={() => setEditingJob(null)}
         onInputChange={handleJobInputChange}
         onFacilityToggle={handleFacilityToggle}
