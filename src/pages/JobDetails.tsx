@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, MapPin, Calendar, Clock, Users, AlertTriangle, Briefcase } from 'lucide-react';
+import { ArrowLeft, MapPin, Calendar, Clock, Users, AlertTriangle, Briefcase, Info } from 'lucide-react';
 import { useAppContext } from '@/contexts/AppContext';
 import ApplicationModal from '@/components/ApplicationModal';
 import Header from '@/components/Header';
@@ -185,9 +185,9 @@ const JobDetails: React.FC = () => {
                       </div>}
                     
                     <div className="flex items-start space-x-3">
-                      <Clock className="w-5 h-5 text-primary mt-0.5" />
+                      <Info className="w-5 h-5 text-primary mt-0.5" />
                       <div>
-                        <p className="text-sm font-medium text-gray-900">Employment Type</p>
+                        <p className="text-sm font-medium text-gray-900">Position Information</p>
                         <div className="flex flex-wrap gap-1 mt-1">
                           {job.facilities.map((facility, index) => <Badge key={index} variant="outline" className="text-xs border-gray-300">
                               {facility}
