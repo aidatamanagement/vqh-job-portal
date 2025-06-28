@@ -226,7 +226,7 @@ body {
 .job-description-content h5,
 .job-description-content h6 {
   font-weight: 600;
-  margin-top: 1.75rem;
+  margin-top: 0.75rem;
   margin-bottom: 1rem;
   color: #111827;
   line-height: 1.4;
@@ -260,7 +260,7 @@ body {
 }
 
 .job-description-content p {
-  margin-bottom: 1.25rem;
+  margin-bottom: 0;
   line-height: 1.7;
 }
 
@@ -305,7 +305,7 @@ body {
 }
 
 .job-description-content li {
-  margin-bottom: 0.5rem;
+  margin-bottom: 0;
   line-height: 1.7;
   padding-left: 0.25rem;
 }
