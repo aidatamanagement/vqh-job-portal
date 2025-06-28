@@ -110,26 +110,8 @@ export const getRolePermissions = (role: UserRole): RolePermissions => {
         canManageContent: true,
       };
     
-    case 'user':
-      return {
-        canManageJobs: false,
-        canViewApplications: false,
-        canManageApplications: false,
-        canManageSalespeople: false,
-        canViewSalespeople: false,
-        canManageVisitLogs: false,
-        canViewVisitLogs: false,
-        canManageTrainingVideos: false,
-        canViewTrainingVideos: false,
-        canManageEmailSettings: false,
-        canViewEmailLogs: false,
-        canManageUsers: false,
-        canViewDashboard: false,
-        canManageContent: false,
-      };
-    
     default:
-      // Default to minimal permissions
+      // Default to minimal permissions for any undefined role
       return {
         canManageJobs: false,
         canViewApplications: false,

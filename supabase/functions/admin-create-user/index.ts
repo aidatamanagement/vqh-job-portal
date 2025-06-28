@@ -40,6 +40,19 @@ serve(async (req) => {
       )
     }
 
+    // Validate role is one of the allowed values
+    const allowedRoles = ['admin', 'recruiter', 'hr', 'trainer', 'content_manager'];
+    const role = user_metadata?.role || 'recruiter';
+    if (!allowedRoles.includes(role)) {
+      return new Response(
+        JSON.stringify({ error: 'Invalid role specified' }),
+        { 
+          status: 400, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      )
+    }
+
     // Create user using admin API
     const { data: user, error: createError } = await supabaseAdmin.auth.admin.createUser({
       email,
@@ -63,7 +76,7 @@ serve(async (req) => {
       const { error: profileError } = await supabaseAdmin
         .from('profiles')
         .update({
-          role: user_metadata.role || 'user',
+          role: role,
           admin_name: user_metadata.admin_name,
           display_name: user_metadata.display_name
         })
