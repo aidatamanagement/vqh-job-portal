@@ -12,7 +12,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Eye, RefreshCw } from 'lucide-react';
+import { Eye, RefreshCw, Github, Linkedin, MapPin, Clock, User } from 'lucide-react';
 import InterviewDetailsModal from './InterviewDetailsModal';
 
 interface Interview {
@@ -63,14 +63,29 @@ const InterviewsTable: React.FC<InterviewsTableProps> = ({
 
   const formatDateTime = (dateString: string) => {
     const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric',
-    }) + ' at ' + date.toLocaleTimeString('en-US', {
+    const now = new Date();
+    const isToday = date.toDateString() === now.toDateString();
+    const isTomorrow = date.toDateString() === new Date(now.getTime() + 24 * 60 * 60 * 1000).toDateString();
+    
+    let datePrefix = '';
+    if (isToday) {
+      datePrefix = 'Today';
+    } else if (isTomorrow) {
+      datePrefix = 'Tomorrow';
+    } else {
+      datePrefix = date.toLocaleDateString('en-US', {
+        weekday: 'short',
+        month: 'short',
+        day: 'numeric',
+      });
+    }
+    
+    const timeString = date.toLocaleTimeString('en-US', {
       hour: '2-digit',
       minute: '2-digit',
     });
+    
+    return `${datePrefix} at ${timeString}`;
   };
 
   const getStatusBadgeVariant = (status: string) => {
@@ -88,12 +103,29 @@ const InterviewsTable: React.FC<InterviewsTableProps> = ({
     }
   };
 
+  const getStatusColor = (status: string) => {
+    switch (status.toLowerCase()) {
+      case 'scheduled':
+        return 'text-blue-600';
+      case 'completed':
+        return 'text-green-600';
+      case 'cancelled':
+        return 'text-red-600';
+      case 'no_show':
+        return 'text-orange-600';
+      default:
+        return 'text-gray-600';
+    }
+  };
+
   if (isLoading) {
     return (
       <Card>
-        <CardContent className="flex justify-center items-center py-8">
-          <RefreshCw className="w-6 h-6 animate-spin mr-2" />
-          <span>Loading interviews...</span>
+        <CardContent className="flex justify-center items-center py-12">
+          <div className="flex flex-col items-center space-y-4">
+            <RefreshCw className="w-8 h-8 animate-spin text-primary" />
+            <p className="text-gray-600">Loading scheduled interviews...</p>
+          </div>
         </CardContent>
       </Card>
     );
@@ -102,8 +134,39 @@ const InterviewsTable: React.FC<InterviewsTableProps> = ({
   if (interviews.length === 0) {
     return (
       <Card>
-        <CardContent className="text-center py-8">
-          <p className="text-gray-500">No interviews found.</p>
+        <CardContent className="text-center py-12">
+          <div className="space-y-4">
+            <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto">
+              <Clock className="w-8 h-8 text-gray-400" />
+            </div>
+            <div>
+              <h3 className="text-lg font-medium text-gray-900 mb-2">No upcoming interviews</h3>
+              <p className="text-gray-500 max-w-md mx-auto">
+                When interviews are scheduled through Calendly, they'll appear here automatically. 
+                The system syncs every 10 minutes to keep everything up to date.
+              </p>
+            </div>
+            <div className="flex justify-center space-x-4 pt-4">
+              <a 
+                href="https://github.com" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="flex items-center space-x-2 text-gray-600 hover:text-gray-900 transition-colors"
+              >
+                <Github className="w-5 h-5" />
+                <span>GitHub</span>
+              </a>
+              <a 
+                href="https://linkedin.com" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="flex items-center space-x-2 text-gray-600 hover:text-gray-900 transition-colors"
+              >
+                <Linkedin className="w-5 h-5" />
+                <span>LinkedIn</span>
+              </a>
+            </div>
+          </div>
         </CardContent>
       </Card>
     );
@@ -113,65 +176,99 @@ const InterviewsTable: React.FC<InterviewsTableProps> = ({
     <>
       <Card>
         <CardContent className="p-0">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-16">Done</TableHead>
-                <TableHead>Name</TableHead>
-                <TableHead>Position</TableHead>
-                <TableHead>Email</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Date & Time</TableHead>
-                <TableHead className="w-20">Details</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {interviews.map((interview) => {
-                const dateTime = formatDateTime(interview.scheduled_time);
-                const isCompleted = interview.status === 'completed';
-                const isUpdating = updatingStatuses.has(interview.id);
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="w-16">Done</TableHead>
+                  <TableHead>Interview Details</TableHead>
+                  <TableHead className="hidden md:table-cell">Position</TableHead>
+                  <TableHead className="hidden lg:table-cell">Contact</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Scheduled Time</TableHead>
+                  <TableHead className="w-20">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {interviews.map((interview) => {
+                  const dateTime = formatDateTime(interview.scheduled_time);
+                  const isCompleted = interview.status === 'completed';
+                  const isUpdating = updatingStatuses.has(interview.id);
+                  const candidateName = `${interview.first_name || ''} ${interview.last_name || ''}`.trim() || 'Unknown Candidate';
 
-                return (
-                  <TableRow key={interview.id}>
-                    <TableCell>
-                      <div className="flex items-center space-x-2">
-                        <Checkbox
-                          checked={isCompleted}
-                          disabled={isUpdating}
-                          onCheckedChange={(checked) => 
-                            handleStatusChange(interview, checked as boolean)
-                          }
-                        />
-                        {isUpdating && (
-                          <RefreshCw className="w-3 h-3 animate-spin" />
-                        )}
-                      </div>
-                    </TableCell>
-                    <TableCell className="font-medium">
-                      {interview.first_name} {interview.last_name}
-                    </TableCell>
-                    <TableCell>{interview.applied_position}</TableCell>
-                    <TableCell>{interview.candidate_email}</TableCell>
-                    <TableCell>
-                      <Badge variant={getStatusBadgeVariant(interview.status)}>
-                        {interview.status.replace('_', ' ').toUpperCase()}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>{dateTime}</TableCell>
-                    <TableCell>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setSelectedInterview(interview)}
-                      >
-                        <Eye className="w-4 h-4" />
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
+                  return (
+                    <TableRow key={interview.id} className="hover:bg-gray-50">
+                      <TableCell>
+                        <div className="flex items-center space-x-2">
+                          <Checkbox
+                            checked={isCompleted}
+                            disabled={isUpdating}
+                            onCheckedChange={(checked) => 
+                              handleStatusChange(interview, checked as boolean)
+                            }
+                          />
+                          {isUpdating && (
+                            <RefreshCw className="w-3 h-3 animate-spin" />
+                          )}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="space-y-1">
+                          <div className="flex items-center space-x-2">
+                            <User className="w-4 h-4 text-gray-400" />
+                            <span className="font-medium text-gray-900">{candidateName}</span>
+                          </div>
+                          <div className="text-sm text-gray-600">
+                            {interview.candidate_email}
+                          </div>
+                          {interview.city_state && (
+                            <div className="flex items-center space-x-1 text-xs text-gray-500">
+                              <MapPin className="w-3 h-3" />
+                              <span>{interview.city_state}</span>
+                            </div>
+                          )}
+                        </div>
+                      </TableCell>
+                      <TableCell className="hidden md:table-cell">
+                        <span className="text-sm font-medium text-gray-900">
+                          {interview.applied_position || 'Not specified'}
+                        </span>
+                      </TableCell>
+                      <TableCell className="hidden lg:table-cell">
+                        <div className="text-sm text-gray-600">
+                          {interview.phone && (
+                            <div>{interview.phone}</div>
+                          )}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant={getStatusBadgeVariant(interview.status)}>
+                          {interview.status.replace('_', ' ').toUpperCase()}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <div className="text-sm">
+                          <div className="font-medium text-gray-900">{dateTime}</div>
+                          <div className="text-xs text-gray-500">
+                            {new Date(interview.scheduled_time).toLocaleDateString()}
+                          </div>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setSelectedInterview(interview)}
+                        >
+                          <Eye className="w-4 h-4" />
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          </div>
         </CardContent>
       </Card>
 

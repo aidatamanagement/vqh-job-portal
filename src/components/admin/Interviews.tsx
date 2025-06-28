@@ -12,7 +12,9 @@ import {
   CheckCircle,
   Settings,
   Trash2,
-  Zap
+  Zap,
+  Users,
+  Clock
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -524,6 +526,15 @@ const Interviews: React.FC = () => {
     return matchesSearch && matchesStatus;
   });
 
+  const getInterviewStats = () => {
+    const scheduled = interviews.filter(i => i.status === 'scheduled').length;
+    const completed = interviews.filter(i => i.status === 'completed').length;
+    const total = interviews.length;
+    return { scheduled, completed, total };
+  };
+
+  const stats = getInterviewStats();
+
   if (isCheckingConfig) {
     return (
       <div className="space-y-6">
@@ -532,7 +543,8 @@ const Interviews: React.FC = () => {
             <Calendar className="w-6 h-6 text-white" />
           </div>
           <div>
-            <h1 className="font-bold text-gray-900" style={{ fontSize: '1.3rem' }}>Interviews</h1>
+            <h1 className="font-bold text-gray-900" style={{ fontSize: '1.3rem' }}>Scheduled Interviews</h1>
+            <p className="text-sm text-gray-600">Loading interview configuration...</p>
           </div>
         </div>
         
@@ -554,7 +566,8 @@ const Interviews: React.FC = () => {
             <Calendar className="w-6 h-6 text-white" />
           </div>
           <div>
-            <h1 className="font-bold text-gray-900" style={{ fontSize: '1.3rem' }}>Interviews</h1>
+            <h1 className="font-bold text-gray-900" style={{ fontSize: '1.3rem' }}>Scheduled Interviews</h1>
+            <p className="text-sm text-gray-600">Calendly integration required</p>
           </div>
         </div>
 
@@ -595,16 +608,27 @@ const Interviews: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
+      {/* Enhanced Header with Stats */}
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-3">
           <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
             <Calendar className="w-6 h-6 text-white" />
           </div>
           <div>
-            <h1 className="font-bold text-gray-900" style={{ fontSize: '1.3rem' }}>Interviews</h1>
-            <div className="flex items-center gap-2 text-sm text-gray-600">
-              <span>Showing last 30 days</span>
+            <h1 className="font-bold text-gray-900" style={{ fontSize: '1.3rem' }}>Scheduled Interviews</h1>
+            <div className="flex items-center gap-4 text-sm text-gray-600">
+              <div className="flex items-center gap-1">
+                <Users className="w-4 h-4" />
+                <span>{stats.total} total</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <Clock className="w-4 h-4" />
+                <span>{stats.scheduled} scheduled</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <CheckCircle className="w-4 h-4" />
+                <span>{stats.completed} completed</span>
+              </div>
               {isAutoSyncing && (
                 <div className="flex items-center gap-1 text-blue-600">
                   <Zap className="w-3 h-3" />
@@ -679,7 +703,7 @@ const Interviews: React.FC = () => {
         </AlertDescription>
       </Alert>
 
-      {/* Filters */}
+      {/* Enhanced Filters */}
       <Card>
         <CardContent className="pt-6">
           <div className="flex flex-col sm:flex-row gap-4">
@@ -712,7 +736,7 @@ const Interviews: React.FC = () => {
         </CardContent>
       </Card>
 
-      {/* Interviews Table */}
+      {/* Enhanced Interviews Table */}
       <InterviewsTable
         interviews={filteredInterviews}
         isLoading={isLoading}
