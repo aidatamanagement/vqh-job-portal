@@ -124,6 +124,20 @@ const ManageJobs: React.FC = () => {
     setJobForm(prev => ({ ...prev, facilities: newFacilities }));
   };
 
+  const handleAddCustomFacility = () => {
+    const customFacility = jobForm.customFacility?.trim();
+    if (customFacility) {
+      const currentFacilities = jobForm.facilities || [];
+      if (!currentFacilities.includes(customFacility)) {
+        setJobForm(prev => ({ 
+          ...prev, 
+          facilities: [...currentFacilities, customFacility],
+          customFacility: ''
+        }));
+      }
+    }
+  };
+
   const saveJobChanges = async () => {
     if (!editingJob || !jobForm.title || !jobForm.description || !jobForm.position || !jobForm.location) {
       toast({
@@ -276,6 +290,7 @@ const ManageJobs: React.FC = () => {
         onInputChange={handleJobInputChange}
         onFacilityToggle={handleFacilityToggle}
         onSave={saveJobChanges}
+        onAddCustomFacility={handleAddCustomFacility}
       />
 
       {/* Job Preview Modal */}
