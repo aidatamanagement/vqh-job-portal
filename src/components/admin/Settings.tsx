@@ -330,14 +330,14 @@ const Settings: React.FC = () => {
     setIsLoading(true);
 
     try {
-      console.log('Creating new user via regular signup:', newAdminForm.email, newAdminForm.role);
+      console.log('Creating new user via admin function:', newAdminForm.email, newAdminForm.role);
       
-      // Use regular signup but with auto-confirmation
-      const { data: authData, error: authError } = await supabase.auth.signUp({
-        email: newAdminForm.email,
-        password: newAdminForm.password,
-        options: {
-          data: {
+      // Use the admin function to create user without auto-login
+      const { data, error } = await supabase.functions.invoke('admin-create-user', {
+        body: {
+          email: newAdminForm.email,
+          password: newAdminForm.password,
+          user_metadata: {
             display_name: newAdminForm.fullName,
             admin_name: newAdminForm.fullName,
             role: newAdminForm.role
@@ -345,35 +345,74 @@ const Settings: React.FC = () => {
         }
       });
 
-      if (authError) {
-        console.error('Auth error:', authError);
+      if (error) {
+        console.error('Function error:', error);
         toast({
           title: "Error",
-          description: authError.message,
+          description: error.message || "Failed to create user account",
           variant: "destructive",
         });
         return;
       }
 
-      console.log('Auth data:', authData);
+      console.log('User created successfully:', data);
 
-      // Update profile with role and name if user was created
-      if (authData.user) {
-        console.log('Updating profile for user:', authData.user.id);
+      // If the edge function doesn't exist, fall back to regular signup but immediately sign out
+      if (error && error.message.includes('not found')) {
+        console.log('Admin function not found, using fallback method');
         
-        const { error: profileError } = await supabase
-          .from('profiles')
-          .update({
-            role: newAdminForm.role,
-            admin_name: newAdminForm.fullName,
-            display_name: newAdminForm.fullName
-          })
-          .eq('id', authData.user.id);
+        // Store current session
+        const { data: currentSession } = await supabase.auth.getSession();
+        
+        // Create user with regular signup
+        const { data: authData, error: authError } = await supabase.auth.signUp({
+          email: newAdminForm.email,
+          password: newAdminForm.password,
+          options: {
+            data: {
+              display_name: newAdminForm.fullName,
+              admin_name: newAdminForm.fullName,
+              role: newAdminForm.role
+            }
+          }
+        });
 
-        if (profileError) {
-          console.error('Error updating profile:', profileError);
-        } else {
-          console.log('Profile updated successfully');
+        if (authError) {
+          console.error('Auth error:', authError);
+          toast({
+            title: "Error",
+            description: authError.message,
+            variant: "destructive",
+          });
+          return;
+        }
+
+        // Immediately sign out the new user and restore admin session
+        await supabase.auth.signOut();
+        
+        // Restore the admin session
+        if (currentSession.session) {
+          await supabase.auth.setSession(currentSession.session);
+        }
+
+        // Update profile with role and name if user was created
+        if (authData.user) {
+          console.log('Updating profile for user:', authData.user.id);
+          
+          const { error: profileError } = await supabase
+            .from('profiles')
+            .update({
+              role: newAdminForm.role,
+              admin_name: newAdminForm.fullName,
+              display_name: newAdminForm.fullName
+            })
+            .eq('id', authData.user.id);
+
+          if (profileError) {
+            console.error('Error updating profile:', profileError);
+          } else {
+            console.log('Profile updated successfully');
+          }
         }
       }
 
@@ -390,7 +429,7 @@ const Settings: React.FC = () => {
 
       toast({
         title: "User Added",
-        description: `New ${newAdminForm.role} ${newAdminForm.fullName} (${newAdminForm.email}) has been added successfully. They will need to check their email to confirm their account.`,
+        description: `New ${newAdminForm.role} ${newAdminForm.fullName} (${newAdminForm.email}) has been added successfully.`,
       });
     } catch (error) {
       console.error('Error creating user:', error);
