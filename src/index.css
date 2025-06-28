@@ -267,27 +267,6 @@ body {
   margin-bottom: 0;
 }
 
-/* Remove empty paragraphs and convert to line breaks */
-.job-description-content p:empty {
-  display: none;
-}
-
-.job-description-content p:empty + p {
-  margin-top: 1.25rem;
-}
-
-/* Handle paragraphs that only contain <br> */
-.job-description-content p br:only-child {
-  display: block;
-  margin: 0.625rem 0;
-  content: "";
-}
-
-.job-description-content p:has(br:only-child) {
-  margin-bottom: 0;
-  line-height: 1;
-}
-
 /* Enhanced list styling */
 .job-description-content ul,
 .job-description-content ol {
@@ -436,12 +415,12 @@ body {
   margin: 2rem 0;
 }
 
-/* Line breaks - properly handle br tags */
+/* Line breaks - handle br tags properly */
 .job-description-content br {
-  line-height: 1.7;
   display: block;
-  margin: 0.5rem 0;
+  margin: 0.625rem 0;
   content: "";
+  line-height: 1;
 }
 
 /* Spinner animation */

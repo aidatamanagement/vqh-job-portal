@@ -39,12 +39,23 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
     'color', 'background'
   ];
 
+  // Process content to replace empty paragraphs with line breaks
+  const handleContentChange = (content: string) => {
+    // Replace empty paragraphs with line breaks
+    const processedContent = content
+      .replace(/<p><br><\/p>/g, '<br>')
+      .replace(/<p><\/p>/g, '<br>')
+      .replace(/<p>\s*<\/p>/g, '<br>');
+    
+    onChange(processedContent);
+  };
+
   return (
     <div className={cn("rich-text-editor", className)}>
       <ReactQuill
         theme="snow"
         value={value}
-        onChange={onChange}
+        onChange={handleContentChange}
         modules={modules}
         formats={formats}
         placeholder={placeholder}
