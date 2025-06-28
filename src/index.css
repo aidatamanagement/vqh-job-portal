@@ -1,3 +1,4 @@
+
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 @tailwind base;
 @tailwind components;
@@ -415,12 +416,18 @@ body {
   margin: 2rem 0;
 }
 
-/* Line breaks - handle br tags properly */
+/* Line breaks */
 .job-description-content br {
-  display: block;
-  margin: 0.625rem 0;
-  content: "";
-  line-height: 1;
+  line-height: 1.7;
+}
+
+/* Handle empty paragraphs with line breaks */
+.job-description-content p:empty {
+  margin-bottom: 1rem;
+}
+
+.job-description-content p br:only-child {
+  line-height: 2;
 }
 
 /* Spinner animation */
