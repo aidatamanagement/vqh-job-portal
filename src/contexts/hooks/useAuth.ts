@@ -12,9 +12,10 @@ export const useAuth = () => {
 
   const isAuthenticated = !!user;
 
-  // Fetch user profile
+  // Fetch user profile with better error handling
   const fetchUserProfile = useCallback(async (userId: string) => {
     try {
+      console.log('Fetching user profile for:', userId);
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
@@ -23,14 +24,23 @@ export const useAuth = () => {
       
       if (error) {
         console.error('Error fetching user profile:', error);
+        // If profile doesn't exist, create a basic one
+        if (error.code === 'PGRST116') {
+          console.log('Profile not found, user may need to complete setup');
+          setUserProfile(null);
+        }
         return;
       }
       
+      console.log('User profile fetched successfully:', data);
       if (isMounted.current) {
         setUserProfile(data);
       }
     } catch (error) {
       console.error('Error fetching user profile:', error);
+      if (isMounted.current) {
+        setUserProfile(null);
+      }
     }
   }, []);
 
@@ -46,7 +56,7 @@ export const useAuth = () => {
           
           if (session?.user) {
             // Fetch user profile when user logs in
-            fetchUserProfile(session.user.id);
+            await fetchUserProfile(session.user.id);
           } else {
             setUserProfile(null);
           }

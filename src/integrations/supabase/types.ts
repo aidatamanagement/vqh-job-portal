@@ -597,9 +597,13 @@ export type Database = {
           created_at: string
         }[]
       }
-      get_current_user_role: {
+      is_admin: {
         Args: Record<PropertyKey, never>
-        Returns: string
+        Returns: boolean
+      }
+      is_current_user_admin: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
       }
       validate_status_transition: {
         Args: { current_status: string; new_status: string }
