@@ -32,6 +32,9 @@ interface Interview {
   phone?: string;
   applied_position?: string;
   city_state?: string;
+  job_title?: string;
+  job_location?: string;
+  job_position?: string;
 }
 
 interface InterviewsTableProps {
@@ -183,7 +186,8 @@ const InterviewsTable: React.FC<InterviewsTableProps> = ({
                   <TableHead className="w-16">Done</TableHead>
                   <TableHead>Interview Details</TableHead>
                   <TableHead className="hidden md:table-cell">Position</TableHead>
-                  <TableHead className="hidden lg:table-cell">Contact</TableHead>
+                  <TableHead className="hidden lg:table-cell">Job Location</TableHead>
+                  <TableHead className="hidden xl:table-cell">Contact</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Scheduled Time</TableHead>
                   <TableHead className="w-20">Actions</TableHead>
@@ -235,6 +239,14 @@ const InterviewsTable: React.FC<InterviewsTableProps> = ({
                         </span>
                       </TableCell>
                       <TableCell className="hidden lg:table-cell">
+                        <div className="flex items-center space-x-1">
+                          <MapPin className="w-3 h-3 text-gray-400" />
+                          <span className="text-sm text-gray-600">
+                            {interview.job_location || 'Not specified'}
+                          </span>
+                        </div>
+                      </TableCell>
+                      <TableCell className="hidden xl:table-cell">
                         <div className="text-sm text-gray-600">
                           {interview.phone && (
                             <div>{interview.phone}</div>

@@ -1,1 +1,32 @@
 project_id = "dtmwyzrleyevcgtfwrnr"
+
+[api]
+port = 54321
+schemas = ["public", "storage", "graphql_public"]
+extra_search_path = ["public", "extensions"]
+max_rows = 1000
+
+[db]
+port = 54322
+shadow_port = 54320
+major_version = 15
+
+[functions]
+# Port to use for the Edge Functions.
+[functions.import_map]
+
+[auth]
+enable_signup = true
+[auth.email]
+enable_signup = true
+double_confirm_changes = true
+enable_confirmations = false
+
+[storage]
+file_size_limit = "50MiB"
+
+[edge_runtime]
+policy = "oneshot"
+
+[analytics]
+enabled = false

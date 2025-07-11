@@ -31,7 +31,8 @@ type AdminView =
   | 'dashboard'
   | 'post-job' 
   | 'manage-jobs' 
-  | 'submissions' 
+  | 'submissions'
+  | 'interviews' 
   | 'settings' 
   | 'email-management' 
   | 'guide-training'
@@ -39,7 +40,8 @@ type AdminView =
   | 'visit-logs'
   | 'crm-reports'
   | 'training-videos'
-  | 'content-manager';
+  | 'content-manager'
+  | 'profile-settings';
 
 interface DashboardProps {
   onNavigate: (view: AdminView) => void;
@@ -206,9 +208,9 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
           <BarChart3 className="w-5 h-5 text-white" />
         </div>
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
+          <h1 className="text-2xl font-bold text-gray-900"> {userRole.charAt(0).toUpperCase() + userRole.slice(1).replace('_', ' ')} Dashboard</h1>
           <p className="text-sm text-gray-600">
-            Welcome back, {userProfile?.display_name || 'User'} ({userRole.charAt(0).toUpperCase() + userRole.slice(1).replace('_', ' ')})
+            Welcome, {userProfile?.display_name || 'User'}
           </p>
         </div>
       </div>

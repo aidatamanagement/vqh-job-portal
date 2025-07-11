@@ -11,9 +11,10 @@ import RichTextEditor from '@/components/ui/rich-text-editor';
 import { 
   X,
   AlertTriangle,
-  Clock
+  Clock,
+  Users
 } from 'lucide-react';
-import { Job, JobPosition, JobLocation, JobFacility } from '@/types';
+import { Job, JobPosition, JobLocation, JobFacility, HRManager } from '@/types';
 
 interface EditJobModalProps {
   editingJob: Job | null;
@@ -21,6 +22,7 @@ interface EditJobModalProps {
   positions: JobPosition[];
   locations: JobLocation[];
   facilities: JobFacility[];
+  hrManagers: HRManager[];
   onClose: () => void;
   onInputChange: (field: string, value: string | string[] | boolean) => void;
   onFacilityToggle: (facility: string) => void;
@@ -34,6 +36,7 @@ const EditJobModal: React.FC<EditJobModalProps> = ({
   positions,
   locations,
   facilities,
+  hrManagers,
   onClose,
   onInputChange,
   onFacilityToggle,
@@ -61,7 +64,7 @@ const EditJobModal: React.FC<EditJobModalProps> = ({
               />
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
                 <Label htmlFor="edit-position" className="text-sm font-medium">Position Category *</Label>
                 <Select 
@@ -98,6 +101,32 @@ const EditJobModal: React.FC<EditJobModalProps> = ({
                     ))}
                   </SelectContent>
                 </Select>
+              </div>
+
+              <div>
+                <Label htmlFor="edit-hrManager" className="text-sm font-medium">Assigned HR Manager *</Label>
+                <Select 
+                  value={jobForm.hrManagerId || ''} 
+                  onValueChange={(value) => onInputChange('hrManagerId', value)}
+                >
+                  <SelectTrigger className="mt-1">
+                    <SelectValue placeholder="Select HR manager" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {hrManagers.map((manager) => (
+                      <SelectItem key={manager.id} value={manager.id}>
+                        <div className="flex items-center space-x-2">
+                          <Users className="w-4 h-4" />
+                          <span>{manager.name}</span>
+                          <span className="text-xs text-gray-500">({manager.email})</span>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-gray-500 mt-1">
+                  HR manager will handle all applicants for this job
+                </p>
               </div>
             </div>
 

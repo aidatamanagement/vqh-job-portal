@@ -16,6 +16,7 @@ import TrainingVideos from '@/components/admin/TrainingVideos';
 import CrmReports from '@/components/admin/CrmReports';
 import GuideTraining from '@/components/admin/GuideTraining';
 import ContentManager from '@/components/admin/ContentManager';
+import ProfileSettings from '@/components/admin/ProfileSettings';
 
 type AdminView = 
   | 'dashboard'
@@ -30,7 +31,8 @@ type AdminView =
   | 'visit-logs'
   | 'crm-reports'
   | 'training-videos'
-  | 'content-manager';
+  | 'content-manager'
+  | 'profile-settings';
 
 const AdminDashboard: React.FC = () => {
   const { isAuthenticated } = useAppContext();
@@ -74,41 +76,62 @@ const AdminDashboard: React.FC = () => {
         return <ContentManager />;
       case 'settings':
         return <Settings />;
+      case 'profile-settings':
+        return <ProfileSettings />;
       default:
         return <Dashboard onNavigate={handleNavigate} />;
     }
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 animate-slide-up">
-      <AdminHeader onMenuClick={() => setSidebarOpen(!sidebarOpen)} />
-      <div className="flex relative">
+    <div className="h-screen bg-gray-50 overflow-hidden animate-slide-up">
+      {/* Fixed Header */}
+      <div className="h-16 bg-white border-b border-gray-200 relative z-50">
+        <AdminHeader 
+          onMenuClick={() => setSidebarOpen(!sidebarOpen)} 
+          onNavigate={(view) => setCurrentView(view as AdminView)}
+        />
+      </div>
+      
+      {/* Layout Container - Takes remaining height after header */}
+      <div className="h-[calc(100vh-4rem)] flex relative">
         {/* Mobile Sidebar Overlay */}
         {sidebarOpen && (
           <div 
-            className="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden"
+            className="absolute inset-0 bg-black bg-opacity-50 z-30 lg:hidden"
             onClick={() => setSidebarOpen(false)}
           />
         )}
         
-        {/* Sidebar */}
+        {/* Desktop Sidebar - Always visible, hover to expand */}
+        <div className="hidden lg:block relative z-40">
+          <AdminSidebar 
+            currentView={currentView} 
+            onViewChange={setCurrentView} 
+          />
+        </div>
+        
+        {/* Mobile Sidebar - Toggle visibility */}
         <div className={`
-          fixed lg:relative lg:translate-x-0 transition-transform duration-300 ease-in-out z-50 animate-slide-in-right
-          ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
+          absolute left-0 top-0 h-full z-40 shadow-lg lg:hidden transition-transform duration-300 ease-in-out
+          ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
         `}>
           <AdminSidebar 
             currentView={currentView} 
             onViewChange={(view) => {
               setCurrentView(view);
               setSidebarOpen(false); // Close sidebar on mobile after selection
-            }} 
+            }}
+            isMobile={true}
           />
         </div>
         
-        {/* Main Content */}
-        <main className="flex-1 p-4 lg:p-8 w-full lg:w-auto animate-slide-up-delayed">
-          <div className="max-w-7xl mx-auto">
-            {renderContent()}
+        {/* Main Content Area - Only this scrolls */}
+        <main className="flex-1 overflow-y-auto bg-gray-50 animate-slide-up-delayed transition-all duration-300">
+          <div className="px-4 lg:px-8 py-4 lg:py-8">
+            <div className="max-w-7xl mx-auto pt-4">
+              {renderContent()}
+            </div>
           </div>
         </main>
       </div>

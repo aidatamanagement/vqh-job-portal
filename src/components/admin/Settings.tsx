@@ -24,7 +24,9 @@ import {
   Camera,
   Calendar,
   Mail,
-  Clock
+  Clock,
+  MapPin,
+  X
 } from 'lucide-react';
 import { useAppContext } from '@/contexts/AppContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -32,6 +34,8 @@ import { toast } from '@/hooks/use-toast';
 import { UserRole } from '@/types';
 import { hasPermission } from '@/utils/rolePermissions';
 import CalendlySettings from './CalendlySettings';
+import { useProfileImage } from '@/hooks/useProfileImage';
+import { testProfileImageConnection } from '@/utils/testProfileImageConnection';
 import {
   Dialog,
   DialogContent,
@@ -46,13 +50,15 @@ interface AdminUser {
   email: string;
   admin_name: string | null;
   display_name: string | null;
+  location: string | null;
   role: UserRole;
   created_at: string;
   updated_at: string;
 }
 
 const Settings: React.FC = () => {
-  const { user, userProfile, updateUserDisplayName } = useAppContext();
+  const { user, userProfile, updateUserDisplayName, locations } = useAppContext();
+  const { uploadProfileImage, deleteProfileImage, isUploading } = useProfileImage();
   const [activeTab, setActiveTab] = useState('profile');
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
@@ -67,11 +73,14 @@ const Settings: React.FC = () => {
   const [editingUser, setEditingUser] = useState<AdminUser | null>(null);
   const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
   const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
+  const [isUserModalOpen, setIsUserModalOpen] = useState(false);
+  const [userModalMode, setUserModalMode] = useState<'add' | 'edit'>('add');
   
   // Profile form state
   const [profileForm, setProfileForm] = useState({
     fullName: userProfile?.admin_name || userProfile?.display_name || '',
     email: user?.email || '',
+    location: userProfile?.location || 'none',
     currentPassword: '',
     newPassword: '',
     confirmPassword: '',
@@ -83,12 +92,14 @@ const Settings: React.FC = () => {
     password: '',
     confirmPassword: '',
     fullName: '',
+    location: 'none',
     role: 'recruiter' as UserRole,
   });
 
   // Edit user form state
   const [editUserForm, setEditUserForm] = useState({
     fullName: '',
+    location: '',
     role: 'recruiter' as UserRole,
   });
 
@@ -118,7 +129,7 @@ const Settings: React.FC = () => {
       // Fetch all users from profiles table
       const { data, error } = await supabase
         .from('profiles')
-        .select('id, email, admin_name, display_name, role, created_at, updated_at')
+        .select('id, email, admin_name, display_name, location, role, created_at, updated_at')
         .order('created_at', { ascending: false });
 
       if (error) {
@@ -151,15 +162,21 @@ const Settings: React.FC = () => {
   };
 
   const handleProfileInputChange = (field: string, value: string) => {
-    setProfileForm(prev => ({ ...prev, [field]: value }));
+    // Convert "none" back to empty string for location field
+    const actualValue = field === 'location' && value === 'none' ? '' : value;
+    setProfileForm(prev => ({ ...prev, [field]: actualValue }));
   };
 
   const handleNewAdminInputChange = (field: string, value: string) => {
-    setNewAdminForm(prev => ({ ...prev, [field]: value }));
+    // Convert "none" back to empty string for location field
+    const actualValue = field === 'location' && value === 'none' ? '' : value;
+    setNewAdminForm(prev => ({ ...prev, [field]: actualValue }));
   };
 
   const handleEditUserInputChange = (field: string, value: string) => {
-    setEditUserForm(prev => ({ ...prev, [field]: value }));
+    // Convert "none" back to empty string for location field
+    const actualValue = field === 'location' && value === 'none' ? '' : value;
+    setEditUserForm(prev => ({ ...prev, [field]: actualValue }));
   };
 
   const updateProfile = async (e: React.FormEvent) => {
@@ -182,7 +199,8 @@ const Settings: React.FC = () => {
         .from('profiles')
         .update({ 
           admin_name: profileForm.fullName,
-          display_name: profileForm.fullName
+          display_name: profileForm.fullName,
+          location: profileForm.location
         })
         .eq('id', user?.id);
 
@@ -413,13 +431,8 @@ const Settings: React.FC = () => {
         }
       }
 
-      setNewAdminForm({
-        email: '',
-        password: '',
-        confirmPassword: '',
-        fullName: '',
-        role: 'recruiter',
-      });
+      // Close modal and reset form
+      closeUserModal();
 
       // Refresh user list
       await fetchAllUsers();
@@ -451,6 +464,7 @@ const Settings: React.FC = () => {
         .update({
           admin_name: editUserForm.fullName,
           display_name: editUserForm.fullName,
+          location: editUserForm.location,
           role: editUserForm.role
         })
         .eq('id', editingUser.id);
@@ -465,7 +479,7 @@ const Settings: React.FC = () => {
         return;
       }
 
-      setEditingUser(null);
+      closeUserModal();
       await fetchAllUsers();
 
       toast({
@@ -545,6 +559,20 @@ const Settings: React.FC = () => {
     }
   };
 
+  const openAddUserModal = () => {
+    setUserModalMode('add');
+    setEditingUser(null);
+    setNewAdminForm({
+      email: '',
+      password: '',
+      confirmPassword: '',
+      fullName: '',
+      location: 'none',
+      role: 'recruiter',
+    });
+    setIsUserModalOpen(true);
+  };
+
   const startEditUser = (userToEdit: AdminUser) => {
     // Only allow admins to edit users
     if (!isAdmin) {
@@ -556,11 +584,20 @@ const Settings: React.FC = () => {
       return;
     }
 
+    setUserModalMode('edit');
     setEditingUser(userToEdit);
     setEditUserForm({
       fullName: userToEdit.admin_name || userToEdit.display_name || '',
+      location: userToEdit.location || 'none',
       role: userToEdit.role,
     });
+    setIsUserModalOpen(true);
+  };
+
+  const closeUserModal = () => {
+    setIsUserModalOpen(false);
+    setEditingUser(null);
+    setUserModalMode('add');
   };
 
   const getRoleBadgeVariant = (role: UserRole): "default" | "secondary" | "destructive" => {
@@ -577,17 +614,80 @@ const Settings: React.FC = () => {
   const filteredUsers = adminList.filter(user => {
     const matchesSearch = user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          (user.admin_name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         (user.display_name || '').toLowerCase().includes(searchTerm.toLowerCase());
+                         (user.display_name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         (user.location || '').toLowerCase().includes(searchTerm.toLowerCase());
     const matchesRole = roleFilter === 'all' || user.role === roleFilter;
     return matchesSearch && matchesRole;
   });
 
   const handleProfilePictureUpload = () => {
-    // TODO: Implement profile picture upload functionality
-    toast({
-      title: "Coming Soon",
-      description: "Profile picture upload will be available soon",
-    });
+    if (!user?.id) return;
+
+    // Create file input
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/jpeg,image/png,image/webp';
+    input.multiple = false;
+
+    input.onchange = async (e) => {
+      const file = (e.target as HTMLInputElement).files?.[0];
+      if (!file) return;
+
+      console.log('Starting profile image upload...');
+      const result = await uploadProfileImage(file, user.id);
+      
+      if (result.success) {
+        // Fetch updated profile data to refresh the UI
+        try {
+          const { data: updatedProfile, error } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', user.id)
+            .single();
+          
+          if (!error && updatedProfile) {
+            // Update the context with new profile data
+            console.log('Profile updated successfully:', updatedProfile);
+            // Force a small delay to ensure storage URL is accessible
+            setTimeout(() => {
+              window.location.reload();
+            }, 1000);
+          }
+        } catch (error) {
+          console.error('Error fetching updated profile:', error);
+        }
+      }
+    };
+
+    input.click();
+  };
+
+  const handleDeleteProfileImage = async () => {
+    if (!user?.id) return;
+
+    console.log('Starting profile image deletion...');
+    const result = await deleteProfileImage(user.id);
+    
+    if (result.success) {
+      // Fetch updated profile data to refresh the UI
+      try {
+        const { data: updatedProfile, error } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', user.id)
+          .single();
+        
+        if (!error && updatedProfile) {
+          console.log('Profile image deleted successfully:', updatedProfile);
+          // Force a small delay to ensure changes are reflected
+          setTimeout(() => {
+            window.location.reload();
+          }, 500);
+        }
+      } catch (error) {
+        console.error('Error fetching updated profile after deletion:', error);
+      }
+    }
   };
 
   return (
@@ -642,7 +742,7 @@ const Settings: React.FC = () => {
                     <div className="flex flex-col items-center space-y-4">
                       <div className="relative">
                         <Avatar className="w-24 h-24">
-                          <AvatarImage src="" />
+                          <AvatarImage src={userProfile?.profile_image_url || ""} />
                           <AvatarFallback className="text-xl font-semibold bg-primary/10 text-primary">
                             {(userProfile?.admin_name || userProfile?.display_name || user?.email || '')
                               .split(' ')
@@ -652,14 +752,30 @@ const Settings: React.FC = () => {
                               .slice(0, 2)}
                           </AvatarFallback>
                         </Avatar>
-                        <Button
-                          onClick={handleProfilePictureUpload}
-                          size="sm"
-                          variant="secondary"
-                          className="absolute -bottom-1 -right-1 rounded-full w-8 h-8 p-0"
-                        >
-                          <Camera className="w-3 h-3" />
-                        </Button>
+                        <div className="absolute -bottom-1 -right-1 flex space-x-1">
+                          <Button
+                            onClick={handleProfilePictureUpload}
+                            size="sm"
+                            variant="secondary"
+                            className="rounded-full w-8 h-8 p-0"
+                            disabled={isUploading}
+                            title="Change profile picture"
+                          >
+                            <Camera className="w-3 h-3" />
+                          </Button>
+                          {userProfile?.profile_image_url && (
+                            <Button
+                              onClick={handleDeleteProfileImage}
+                              size="sm"
+                              variant="destructive"
+                              className="rounded-full w-8 h-8 p-0"
+                              disabled={isUploading}
+                              title="Remove profile picture"
+                            >
+                              <X className="w-3 h-3" />
+                            </Button>
+                          )}
+                        </div>
                       </div>
 
                       <div className="text-center">
@@ -669,6 +785,8 @@ const Settings: React.FC = () => {
                         <p className="text-gray-600 text-sm mt-1">
                           {userRoles.find(r => r.value === userProfile?.role)?.description || 'User'}
                         </p>
+                        
+
                       </div>
                     </div>
                   </div>
@@ -715,6 +833,16 @@ const Settings: React.FC = () => {
                         </p>
                       </div>
                     </div>
+
+                    <div className="flex items-center space-x-3 p-4 bg-gray-50 rounded-lg">
+                      <MapPin className="w-5 h-5 text-gray-500" />
+                      <div>
+                        <Label className="text-sm text-gray-600">Location</Label>
+                        <p className="font-medium text-gray-900">
+                          {userProfile?.location || 'Not set'}
+                        </p>
+                      </div>
+                    </div>
                   </div>
 
                   {/* Action Buttons */}
@@ -745,6 +873,27 @@ const Settings: React.FC = () => {
                               placeholder="Enter your full name"
                               disabled={isLoading}
                             />
+                          </div>
+
+                          <div>
+                            <Label htmlFor="editLocation">Location</Label>
+                            <Select 
+                              value={profileForm.location} 
+                              onValueChange={(value) => handleProfileInputChange('location', value)}
+                              disabled={isLoading}
+                            >
+                              <SelectTrigger className="mt-1">
+                                <SelectValue placeholder="Select your location" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="none">No location specified</SelectItem>
+                                {locations.map((location) => (
+                                  <SelectItem key={location.id} value={location.name}>
+                                    {location.name}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
                           </div>
 
                           <div className="flex space-x-3 pt-4">
@@ -884,124 +1033,28 @@ const Settings: React.FC = () => {
 
         {canManageUsers && (
           <TabsContent value="users" className="space-y-6">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* Add New User - Only show for admins */}
+            {/* Header with Add New User Button */}
+            <div className="flex justify-between items-center">
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 flex items-center">
+                  <Users className="w-5 h-5 mr-2 text-primary" />
+                  User Management
+                </h3>
+                <p className="text-sm text-gray-600">Manage system users and their roles</p>
+              </div>
               {isAdmin && (
-                <Card className="p-6">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-                    <UserPlus className="w-5 h-5 mr-2 text-primary" />
-                    Add New User
-                  </h3>
-                  
-                  <form onSubmit={addNewUser} className="space-y-4">
-                    <div>
-                      <Label htmlFor="newUserRole">Role *</Label>
-                      <Select 
-                        value={newAdminForm.role} 
-                        onValueChange={(value: UserRole) => handleNewAdminInputChange('role', value)}
-                      >
-                        <SelectTrigger className="mt-1">
-                          <SelectValue placeholder="Select role" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {userRoles.map((role) => (
-                            <SelectItem key={role.value} value={role.value}>
-                              <div className="flex items-center justify-between w-full">
-                                <span>{role.label}</span>
-                                {role.value === 'admin' && <Crown className="w-4 h-4 text-yellow-500 ml-2" />}
-                              </div>
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <p className="text-xs text-gray-500 mt-1">
-                        {userRoles.find(r => r.value === newAdminForm.role)?.description}
-                      </p>
-                    </div>
-
-                    <div>
-                      <Label htmlFor="fullName">Full Name *</Label>
-                      <Input
-                        id="fullName"
-                        type="text"
-                        value={newAdminForm.fullName}
-                        onChange={(e) => handleNewAdminInputChange('fullName', e.target.value)}
-                        className="mt-1"
-                        placeholder="Enter user's full name"
-                        disabled={isLoading}
-                      />
-                    </div>
-
-                    <div>
-                      <Label htmlFor="newUserEmail">Email Address *</Label>
-                      <Input
-                        id="newUserEmail"
-                        type="email"
-                        value={newAdminForm.email}
-                        onChange={(e) => handleNewAdminInputChange('email', e.target.value)}
-                        className="mt-1"
-                        placeholder="user@hospicecare.com"
-                        disabled={isLoading}
-                      />
-                    </div>
-
-                    <div>
-                      <Label htmlFor="newUserPassword">Password *</Label>
-                      <div className="relative mt-1">
-                        <Input
-                          id="newUserPassword"
-                          type={showAdminPassword ? 'text' : 'password'}
-                          value={newAdminForm.password}
-                          onChange={(e) => handleNewAdminInputChange('password', e.target.value)}
-                          className="pr-10"
-                          placeholder="Minimum 8 characters"
-                          disabled={isLoading}
-                        />
-                        <button
-                          type="button"
-                          onClick={() => setShowAdminPassword(!showAdminPassword)}
-                          className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                        >
-                          {showAdminPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                        </button>
-                      </div>
-                    </div>
-
-                    <div>
-                      <Label htmlFor="newUserConfirmPassword">Confirm Password *</Label>
-                      <div className="relative mt-1">
-                        <Input
-                          id="newUserConfirmPassword"
-                          type={showAdminConfirmPassword ? 'text' : 'password'}
-                          value={newAdminForm.confirmPassword}
-                          onChange={(e) => handleNewAdminInputChange('confirmPassword', e.target.value)}
-                          className="pr-10"
-                          disabled={isLoading}
-                        />
-                        <button
-                          type="button"
-                          onClick={() => setShowAdminConfirmPassword(!showAdminConfirmPassword)}
-                          className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                        >
-                          {showAdminConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                        </button>
-                      </div>
-                    </div>
-
-                    <Button 
-                      type="submit" 
-                      className="w-full bg-primary hover:bg-primary/90"
-                      disabled={isLoading}
-                    >
-                      <Plus className="w-4 h-4 mr-2" />
-                      {isLoading ? 'Adding...' : 'Add User'}
-                    </Button>
-                  </form>
-                </Card>
+                <Button 
+                  onClick={openAddUserModal}
+                  className="bg-primary hover:bg-primary/90"
+                >
+                  <UserPlus className="w-4 h-4 mr-2" />
+                  Add New User
+                </Button>
               )}
+            </div>
 
-              {/* Current Users */}
-              <Card className={`p-6 ${isAdmin ? '' : 'lg:col-span-2'}`}>
+            {/* Users List */}
+            <Card className="p-6">
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="text-lg font-semibold text-gray-900 flex items-center">
                     <Users className="w-5 h-5 mr-2 text-primary" />
@@ -1067,6 +1120,12 @@ const Settings: React.FC = () => {
                             {userItem.role === 'admin' && <Crown className="w-4 h-4 text-yellow-500" />}
                           </div>
                           <p className="text-sm text-gray-600">{userItem.email}</p>
+                          {userItem.location && (
+                            <p className="text-xs text-gray-500 flex items-center">
+                              <MapPin className="w-3 h-3 mr-1" />
+                              {userItem.location}
+                            </p>
+                          )}
                           <p className="text-xs text-gray-500">
                             Added {new Date(userItem.created_at).toLocaleDateString()}
                           </p>
@@ -1100,75 +1159,229 @@ const Settings: React.FC = () => {
                     ))
                   )}
                 </div>
-              </Card>
-            </div>
-
-            {/* Edit User Modal - Only show for admins */}
-            {editingUser && isAdmin && (
-              <Card className="p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-                  <Edit className="w-5 h-5 mr-2 text-primary" />
-                  Edit User: {editingUser.email}
-                </h3>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="editFullName">Full Name</Label>
-                    <Input
-                      id="editFullName"
-                      type="text"
-                      value={editUserForm.fullName}
-                      onChange={(e) => handleEditUserInputChange('fullName', e.target.value)}
-                      className="mt-1"
-                      placeholder="Enter full name"
-                      disabled={isLoading}
-                    />
-                  </div>
-
-                  <div>
-                    <Label htmlFor="editUserRole">Role</Label>
-                    <Select 
-                      value={editUserForm.role} 
-                      onValueChange={(value: UserRole) => handleEditUserInputChange('role', value)}
-                    >
-                      <SelectTrigger className="mt-1">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {userRoles.map((role) => (
-                          <SelectItem key={role.value} value={role.value}>
-                            <div className="flex items-center justify-between w-full">
-                              <span>{role.label}</span>
-                              {role.value === 'admin' && <Crown className="w-4 h-4 text-yellow-500 ml-2" />}
-                            </div>
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-                
-                <div className="flex justify-end space-x-3 mt-6">
-                  <Button
-                    onClick={() => setEditingUser(null)}
-                    variant="outline"
-                    disabled={isLoading}
-                  >
-                    Cancel
-                  </Button>
-                  <Button
-                    onClick={updateUser}
-                    className="bg-primary hover:bg-primary/90"
-                    disabled={isLoading}
-                  >
-                    {isLoading ? 'Updating...' : 'Update User'}
-                  </Button>
-                </div>
-              </Card>
-            )}
+            </Card>
           </TabsContent>
         )}
       </Tabs>
+
+      {/* User Management Modal */}
+      <Dialog open={isUserModalOpen} onOpenChange={setIsUserModalOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>
+              {userModalMode === 'add' ? 'Add New User' : 'Edit User'}
+            </DialogTitle>
+            <DialogDescription>
+              {userModalMode === 'add' 
+                ? 'Create a new user account with role and permissions.' 
+                : 'Update user information and role.'}
+            </DialogDescription>
+          </DialogHeader>
+          
+          <form onSubmit={userModalMode === 'add' ? addNewUser : (e) => { e.preventDefault(); updateUser(); }} className="space-y-4">
+            {userModalMode === 'add' && (
+              <>
+                <div>
+                  <Label htmlFor="modalUserRole">Role *</Label>
+                  <Select 
+                    value={newAdminForm.role} 
+                    onValueChange={(value: UserRole) => handleNewAdminInputChange('role', value)}
+                  >
+                    <SelectTrigger className="mt-1">
+                      <SelectValue placeholder="Select role" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {userRoles.map((role) => (
+                        <SelectItem key={role.value} value={role.value}>
+                          <div className="flex items-center justify-between w-full">
+                            <span>{role.label}</span>
+                            {role.value === 'admin' && <Crown className="w-4 h-4 text-yellow-500 ml-2" />}
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-gray-500 mt-1">
+                    {userRoles.find(r => r.value === newAdminForm.role)?.description}
+                  </p>
+                </div>
+
+                <div>
+                  <Label htmlFor="modalFullName">Full Name *</Label>
+                  <Input
+                    id="modalFullName"
+                    type="text"
+                    value={newAdminForm.fullName}
+                    onChange={(e) => handleNewAdminInputChange('fullName', e.target.value)}
+                    className="mt-1"
+                    placeholder="Enter user's full name"
+                    disabled={isLoading}
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="modalUserEmail">Email Address *</Label>
+                  <Input
+                    id="modalUserEmail"
+                    type="email"
+                    value={newAdminForm.email}
+                    onChange={(e) => handleNewAdminInputChange('email', e.target.value)}
+                    className="mt-1"
+                    placeholder="user@hospicecare.com"
+                    disabled={isLoading}
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="modalUserLocation">Location</Label>
+                  <Select 
+                    value={newAdminForm.location} 
+                    onValueChange={(value) => handleNewAdminInputChange('location', value)}
+                    disabled={isLoading}
+                  >
+                    <SelectTrigger className="mt-1">
+                      <SelectValue placeholder="Select user's location" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">No location specified</SelectItem>
+                      {locations.map((location) => (
+                        <SelectItem key={location.id} value={location.name}>
+                          {location.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <Label htmlFor="modalUserPassword">Password *</Label>
+                  <div className="relative mt-1">
+                    <Input
+                      id="modalUserPassword"
+                      type={showAdminPassword ? 'text' : 'password'}
+                      value={newAdminForm.password}
+                      onChange={(e) => handleNewAdminInputChange('password', e.target.value)}
+                      className="pr-10"
+                      placeholder="Minimum 8 characters"
+                      disabled={isLoading}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowAdminPassword(!showAdminPassword)}
+                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                    >
+                      {showAdminPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  </div>
+                </div>
+
+                <div>
+                  <Label htmlFor="modalUserConfirmPassword">Confirm Password *</Label>
+                  <div className="relative mt-1">
+                    <Input
+                      id="modalUserConfirmPassword"
+                      type={showAdminConfirmPassword ? 'text' : 'password'}
+                      value={newAdminForm.confirmPassword}
+                      onChange={(e) => handleNewAdminInputChange('confirmPassword', e.target.value)}
+                      className="pr-10"
+                      disabled={isLoading}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowAdminConfirmPassword(!showAdminConfirmPassword)}
+                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                    >
+                      {showAdminConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  </div>
+                </div>
+              </>
+            )}
+
+            {userModalMode === 'edit' && (
+              <>
+                <div>
+                  <Label htmlFor="modalEditFullName">Full Name</Label>
+                  <Input
+                    id="modalEditFullName"
+                    type="text"
+                    value={editUserForm.fullName}
+                    onChange={(e) => handleEditUserInputChange('fullName', e.target.value)}
+                    className="mt-1"
+                    placeholder="Enter full name"
+                    disabled={isLoading}
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="modalEditUserLocation">Location</Label>
+                  <Select 
+                    value={editUserForm.location} 
+                    onValueChange={(value) => handleEditUserInputChange('location', value)}
+                    disabled={isLoading}
+                  >
+                    <SelectTrigger className="mt-1">
+                      <SelectValue placeholder="Select location" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">No location specified</SelectItem>
+                      {locations.map((location) => (
+                        <SelectItem key={location.id} value={location.name}>
+                          {location.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <Label htmlFor="modalEditUserRole">Role</Label>
+                  <Select 
+                    value={editUserForm.role} 
+                    onValueChange={(value: UserRole) => handleEditUserInputChange('role', value)}
+                  >
+                    <SelectTrigger className="mt-1">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {userRoles.map((role) => (
+                        <SelectItem key={role.value} value={role.value}>
+                          <div className="flex items-center justify-between w-full">
+                            <span>{role.label}</span>
+                            {role.value === 'admin' && <Crown className="w-4 h-4 text-yellow-500 ml-2" />}
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </>
+            )}
+
+            <div className="flex space-x-3 pt-4">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={closeUserModal}
+                className="flex-1"
+                disabled={isLoading}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                className="flex-1 bg-primary hover:bg-primary/90"
+                disabled={isLoading}
+              >
+                {isLoading 
+                  ? (userModalMode === 'add' ? 'Adding...' : 'Updating...') 
+                  : (userModalMode === 'add' ? 'Add User' : 'Update User')
+                }
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

@@ -45,7 +45,15 @@ export const useDataFetching = (user: User | null, userProfile: any | null) => {
     try {
       const { data, error } = await supabase
         .from('jobs')
-        .select('*')
+        .select(`
+          *,
+          hr_manager:profiles!hr_manager_id (
+            id,
+            email,
+            admin_name,
+            display_name
+          )
+        `)
         .order('created_at', { ascending: false });
 
       if (error) {
@@ -64,6 +72,9 @@ export const useDataFetching = (user: User | null, userProfile: any | null) => {
         isActive: job.is_active,
         isUrgent: job.is_urgent || false,
         applicationDeadline: job.application_deadline,
+        hrManagerId: job.hr_manager_id,
+        hrManagerName: job.hr_manager ? (job.hr_manager.admin_name || job.hr_manager.display_name || job.hr_manager.email) : undefined,
+        hrManagerEmail: job.hr_manager?.email,
         createdAt: job.created_at,
         updatedAt: job.updated_at,
       }));
@@ -111,6 +122,7 @@ export const useDataFetching = (user: User | null, userProfile: any | null) => {
         earliestStartDate: app.earliest_start_date,
         cityState: app.city_state,
         coverLetter: app.cover_letter,
+        coverLetterUrl: app.cover_letter_url,
         status: mapStatusToNewFlow(app.status),
         additionalDocsUrls: app.additional_docs_urls || [],
         trackingToken: app.tracking_token,

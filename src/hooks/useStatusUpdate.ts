@@ -56,6 +56,32 @@ export const useStatusUpdate = () => {
 
       console.log('Application status updated successfully:', updatedApplication);
 
+      // If status changed to 'hired', deactivate the job posting
+      if (newStatus === 'hired' && currentApplication.status !== 'hired') {
+        console.log('Application marked as hired, deactivating job posting...');
+        try {
+          const { error: jobUpdateError } = await supabase
+            .from('jobs')
+            .update({ 
+              is_active: false,
+              updated_at: new Date().toISOString()
+            })
+            .eq('id', updatedApplication.job_id);
+
+          if (jobUpdateError) {
+            console.error('Error deactivating job:', jobUpdateError);
+            // Don't throw error - application status update succeeded
+          } else {
+            console.log('Job posting deactivated successfully');
+            // Set a flag to indicate job was deactivated for success message
+            (updatedApplication as any).jobDeactivated = true;
+          }
+        } catch (jobError) {
+          console.error('Failed to deactivate job:', jobError);
+          // Don't throw error - application status update succeeded
+        }
+      }
+
       // Send email notification for the status change
       if (updatedApplication && currentApplication.status !== newStatus) {
         console.log('Sending status update email notification...');

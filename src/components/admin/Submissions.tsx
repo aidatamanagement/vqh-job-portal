@@ -10,7 +10,9 @@ import { useStatusUpdate } from '@/hooks/useStatusUpdate';
 import { toast } from '@/hooks/use-toast';
 import {
   getUniquePositions,
+  getUniqueHrManagers,
   filterSubmissions,
+  sortSubmissions,
   getStatusText
 } from './utils/submissionsUtils';
 
@@ -18,6 +20,9 @@ const Submissions: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [positionFilter, setPositionFilter] = useState<string>('all');
+  const [hrManagerFilter, setHrManagerFilter] = useState<string>('all');
+  const [sortBy, setSortBy] = useState<'date' | 'name' | 'position' | 'hrManager'>('date');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [selectedApplication, setSelectedApplication] = useState<JobApplication | null>(null);
   const [viewingFile, setViewingFile] = useState<{ url: string; name: string } | null>(null);
 
@@ -31,8 +36,13 @@ const Submissions: React.FC = () => {
 
   const { updateApplicationStatus } = useStatusUpdate();
 
-  const filteredSubmissions = filterSubmissions(submissions, searchTerm, statusFilter, positionFilter);
+  const filteredSubmissions = sortSubmissions(
+    filterSubmissions(submissions, searchTerm, statusFilter, positionFilter, hrManagerFilter),
+    sortBy,
+    sortOrder
+  );
   const uniquePositions = getUniquePositions(submissions);
+  const uniqueHrManagers = getUniqueHrManagers(submissions);
 
   const openFileViewer = (url: string, name: string) => {
     setViewingFile({ url, name });
@@ -61,9 +71,12 @@ const Submissions: React.FC = () => {
           setSelectedApplication(prev => prev ? { ...prev, status: newStatus } : null);
         }
         
+        // Check if job was deactivated due to hire
+        const jobDeactivatedMessage = newStatus === 'hired' ? ' The job posting has been automatically deactivated.' : '';
+        
         toast({
           title: "Status Updated",
-          description: `Application status updated to ${getStatusText(newStatus)}. Email notification sent to candidate.`,
+          description: `Application status updated to ${getStatusText(newStatus)}. Email notification sent to candidate.${jobDeactivatedMessage}`,
         });
       }
     } catch (error) {
@@ -100,7 +113,14 @@ const Submissions: React.FC = () => {
         setPositionFilter={setPositionFilter}
         statusFilter={statusFilter}
         setStatusFilter={setStatusFilter}
+        hrManagerFilter={hrManagerFilter}
+        setHrManagerFilter={setHrManagerFilter}
+        sortBy={sortBy}
+        setSortBy={setSortBy}
+        sortOrder={sortOrder}
+        setSortOrder={setSortOrder}
         uniquePositions={uniquePositions}
+        uniqueHrManagers={uniqueHrManagers}
       />
 
       {/* Submissions Table */}

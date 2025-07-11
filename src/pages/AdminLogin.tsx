@@ -71,7 +71,7 @@ const AdminLogin: React.FC = () => {
 
     setIsResetting(true);
     try {
-      const redirectUrl = `${window.location.origin}/admin/login`;
+      const redirectUrl = `${window.location.origin}/admin/reset-password`;
       const { error } = await supabase.auth.resetPasswordForEmail(resetEmail, {
         redirectTo: redirectUrl,
       });

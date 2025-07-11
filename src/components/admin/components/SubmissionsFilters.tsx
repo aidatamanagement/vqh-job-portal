@@ -3,7 +3,7 @@ import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Search, X } from 'lucide-react';
+import { Search, X, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
 
 interface SubmissionsFiltersProps {
   searchTerm: string;
@@ -12,7 +12,14 @@ interface SubmissionsFiltersProps {
   setPositionFilter: (filter: string) => void;
   statusFilter: string;
   setStatusFilter: (filter: string) => void;
+  hrManagerFilter: string;
+  setHrManagerFilter: (filter: string) => void;
+  sortBy: 'date' | 'name' | 'position' | 'hrManager';
+  setSortBy: (sort: 'date' | 'name' | 'position' | 'hrManager') => void;
+  sortOrder: 'asc' | 'desc';
+  setSortOrder: (order: 'asc' | 'desc') => void;
   uniquePositions: string[];
+  uniqueHrManagers: string[];
 }
 
 const SubmissionsFilters: React.FC<SubmissionsFiltersProps> = ({
@@ -22,69 +29,128 @@ const SubmissionsFilters: React.FC<SubmissionsFiltersProps> = ({
   setPositionFilter,
   statusFilter,
   setStatusFilter,
-  uniquePositions
+  hrManagerFilter,
+  setHrManagerFilter,
+  sortBy,
+  setSortBy,
+  sortOrder,
+  setSortOrder,
+  uniquePositions,
+  uniqueHrManagers
 }) => {
-  const hasActiveFilters = searchTerm !== '' || positionFilter !== 'all' || statusFilter !== 'all';
+  const hasActiveFilters = searchTerm !== '' || positionFilter !== 'all' || statusFilter !== 'all' || hrManagerFilter !== 'all';
 
   const clearAllFilters = () => {
     setSearchTerm('');
     setPositionFilter('all');
     setStatusFilter('all');
+    setHrManagerFilter('all');
+    setSortBy('date');
+    setSortOrder('desc');
+  };
+
+  const toggleSortOrder = () => {
+    setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
   };
 
   return (
     <div className="bg-white p-4 sm:p-6 rounded-lg border border-gray-200 shadow-sm animate-slide-up-delayed">
-      <div className="flex flex-col space-y-4 sm:space-y-0 sm:flex-row sm:gap-4">
-        <div className="flex-1">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-            <Input
-              placeholder="Search by name, email, or position..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10"
-            />
+      <div className="flex flex-col space-y-4">
+        {/* First Row: Search and Filters */}
+        <div className="flex flex-col space-y-4 sm:space-y-0 sm:flex-row sm:gap-4">
+          <div className="flex-1">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+              <Input
+                placeholder="Search by name, email, position, or HR manager..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10"
+              />
+            </div>
           </div>
+
+          <Select value={positionFilter} onValueChange={setPositionFilter}>
+            <SelectTrigger className="w-full sm:w-48">
+              <SelectValue placeholder="All Positions" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Positions</SelectItem>
+              {uniquePositions.map(position => (
+                <SelectItem key={position} value={position}>{position}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          <Select value={hrManagerFilter} onValueChange={setHrManagerFilter}>
+            <SelectTrigger className="w-full sm:w-48">
+              <SelectValue placeholder="All HR Managers" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All HR Managers</SelectItem>
+              <SelectItem value="Unassigned">Unassigned</SelectItem>
+              {uniqueHrManagers.map(manager => (
+                <SelectItem key={manager} value={manager}>{manager}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <SelectTrigger className="w-full sm:w-48">
+              <SelectValue placeholder="All Statuses" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Statuses</SelectItem>
+              <SelectItem value="application_submitted">Application Submitted</SelectItem>
+              <SelectItem value="under_review">Under Review</SelectItem>
+              <SelectItem value="shortlisted">Shortlisted</SelectItem>
+              <SelectItem value="interviewed">Interviewed</SelectItem>
+              <SelectItem value="hired">Hired</SelectItem>
+              <SelectItem value="rejected">Rejected</SelectItem>
+              <SelectItem value="waiting_list">Waiting List</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
 
-        <Select value={positionFilter} onValueChange={setPositionFilter}>
-          <SelectTrigger className="w-full sm:w-48">
-            <SelectValue placeholder="All Positions" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Positions</SelectItem>
-            {uniquePositions.map(position => (
-              <SelectItem key={position} value={position}>{position}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        {/* Second Row: Sorting and Clear */}
+        <div className="flex flex-col space-y-4 sm:space-y-0 sm:flex-row sm:gap-4 sm:items-center">
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-medium text-gray-700">Sort by:</span>
+            <Select value={sortBy} onValueChange={setSortBy}>
+              <SelectTrigger className="w-40">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="date">Date Applied</SelectItem>
+                <SelectItem value="name">Candidate Name</SelectItem>
+                <SelectItem value="position">Position</SelectItem>
+                <SelectItem value="hrManager">HR Manager</SelectItem>
+              </SelectContent>
+            </Select>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={toggleSortOrder}
+              className="flex items-center gap-1"
+            >
+              {sortOrder === 'asc' ? <ArrowUp className="w-4 h-4" /> : <ArrowDown className="w-4 h-4" />}
+              {sortOrder === 'asc' ? 'Asc' : 'Desc'}
+            </Button>
+          </div>
 
-        <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="w-full sm:w-48">
-            <SelectValue placeholder="All Statuses" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Statuses</SelectItem>
-            <SelectItem value="application_submitted">Application Submitted</SelectItem>
-            <SelectItem value="under_review">Under Review</SelectItem>
-            <SelectItem value="shortlisted">Shortlisted</SelectItem>
-            <SelectItem value="interviewed">Interviewed</SelectItem>
-            <SelectItem value="hired">Hired</SelectItem>
-            <SelectItem value="rejected">Rejected</SelectItem>
-            <SelectItem value="waiting_list">Waiting List</SelectItem>
-          </SelectContent>
-        </Select>
+          <div className="flex-1" />
 
-        {hasActiveFilters && (
-          <Button
-            variant="outline"
-            onClick={clearAllFilters}
-            className="whitespace-nowrap text-sm px-3"
-          >
-            <X className="w-4 h-4 mr-2" />
-            Clear Filters
-          </Button>
-        )}
+          {hasActiveFilters && (
+            <Button
+              variant="outline"
+              onClick={clearAllFilters}
+              className="whitespace-nowrap text-sm px-3"
+            >
+              <X className="w-4 h-4 mr-2" />
+              Clear Filters
+            </Button>
+          )}
+        </div>
       </div>
     </div>
   );

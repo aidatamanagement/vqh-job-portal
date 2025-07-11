@@ -71,20 +71,30 @@ serve(async (req) => {
       )
     }
 
-    // Update the user's profile with role and other metadata
+    // Create or update the user's profile with role and other metadata
     if (user?.user && user_metadata) {
       const { error: profileError } = await supabaseAdmin
         .from('profiles')
-        .update({
+        .upsert({
+          id: user.user.id,
+          email: user.user.email,
           role: role,
           admin_name: user_metadata.admin_name,
-          display_name: user_metadata.display_name
+          display_name: user_metadata.display_name,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
         })
         .eq('id', user.user.id)
 
       if (profileError) {
-        console.error('Error updating profile:', profileError)
-        // Don't fail the request if profile update fails
+        console.error('Error creating/updating profile:', profileError)
+        return new Response(
+          JSON.stringify({ error: 'Failed to create user profile: ' + profileError.message }),
+          { 
+            status: 500, 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+          }
+        )
       }
     }
 

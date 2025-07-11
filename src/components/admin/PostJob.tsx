@@ -7,10 +7,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Plus, X, Briefcase, MapPin, Settings as SettingsIcon, Award, AlertTriangle, Calendar, Loader2 } from 'lucide-react';
+import { Plus, X, Briefcase, MapPin, Settings as SettingsIcon, Award, AlertTriangle, Calendar, Loader2, Users } from 'lucide-react';
 import { useAppContext } from '@/contexts/AppContext';
 import { toast } from '@/hooks/use-toast';
 import RichTextEditor from '@/components/ui/rich-text-editor';
+import { HRManager } from '@/types';
 
 const PostJob: React.FC = () => {
   const { 
@@ -25,10 +26,12 @@ const PostJob: React.FC = () => {
     createFacility, 
     deleteFacility,
     fetchMasterData,
+    fetchHRManagers,
     isLoading
   } = useAppContext();
   const [activeTab, setActiveTab] = useState('create-job');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [hrManagers, setHRManagers] = useState<HRManager[]>([]);
   
   // Job form state
   const [jobForm, setJobForm] = useState({
@@ -40,6 +43,7 @@ const PostJob: React.FC = () => {
     customFacility: '',
     isUrgent: false,
     applicationDeadline: '',
+    hrManagerId: '',
   });
 
   // Position/Location/Facility management state
@@ -50,10 +54,11 @@ const PostJob: React.FC = () => {
   const [isAddingLocation, setIsAddingLocation] = useState(false);
   const [isAddingFacility, setIsAddingFacility] = useState(false);
 
-  // Fetch master data on component mount
+  // Fetch master data and HR managers on component mount
   useEffect(() => {
     fetchMasterData();
-  }, [fetchMasterData]);
+    fetchHRManagers().then(setHRManagers);
+  }, [fetchMasterData, fetchHRManagers]);
 
   const handleJobInputChange = (field: string, value: string | boolean) => {
     setJobForm(prev => ({ ...prev, [field]: value }));
@@ -89,10 +94,10 @@ const PostJob: React.FC = () => {
     e.preventDefault();
     setIsSubmitting(true);
     
-    if (!jobForm.title || !jobForm.description || !jobForm.position || !jobForm.location) {
+    if (!jobForm.title || !jobForm.description || !jobForm.position || !jobForm.location || !jobForm.hrManagerId) {
       toast({
         title: "Missing Required Fields",
-        description: "Please fill in all required fields",
+        description: "Please fill in all required fields including HR Manager",
         variant: "destructive",
       });
       setIsSubmitting(false);
@@ -123,6 +128,7 @@ const PostJob: React.FC = () => {
       isActive: true,
       isUrgent: jobForm.isUrgent,
       applicationDeadline: jobForm.applicationDeadline || null,
+      hrManagerId: jobForm.hrManagerId,
     };
 
     console.log('Submitting job data:', jobData);
@@ -140,6 +146,7 @@ const PostJob: React.FC = () => {
         customFacility: '',
         isUrgent: false,
         applicationDeadline: '',
+        hrManagerId: '',
       });
 
       toast({
@@ -340,7 +347,7 @@ const PostJob: React.FC = () => {
                   />
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div>
                     <Label htmlFor="position">Position Category *</Label>
                     <Select value={jobForm.position} onValueChange={(value) => handleJobInputChange('position', value)} disabled={isSubmitting}>
@@ -371,6 +378,29 @@ const PostJob: React.FC = () => {
                         ))}
                       </SelectContent>
                     </Select>
+                  </div>
+
+                  <div>
+                    <Label htmlFor="hrManager">Assigned HR Manager *</Label>
+                    <Select value={jobForm.hrManagerId} onValueChange={(value) => handleJobInputChange('hrManagerId', value)} disabled={isSubmitting}>
+                      <SelectTrigger className="mt-1">
+                        <SelectValue placeholder={hrManagers.length === 0 ? "Loading HR managers..." : "Select HR manager"} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {hrManagers.map((manager) => (
+                          <SelectItem key={manager.id} value={manager.id}>
+                            <div className="flex items-center space-x-2">
+                              <Users className="w-4 h-4" />
+                              <span>{manager.name}</span>
+                              <span className="text-xs text-gray-500">({manager.email})</span>
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <p className="text-xs text-gray-500 mt-1">
+                      HR manager will handle all applicants for this job
+                    </p>
                   </div>
                 </div>
               </div>

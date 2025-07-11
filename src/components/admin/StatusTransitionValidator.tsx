@@ -3,6 +3,7 @@ import React from 'react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { AlertTriangle, CheckCircle, XCircle } from 'lucide-react';
+import { getValidNextStatuses } from './utils/submissionsUtils';
 
 interface StatusTransitionValidatorProps {
   currentStatus: string;
@@ -36,18 +37,7 @@ const StatusTransitionValidator: React.FC<StatusTransitionValidatorProps> = ({
     }
   };
 
-  const getValidTransitions = (status: string): string[] => {
-    const transitions: Record<string, string[]> = {
-      'application_submitted': ['under_review', 'rejected'],
-      'under_review': ['shortlisted', 'rejected', 'waiting_list'],
-      'shortlisted': ['interviewed', 'rejected', 'waiting_list'],
-      'interviewed': ['hired', 'rejected', 'waiting_list'],
-      'hired': [],
-      'rejected': [],
-      'waiting_list': ['under_review', 'shortlisted', 'interviewed', 'hired', 'rejected']
-    };
-    return transitions[status] || [];
-  };
+
 
   if (currentStatus === newStatus) {
     return (
@@ -61,7 +51,7 @@ const StatusTransitionValidator: React.FC<StatusTransitionValidatorProps> = ({
     );
   }
 
-  const validTransitions = getValidTransitions(currentStatus);
+  const validTransitions = getValidNextStatuses(currentStatus);
 
   if (isValid) {
     return (

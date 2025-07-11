@@ -7,6 +7,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Card } from '@/components/ui/card';
 import { Upload, X, FileText, Calendar, MapPin, Copy, ExternalLink } from 'lucide-react';
 import { Job } from '@/types';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useAppContext } from '@/contexts/AppContext';
 import { toast } from '@/hooks/use-toast';
 import RichTextEditor from '@/components/ui/rich-text-editor';
@@ -38,6 +39,7 @@ const ApplicationModal: React.FC<ApplicationModalProps> = ({ isOpen, onClose, jo
 
   const [files, setFiles] = useState({
     resume: null as File | null,
+    coverLetter: null as File | null,
     additionalDocs: [] as File[],
   });
 
@@ -45,17 +47,21 @@ const ApplicationModal: React.FC<ApplicationModalProps> = ({ isOpen, onClose, jo
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
-  const handleFileUpload = (type: 'resume' | 'additional', file: File) => {
+  const handleFileUpload = (type: 'resume' | 'coverLetter' | 'additional', file: File) => {
     if (type === 'resume') {
       setFiles(prev => ({ ...prev, resume: file }));
+    } else if (type === 'coverLetter') {
+      setFiles(prev => ({ ...prev, coverLetter: file }));
     } else {
       setFiles(prev => ({ ...prev, additionalDocs: [...prev.additionalDocs, file] }));
     }
   };
 
-  const removeFile = (type: 'resume' | 'additional', index?: number) => {
+  const removeFile = (type: 'resume' | 'coverLetter' | 'additional', index?: number) => {
     if (type === 'resume') {
       setFiles(prev => ({ ...prev, resume: null }));
+    } else if (type === 'coverLetter') {
+      setFiles(prev => ({ ...prev, coverLetter: null }));
     } else if (typeof index === 'number') {
       setFiles(prev => ({
         ...prev,
@@ -64,7 +70,7 @@ const ApplicationModal: React.FC<ApplicationModalProps> = ({ isOpen, onClose, jo
     }
   };
 
-  const uploadFileToSupabase = async (file: File, applicationId: string, fileType: 'resume' | 'additional', index?: number): Promise<string> => {
+  const uploadFileToSupabase = async (file: File, applicationId: string, fileType: 'resume' | 'coverLetter' | 'additional', index?: number): Promise<string> => {
     const fileExt = file.name.split('.').pop();
     const fileName = `${applicationId}/${fileType}${index !== undefined ? `_${index}` : ''}.${fileExt}`;
     
@@ -92,7 +98,7 @@ const ApplicationModal: React.FC<ApplicationModalProps> = ({ isOpen, onClose, jo
   };
 
   const validateForm = () => {
-    const required = ['firstName', 'lastName', 'email', 'phone', 'earliestStartDate', 'cityState', 'coverLetter'];
+    const required = ['firstName', 'lastName', 'email', 'phone', 'earliestStartDate', 'cityState'];
     
     for (const field of required) {
       if (!formData[field as keyof typeof formData]) {
@@ -105,10 +111,36 @@ const ApplicationModal: React.FC<ApplicationModalProps> = ({ isOpen, onClose, jo
       }
     }
 
+    // Validate earliest start date is not in the past
+    if (formData.earliestStartDate) {
+      const startDate = new Date(formData.earliestStartDate);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0); // Set to start of day for accurate comparison
+      
+      if (startDate < today) {
+        toast({
+          title: "Invalid Start Date",
+          description: "Earliest start date cannot be in the past",
+          variant: "destructive",
+        });
+        return false;
+      }
+    }
+
     if (!files.resume) {
       toast({
         title: "Resume Required",
         description: "Please upload your resume",
+        variant: "destructive",
+      });
+      return false;
+    }
+
+    // Check that at least one cover letter option is provided
+    if (!formData.coverLetter.trim() && !files.coverLetter) {
+      toast({
+        title: "Cover Letter Required",
+        description: "Please provide a cover letter by either typing it below or uploading a file",
         variant: "destructive",
       });
       return false;
@@ -145,6 +177,12 @@ const ApplicationModal: React.FC<ApplicationModalProps> = ({ isOpen, onClose, jo
         resumeUrl = await uploadFileToSupabase(files.resume, applicationId, 'resume');
       }
 
+      // Upload cover letter file
+      let coverLetterUrl = '';
+      if (files.coverLetter) {
+        coverLetterUrl = await uploadFileToSupabase(files.coverLetter, applicationId, 'coverLetter');
+      }
+
       // Upload additional documents
       const additionalDocsUrls: string[] = [];
       for (let i = 0; i < files.additionalDocs.length; i++) {
@@ -164,6 +202,7 @@ const ApplicationModal: React.FC<ApplicationModalProps> = ({ isOpen, onClose, jo
         earliest_start_date: formData.earliestStartDate,
         city_state: formData.cityState,
         cover_letter: formData.coverLetter,
+        cover_letter_url: coverLetterUrl,
         additional_docs_urls: additionalDocsUrls,
         status: 'application_submitted',
         user_id: null // Anonymous application
@@ -197,6 +236,7 @@ const ApplicationModal: React.FC<ApplicationModalProps> = ({ isOpen, onClose, jo
         earliestStartDate: formData.earliestStartDate,
         cityState: formData.cityState,
         coverLetter: formData.coverLetter,
+        coverLetterUrl: coverLetterUrl,
         status: 'application_submitted' as const,
         resumeUrl: resumeUrl,
         additionalDocsUrls: additionalDocsUrls,
@@ -262,6 +302,7 @@ const ApplicationModal: React.FC<ApplicationModalProps> = ({ isOpen, onClose, jo
     });
     setFiles({
       resume: null,
+      coverLetter: null,
       additionalDocs: [],
     });
     setShowThankYou(false);
@@ -391,6 +432,7 @@ const ApplicationModal: React.FC<ApplicationModalProps> = ({ isOpen, onClose, jo
                   type="date"
                   value={formData.earliestStartDate}
                   onChange={(e) => handleInputChange('earliestStartDate', e.target.value)}
+                  min={new Date().toISOString().split('T')[0]}
                   className="mt-1"
                 />
               </div>
@@ -409,7 +451,51 @@ const ApplicationModal: React.FC<ApplicationModalProps> = ({ isOpen, onClose, jo
 
           {/* Cover Letter */}
           <Card className="p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Cover Letter *</h3>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-gray-900">Cover Letter *</h3>
+              <div className="flex items-center space-x-2">
+                {!files.coverLetter ? (
+                  <>
+                    <input
+                      type="file"
+                      accept=".pdf,.doc,.docx"
+                      onChange={(e) => e.target.files?.[0] && handleFileUpload('coverLetter', e.target.files[0])}
+                      className="hidden"
+                      id="cover-letter-upload"
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => document.getElementById('cover-letter-upload')?.click()}
+                      className="flex items-center space-x-1"
+                    >
+                      <Upload className="w-4 h-4" />
+                      <span className="text-sm">Upload File</span>
+                    </Button>
+                  </>
+                ) : (
+                  <div className="flex items-center space-x-2 p-2 bg-green-50 rounded-lg border border-green-200">
+                    <FileText className="w-4 h-4 text-green-600" />
+                    <span className="text-sm text-green-700 font-medium">{files.coverLetter.name}</span>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => removeFile('coverLetter')}
+                      className="h-6 w-6 p-0 text-green-600 hover:text-green-800"
+                    >
+                      <X className="w-3 h-3" />
+                    </Button>
+                  </div>
+                )}
+              </div>
+            </div>
+            
+            <p className="text-sm text-gray-600 mb-4">
+              Please provide a cover letter by typing below OR uploading a file (at least one is required).
+            </p>
+            
             <RichTextEditor
               value={formData.coverLetter}
               onChange={(value) => handleInputChange('coverLetter', value)}
@@ -423,7 +509,7 @@ const ApplicationModal: React.FC<ApplicationModalProps> = ({ isOpen, onClose, jo
 
           {/* File Uploads */}
           <Card className="p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Documents</h3>
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Resume</h3>
             
             {/* Resume Upload */}
             <div className="mb-6">

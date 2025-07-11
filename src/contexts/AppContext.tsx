@@ -92,6 +92,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     fetchJobs: dataFetching.fetchJobs,
     fetchApplications: dataFetching.fetchApplications,
     fetchMasterData: dataFetching.fetchMasterData,
+    fetchHRManagers: adminOperations.fetchHRManagers,
     fetchSalespeople: crmDataFetching.fetchSalespeople,
     fetchVisitLogs: crmDataFetching.fetchVisitLogs,
     fetchTrainingVideos: crmDataFetching.fetchTrainingVideos,

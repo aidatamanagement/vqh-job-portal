@@ -1,12 +1,38 @@
 
 import { useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { Job } from '@/types';
+import { Job, HRManager } from '@/types';
 
 export const useAdminOperations = (
   fetchJobs: () => Promise<void>,
   fetchMasterData: () => Promise<void>
 ) => {
+  // Fetch HR managers for job assignment
+  const fetchHRManagers = useCallback(async (): Promise<HRManager[]> => {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('id, email, admin_name, display_name, role')
+        .in('role', ['admin', 'hr'])
+        .order('admin_name');
+
+      if (error) {
+        console.error('Error fetching HR managers:', error);
+        return [];
+      }
+
+      return (data || []).map(profile => ({
+        id: profile.id,
+        email: profile.email,
+        name: profile.admin_name || profile.display_name || profile.email,
+        role: profile.role as 'admin' | 'hr'
+      }));
+    } catch (error) {
+      console.error('Error fetching HR managers:', error);
+      return [];
+    }
+  }, []);
+
   // Admin database operations
   const createJob = useCallback(async (jobData: Omit<Job, 'id' | 'createdAt' | 'updatedAt'>): Promise<boolean> => {
     try {
@@ -21,6 +47,7 @@ export const useAdminOperations = (
           is_active: jobData.isActive,
           is_urgent: jobData.isUrgent || false,
           application_deadline: jobData.applicationDeadline,
+          hr_manager_id: jobData.hrManagerId,
         });
 
       if (error) {
@@ -47,6 +74,7 @@ export const useAdminOperations = (
       if (jobData.isActive !== undefined) updateData.is_active = jobData.isActive;
       if (jobData.isUrgent !== undefined) updateData.is_urgent = jobData.isUrgent;
       if (jobData.applicationDeadline !== undefined) updateData.application_deadline = jobData.applicationDeadline;
+      if (jobData.hrManagerId !== undefined) updateData.hr_manager_id = jobData.hrManagerId;
 
       const { error } = await supabase
         .from('jobs')
@@ -204,6 +232,7 @@ export const useAdminOperations = (
   }, [fetchMasterData]);
 
   return {
+    fetchHRManagers,
     createJob,
     updateJob,
     deleteJob,

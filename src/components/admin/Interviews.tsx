@@ -12,13 +12,17 @@ import {
   CheckCircle,
   Settings,
   Trash2,
-  Zap
+  Zap,
+  CalendarDays,
+  Table
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useCalendlyApi } from '@/hooks/useCalendlyApi';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import InterviewsTable from './components/InterviewsTable';
+import CalendarView, { CalendarInterview } from './components/CalendarView';
+import { useAppContext } from '@/contexts/AppContext';
 
 interface Interview {
   id: string;
@@ -38,6 +42,10 @@ interface Interview {
   phone?: string;
   applied_position?: string;
   city_state?: string;
+  // From join with jobs
+  job_title?: string;
+  job_location?: string;
+  job_position?: string;
 }
 
 const Interviews: React.FC = () => {
@@ -45,6 +53,7 @@ const Interviews: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [viewType, setViewType] = useState<'calendar' | 'table'>('calendar');
   const [isCalendlyConfigured, setIsCalendlyConfigured] = useState(false);
   const [isCheckingConfig, setIsCheckingConfig] = useState(true);
   const [isSyncing, setIsSyncing] = useState(false);
@@ -53,6 +62,7 @@ const Interviews: React.FC = () => {
   const [isCleaningUp, setIsCleaningUp] = useState(false);
   const { toast } = useToast();
   const { getEvents, getInvitees } = useCalendlyApi();
+  const { userProfile } = useAppContext();
 
   useEffect(() => {
     checkCalendlyConfiguration();
@@ -156,8 +166,9 @@ const Interviews: React.FC = () => {
   const loadInterviews = async () => {
     try {
       console.log('Loading interviews from database...');
-
-      const { data, error } = await supabase
+      
+      // Build the query with proper joins
+      let query = supabase
         .from('interviews')
         .select(`
           *,
@@ -166,11 +177,18 @@ const Interviews: React.FC = () => {
             last_name,
             phone,
             applied_position,
-            city_state
+            city_state,
+            jobs!inner(
+              title,
+              location,
+              position
+            )
           )
         `)
         .gte('created_at', new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()) // Only last 30 days
         .order('scheduled_time', { ascending: false });
+
+      const { data, error } = await query;
 
       if (error) {
         console.error('Error loading interviews:', error);
@@ -183,17 +201,38 @@ const Interviews: React.FC = () => {
       }
 
       // Flatten the joined data
-      const flattenedInterviews = (data || []).map(interview => ({
+      let flattenedInterviews = (data || []).map(interview => ({
         ...interview,
         first_name: interview.job_applications?.first_name,
         last_name: interview.job_applications?.last_name,
         phone: interview.job_applications?.phone,
         applied_position: interview.job_applications?.applied_position,
         city_state: interview.job_applications?.city_state,
+        job_title: interview.job_applications?.jobs?.title,
+        job_location: interview.job_applications?.jobs?.location,
+        job_position: interview.job_applications?.jobs?.position,
       }));
+
+      // Apply role-based filtering
+      if (userProfile?.role !== 'admin') {
+        // For non-admin users, only show interviews where job location matches their working location
+        const userLocation = userProfile?.location;
+        if (userLocation) {
+          flattenedInterviews = flattenedInterviews.filter(interview => 
+            interview.job_location === userLocation
+          );
+        } else {
+          // If user has no location set, show no interviews
+          flattenedInterviews = [];
+        }
+      }
 
       setInterviews(flattenedInterviews);
       console.log(`Loaded ${flattenedInterviews.length} interviews`);
+      
+      if (userProfile?.role !== 'admin') {
+        console.log(`Filtered to user location: ${userProfile?.location}`);
+      }
     } catch (error) {
       console.error('Error loading interviews:', error);
       toast({
@@ -647,6 +686,28 @@ const Interviews: React.FC = () => {
         </div>
         
         <div className="flex gap-2">
+          {/* View Toggle */}
+          <div className="flex items-center border rounded-lg p-1">
+            <Button
+              variant={viewType === 'calendar' ? 'default' : 'ghost'}
+              size="sm"
+              onClick={() => setViewType('calendar')}
+              className="flex items-center gap-2 px-3"
+            >
+              <CalendarDays className="w-4 h-4" />
+              Calendar
+            </Button>
+            <Button
+              variant={viewType === 'table' ? 'default' : 'ghost'}
+              size="sm"
+              onClick={() => setViewType('table')}
+              className="flex items-center gap-2 px-3"
+            >
+              <Table className="w-4 h-4" />
+              Table
+            </Button>
+          </div>
+
           <Button
             onClick={cleanupOldInterviews}
             disabled={isCleaningUp}
@@ -696,45 +757,69 @@ const Interviews: React.FC = () => {
         </AlertDescription>
       </Alert>
 
-      {/* Filters */}
-      <Card>
-        <CardContent className="pt-6">
-          <div className="flex flex-col sm:flex-row gap-4">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-              <Input
-                placeholder="Search by candidate name, email, or position..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
-              />
-            </div>
-            
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-full sm:w-48">
-                <div className="flex items-center">
-                  <Filter className="w-4 h-4 mr-2" />
-                  <SelectValue placeholder="Filter by status" />
+      {/* Conditional View Based on viewType */}
+      {viewType === 'calendar' ? (
+        <CalendarView
+          interviews={interviews.map(interview => ({
+            id: interview.id,
+            candidate_email: interview.candidate_email,
+            scheduled_time: interview.scheduled_time,
+            status: interview.status,
+            first_name: interview.first_name,
+            last_name: interview.last_name,
+            applied_position: interview.applied_position,
+            city_state: interview.city_state,
+            job_title: interview.job_title,
+            job_location: interview.job_location,
+            meeting_url: interview.meeting_url,
+            phone: interview.phone,
+          }))}
+          isLoading={isLoading}
+          onUpdateStatus={updateInterviewStatus}
+        />
+      ) : (
+        <>
+          {/* Filters - only shown in table view */}
+          <Card>
+            <CardContent className="pt-6">
+              <div className="flex flex-col sm:flex-row gap-4">
+                <div className="relative flex-1">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                  <Input
+                    placeholder="Search by candidate name, email, or position..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-10"
+                  />
                 </div>
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Statuses</SelectItem>
-                <SelectItem value="scheduled">Scheduled</SelectItem>
-                <SelectItem value="completed">Completed</SelectItem>
-                <SelectItem value="cancelled">Cancelled</SelectItem>
-                <SelectItem value="no_show">No Show</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </CardContent>
-      </Card>
+                
+                <Select value={statusFilter} onValueChange={setStatusFilter}>
+                  <SelectTrigger className="w-full sm:w-48">
+                    <div className="flex items-center">
+                      <Filter className="w-4 h-4 mr-2" />
+                      <SelectValue placeholder="Filter by status" />
+                    </div>
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Statuses</SelectItem>
+                    <SelectItem value="scheduled">Scheduled</SelectItem>
+                    <SelectItem value="completed">Completed</SelectItem>
+                    <SelectItem value="cancelled">Cancelled</SelectItem>
+                    <SelectItem value="no_show">No Show</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </CardContent>
+          </Card>
 
-      {/* Interviews Table */}
-      <InterviewsTable
-        interviews={filteredInterviews}
-        isLoading={isLoading}
-        onUpdateStatus={updateInterviewStatus}
-      />
+          {/* Interviews Table */}
+          <InterviewsTable
+            interviews={filteredInterviews}
+            isLoading={isLoading}
+            onUpdateStatus={updateInterviewStatus}
+          />
+        </>
+      )}
     </div>
   );
 };

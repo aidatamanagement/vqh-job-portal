@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Search, FilterX } from 'lucide-react';
-import { JobPosition, JobLocation } from '@/types';
+import { JobPosition, JobLocation, HRManager } from '@/types';
 
 interface JobFiltersProps {
   searchTerm: string;
@@ -16,8 +16,11 @@ interface JobFiltersProps {
   setFilterLocation: (location: string) => void;
   filterStatus: string;
   setFilterStatus: (status: string) => void;
+  filterHRManager: string;
+  setFilterHRManager: (hrManager: string) => void;
   positions: JobPosition[];
   locations: JobLocation[];
+  hrManagers: HRManager[];
   hasActiveFilters: boolean;
   onClearFilters: () => void;
 }
@@ -31,8 +34,11 @@ const JobFilters: React.FC<JobFiltersProps> = ({
   setFilterLocation,
   filterStatus,
   setFilterStatus,
+  filterHRManager,
+  setFilterHRManager,
   positions,
   locations,
+  hrManagers,
   hasActiveFilters,
   onClearFilters,
 }) => {
@@ -51,7 +57,7 @@ const JobFilters: React.FC<JobFiltersProps> = ({
         </div>
         
         {/* Filters - Stack on mobile, grid on larger screens */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
           <Select value={filterPosition} onValueChange={setFilterPosition}>
             <SelectTrigger>
               <SelectValue placeholder="All Positions" />
@@ -75,6 +81,20 @@ const JobFilters: React.FC<JobFiltersProps> = ({
               {locations.map((location) => (
                 <SelectItem key={location.id} value={location.name}>
                   {location.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          <Select value={filterHRManager} onValueChange={setFilterHRManager}>
+            <SelectTrigger>
+              <SelectValue placeholder="All HR Managers" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All HR Managers</SelectItem>
+              {hrManagers.map((manager) => (
+                <SelectItem key={manager.id} value={manager.id}>
+                  {manager.name}
                 </SelectItem>
               ))}
             </SelectContent>

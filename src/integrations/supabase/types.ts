@@ -197,6 +197,7 @@ export type Database = {
           applied_position: string
           city_state: string | null
           cover_letter: string | null
+          cover_letter_url: string | null
           created_at: string | null
           earliest_start_date: string | null
           email: string
@@ -215,6 +216,7 @@ export type Database = {
           applied_position: string
           city_state?: string | null
           cover_letter?: string | null
+          cover_letter_url?: string | null
           created_at?: string | null
           earliest_start_date?: string | null
           email: string
@@ -233,6 +235,7 @@ export type Database = {
           applied_position?: string
           city_state?: string | null
           cover_letter?: string | null
+          cover_letter_url?: string | null
           created_at?: string | null
           earliest_start_date?: string | null
           email?: string
@@ -317,6 +320,7 @@ export type Database = {
           created_by: string | null
           description: string
           facilities: string[] | null
+          hr_manager_id: string | null
           id: string
           is_active: boolean | null
           is_urgent: boolean | null
@@ -331,6 +335,7 @@ export type Database = {
           created_by?: string | null
           description: string
           facilities?: string[] | null
+          hr_manager_id?: string | null
           id?: string
           is_active?: boolean | null
           is_urgent?: boolean | null
@@ -345,6 +350,7 @@ export type Database = {
           created_by?: string | null
           description?: string
           facilities?: string[] | null
+          hr_manager_id?: string | null
           id?: string
           is_active?: boolean | null
           is_urgent?: boolean | null
@@ -372,6 +378,8 @@ export type Database = {
           first_name: string | null
           id: string
           last_name: string | null
+          location: string | null
+          profile_image_url: string | null
           role: string | null
           updated_at: string | null
         }
@@ -383,6 +391,8 @@ export type Database = {
           first_name?: string | null
           id: string
           last_name?: string | null
+          location?: string | null
+          profile_image_url?: string | null
           role?: string | null
           updated_at?: string | null
         }
@@ -394,6 +404,8 @@ export type Database = {
           first_name?: string | null
           id?: string
           last_name?: string | null
+          location?: string | null
+          profile_image_url?: string | null
           role?: string | null
           updated_at?: string | null
         }

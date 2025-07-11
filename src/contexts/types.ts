@@ -6,6 +6,7 @@ import {
   JobPosition, 
   JobLocation, 
   JobFacility,
+  HRManager,
   Salesperson,
   VisitLog,
   TrainingVideo
@@ -55,6 +56,7 @@ export interface AppContextType {
   fetchJobs: () => Promise<void>;
   fetchApplications: () => Promise<void>;
   fetchMasterData: () => Promise<void>;
+  fetchHRManagers: () => Promise<HRManager[]>;
   fetchSalespeople: () => Promise<void>;
   fetchVisitLogs: () => Promise<void>;
   fetchTrainingVideos: () => Promise<void>;

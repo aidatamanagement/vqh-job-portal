@@ -3,7 +3,7 @@ import React from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
-import { MapPin, Calendar, Clock, AlertTriangle, Briefcase, Users } from 'lucide-react';
+import { MapPin, Calendar, Clock, AlertTriangle, Briefcase, Users, User } from 'lucide-react';
 import { Job } from '@/types';
 
 interface JobPreviewModalProps {
@@ -190,6 +190,19 @@ const JobPreviewModal: React.FC<JobPreviewModalProps> = ({ job, isOpen, onClose 
                                 minute: '2-digit'
                               })}
                             </p>
+                          </div>
+                        </div>
+                      )}
+
+                      {job.hrManagerName && (
+                        <div className="flex items-start space-x-3">
+                          <User className="w-5 h-5 text-primary mt-0.5" />
+                          <div>
+                            <p className="text-sm font-medium text-gray-900">HR Contact</p>
+                            <p className="text-sm text-gray-600">{job.hrManagerName}</p>
+                            {job.hrManagerEmail && (
+                              <p className="text-xs text-gray-500">{job.hrManagerEmail}</p>
+                            )}
                           </div>
                         </div>
                       )}

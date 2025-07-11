@@ -1,12 +1,15 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { useNavigate } from 'react-router-dom';
 import { useAppContext } from '@/contexts/AppContext';
 import { User, LogOut, Settings, Lock, Menu } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import UserProfileModal from '@/components/UserProfileModal';
 const Header: React.FC = () => {
   const navigate = useNavigate();
+  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const {
     isAuthenticated,
     user,
@@ -54,6 +57,10 @@ const Header: React.FC = () => {
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="w-48">
+                    <DropdownMenuItem onClick={() => setIsProfileModalOpen(true)}>
+                      <User className="w-4 h-4 mr-2" />
+                      My Profile
+                    </DropdownMenuItem>
                     {userProfile?.role === 'admin' && <DropdownMenuItem onClick={handleAdminClick}>
                         <Settings className="w-4 h-4 mr-2" />
                         Admin Panel
@@ -68,12 +75,33 @@ const Header: React.FC = () => {
 
               {/* Desktop Menu for Authenticated Users */}
               <div className="hidden md:flex items-center space-x-4">
+                {/* User Profile Avatar */}
+                <div 
+                  className="flex items-center space-x-2 px-3 py-2 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors duration-200"
+                  onClick={() => setIsProfileModalOpen(true)}
+                >
+                  <Avatar className="w-6 h-6">
+                    <AvatarImage src="" />
+                    <AvatarFallback className="text-xs font-semibold bg-primary text-white">
+                      {(userProfile?.admin_name || userProfile?.display_name || user?.email || 'U')
+                        .split(' ')
+                        .map(name => name[0])
+                        .join('')
+                        .toUpperCase()
+                        .slice(0, 2)}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="text-sm">
+                    <p className="font-medium text-gray-900">
+                      {userProfile?.admin_name || userProfile?.display_name || 'User'}
+                    </p>
+                  </div>
+                </div>
+
                 {/* Admin Access */}
                 {userProfile?.role === 'admin' && <Button variant="outline" size="sm" onClick={handleAdminClick} className="flex items-center space-x-2">
                     <Settings className="w-4 h-4" />
-                    <span className="hidden lg:inline">
-                      {userProfile?.display_name || userProfile?.email || 'Admin'}
-                    </span>
+                    <span className="hidden lg:inline">Admin Panel</span>
                     <span className="lg:hidden">Admin</span>
                   </Button>}
 
@@ -90,6 +118,12 @@ const Header: React.FC = () => {
             </Button>}
         </div>
       </div>
+
+      {/* User Profile Modal */}
+      <UserProfileModal 
+        isOpen={isProfileModalOpen} 
+        onClose={() => setIsProfileModalOpen(false)} 
+      />
     </header>;
 };
 export default Header;

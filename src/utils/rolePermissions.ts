@@ -47,9 +47,10 @@ export const getRolePermissions = (role: UserRole): RolePermissions => {
         canViewSalespeople: false,
         canManageVisitLogs: false,
         canViewVisitLogs: false,
-        canManageTrainingVideos: false,
-        canViewTrainingVideos: false,
-        canManageEmailSettings: false,
+        canManageTrainingVideos: true,
+        canViewTrainingVideos: true,
+        canManageEmailSettings: false
+        ,
         canViewEmailLogs: false,
         canManageUsers: false,
         canViewDashboard: true,

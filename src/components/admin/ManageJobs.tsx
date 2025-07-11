@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Briefcase } from 'lucide-react';
 import { useAppContext } from '@/contexts/AppContext';
-import { Job } from '@/types';
+import { Job, HRManager } from '@/types';
 import { toast } from '@/hooks/use-toast';
 import JobFilters from './JobFilters';
 import ManageJobCard from './ManageJobCard';
@@ -11,17 +11,24 @@ import EditJobModal from './EditJobModal';
 import JobPreviewModal from './JobPreviewModal';
 
 const ManageJobs: React.FC = () => {
-  const { jobs, applications, positions, locations, facilities, updateJob, deleteJob, isDataLoading } = useAppContext();
+  const { jobs, applications, positions, locations, facilities, updateJob, deleteJob, fetchHRManagers, isDataLoading } = useAppContext();
   const [searchTerm, setSearchTerm] = useState('');
   const [filterPosition, setFilterPosition] = useState('all');
   const [filterLocation, setFilterLocation] = useState('all');
   const [filterStatus, setFilterStatus] = useState('all');
+  const [filterHRManager, setFilterHRManager] = useState('all');
   const [editingJob, setEditingJob] = useState<Job | null>(null);
   const [previewingJob, setPreviewingJob] = useState<Job | null>(null);
   const [jobForm, setJobForm] = useState<Partial<Job> & { customFacility?: string }>({});
+  const [hrManagers, setHRManagers] = useState<HRManager[]>([]);
+
+  // Fetch HR managers on component mount
+  useEffect(() => {
+    fetchHRManagers().then(setHRManagers);
+  }, [fetchHRManagers]);
 
   // Check if any filters are active
-  const hasActiveFilters = searchTerm !== '' || filterPosition !== 'all' || filterLocation !== 'all' || filterStatus !== 'all';
+  const hasActiveFilters = searchTerm !== '' || filterPosition !== 'all' || filterLocation !== 'all' || filterStatus !== 'all' || filterHRManager !== 'all';
 
   // Clear all filters
   const clearAllFilters = () => {
@@ -29,6 +36,7 @@ const ManageJobs: React.FC = () => {
     setFilterPosition('all');
     setFilterLocation('all');
     setFilterStatus('all');
+    setFilterHRManager('all');
   };
 
   // Get application counts for each job
@@ -39,14 +47,16 @@ const ManageJobs: React.FC = () => {
   // Filter jobs based on search and filters
   const filteredJobs = jobs.filter(job => {
     const matchesSearch = job.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         job.position.toLowerCase().includes(searchTerm.toLowerCase());
+                         job.position.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         (job.hrManagerName && job.hrManagerName.toLowerCase().includes(searchTerm.toLowerCase()));
     const matchesPosition = filterPosition === 'all' || job.position === filterPosition;
     const matchesLocation = filterLocation === 'all' || job.location === filterLocation;
     const matchesStatus = filterStatus === 'all' || 
                          (filterStatus === 'active' && job.isActive) ||
                          (filterStatus === 'inactive' && !job.isActive);
+    const matchesHRManager = filterHRManager === 'all' || job.hrManagerId === filterHRManager;
     
-    return matchesSearch && matchesPosition && matchesLocation && matchesStatus;
+    return matchesSearch && matchesPosition && matchesLocation && matchesStatus && matchesHRManager;
   });
 
   const toggleJobStatus = async (jobId: string) => {
@@ -100,6 +110,7 @@ const ManageJobs: React.FC = () => {
       isUrgent: job.isUrgent || false,
       applicationDeadline: job.applicationDeadline ? 
         new Date(job.applicationDeadline).toISOString().slice(0, 16) : '',
+      hrManagerId: job.hrManagerId || '',
     });
   };
 
@@ -139,10 +150,10 @@ const ManageJobs: React.FC = () => {
   };
 
   const saveJobChanges = async () => {
-    if (!editingJob || !jobForm.title || !jobForm.description || !jobForm.position || !jobForm.location) {
+    if (!editingJob || !jobForm.title || !jobForm.description || !jobForm.position || !jobForm.location || !jobForm.hrManagerId) {
       toast({
         title: "Missing Required Fields",
-        description: "Please fill in all required fields",
+        description: "Please fill in all required fields including HR Manager",
         variant: "destructive",
       });
       return;
@@ -170,6 +181,7 @@ const ManageJobs: React.FC = () => {
       facilities: jobForm.facilities,
       isUrgent: jobForm.isUrgent,
       applicationDeadline: jobForm.applicationDeadline || null,
+      hrManagerId: jobForm.hrManagerId,
     };
 
     console.log('Updating job with data:', updateData);
@@ -242,8 +254,11 @@ const ManageJobs: React.FC = () => {
         setFilterLocation={setFilterLocation}
         filterStatus={filterStatus}
         setFilterStatus={setFilterStatus}
+        filterHRManager={filterHRManager}
+        setFilterHRManager={setFilterHRManager}
         positions={positions}
         locations={locations}
+        hrManagers={hrManagers}
         hasActiveFilters={hasActiveFilters}
         onClearFilters={clearAllFilters}
       />
@@ -257,7 +272,7 @@ const ManageJobs: React.FC = () => {
             </div>
             <h3 className="text-lg font-semibold text-gray-900 mb-2">No jobs found</h3>
             <p className="text-sm sm:text-base text-gray-600">
-              {searchTerm || filterPosition !== 'all' || filterLocation !== 'all' || filterStatus !== 'all'
+              {searchTerm || filterPosition !== 'all' || filterLocation !== 'all' || filterStatus !== 'all' || filterHRManager !== 'all'
                 ? "Try adjusting your search criteria" 
                 : "No jobs have been posted yet"
               }
@@ -286,6 +301,7 @@ const ManageJobs: React.FC = () => {
         positions={positions}
         locations={locations}
         facilities={facilities}
+        hrManagers={hrManagers}
         onClose={() => setEditingJob(null)}
         onInputChange={handleJobInputChange}
         onFacilityToggle={handleFacilityToggle}

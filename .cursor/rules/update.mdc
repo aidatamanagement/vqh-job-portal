@@ -1,0 +1,18 @@
+---
+alwaysApply: true
+---
+Rule:
+Every time a minor or major change is made to any project-related code, configuration, or documentation, the corresponding Cursor document must be updated immediately with a brief summary of the change.
+
+Purpose:
+	•	To maintain an accurate and continuous record of the project’s evolution
+	•	To ensure clarity and accountability, even when working alone
+	•	To make it easier to backtrack, debug, or explain decisions later on
+
+Guidelines:
+	•	Use timestamps and bullet points for clarity
+	•	Include code snippet references if applicable
+	•	Keep the change logs short but descriptive (e.g., “Updated form validation on InventoryForm.tsx to include date picker”)
+	•	If the change is experimental or uncertain, note it clearly (e.g., “Testing alternate Supabase query on line 42”)
+
+file "updates.md"

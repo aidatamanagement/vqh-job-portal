@@ -1,15 +1,18 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { useAppContext } from '@/contexts/AppContext';
 import { LogOut, User, Menu } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 interface AdminHeaderProps {
   onMenuClick?: () => void;
+  onNavigate?: (view: string) => void;
 }
 
-const AdminHeader: React.FC<AdminHeaderProps> = ({ onMenuClick }) => {
+const AdminHeader: React.FC<AdminHeaderProps> = ({ onMenuClick, onNavigate }) => {
   const { logout, userProfile } = useAppContext();
   const navigate = useNavigate();
 
@@ -22,9 +25,13 @@ const AdminHeader: React.FC<AdminHeaderProps> = ({ onMenuClick }) => {
     navigate('/');
   };
 
+  const handleProfileClick = () => {
+    onNavigate?.('profile-settings');
+  };
+
   return (
-    <header className="bg-white border-b border-gray-200 px-4 lg:px-6 py-4">
-      <div className="flex items-center justify-between">
+    <header className="bg-white border-b border-gray-200 px-4 lg:px-6 h-16 flex items-center">
+      <div className="flex items-center justify-between w-full">
         {/* Mobile Menu Button and Logo */}
         <div className="flex items-center space-x-3">
           {/* Mobile Menu Button */}
@@ -54,28 +61,99 @@ const AdminHeader: React.FC<AdminHeaderProps> = ({ onMenuClick }) => {
 
         {/* Admin Info and Actions */}
         <div className="flex items-center space-x-2 lg:space-x-4">
-          {/* Admin Info - Hidden on small screens */}
-          <div className="hidden md:flex items-center space-x-2 px-3 py-2 bg-gray-50 rounded-lg">
-            <div className="w-6 h-6 lg:w-8 lg:h-8 bg-primary rounded-full flex items-center justify-center">
-              <User className="w-3 h-3 lg:w-4 lg:h-4 text-white" />
-            </div>
-            <div className="text-sm">
-              <p className="font-medium text-gray-900">
-                {userProfile?.display_name || 'Administrator'}
-              </p>
-            </div>
+          {/* Desktop Profile Dropdown */}
+          <div className="hidden md:block">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <div className="cursor-pointer hover:opacity-80 transition-opacity duration-200">
+                  <Avatar className="w-8 h-8">
+                    <AvatarImage src={userProfile?.profile_image_url || ""} />
+                    <AvatarFallback className="text-sm font-semibold bg-primary text-white">
+                      {(userProfile?.admin_name || userProfile?.display_name || 'A')
+                        .split(' ')
+                        .map(name => name[0])
+                        .join('')
+                        .toUpperCase()
+                        .slice(0, 2)}
+                    </AvatarFallback>
+                  </Avatar>
+                </div>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56 p-1">
+                {/* User Info Header */}
+                <div className="px-2 py-2 border-b border-gray-100">
+                  <div className="flex items-center space-x-2">
+                    <Avatar className="w-8 h-8">
+                      <AvatarImage src={userProfile?.profile_image_url || ""} />
+                      <AvatarFallback className="text-xs font-semibold bg-primary text-white">
+                        {(userProfile?.admin_name || userProfile?.display_name || 'A')
+                          .split(' ')
+                          .map(name => name[0])
+                          .join('')
+                          .toUpperCase()
+                          .slice(0, 2)}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-gray-900 truncate">{userProfile?.admin_name || userProfile?.display_name || 'Administrator'}</p>
+                      <p className="text-xs text-gray-500 truncate">{userProfile?.email || 'No email'}</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Menu Items */}
+                <div className="py-1">
+                  <DropdownMenuItem onClick={handleProfileClick} className="flex items-center space-x-2 px-2 py-1.5 cursor-pointer text-sm">
+                    <User className="w-4 h-4" />
+                    <span>Profile</span>
+                  </DropdownMenuItem>
+                  
+                  <DropdownMenuSeparator className="my-1" />
+                  
+                  <DropdownMenuItem onClick={handleLogout} className="flex items-center space-x-2 px-2 py-1.5 cursor-pointer text-sm text-red-600 hover:text-red-700 hover:bg-red-50">
+                    <LogOut className="w-4 h-4" />
+                    <span>Log out</span>
+                  </DropdownMenuItem>
+                </div>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
 
-          {/* Logout Button */}
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleLogout}
-            className="flex items-center space-x-1 lg:space-x-2 hover:bg-red-50 hover:border-red-200 hover:text-red-700"
-          >
-            <LogOut className="w-4 h-4" />
-            <span className="hidden sm:inline">Logout</span>
-          </Button>
+          {/* Mobile Profile Dropdown */}
+          <div className="md:hidden">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Avatar className="w-8 h-8 cursor-pointer hover:opacity-80 transition-opacity duration-200">
+                  <AvatarImage src={userProfile?.profile_image_url || ""} />
+                  <AvatarFallback className="text-sm font-semibold bg-primary text-white">
+                    {(userProfile?.admin_name || userProfile?.display_name || 'A')
+                      .split(' ')
+                      .map(name => name[0])
+                      .join('')
+                      .toUpperCase()
+                      .slice(0, 2)}
+                  </AvatarFallback>
+                </Avatar>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-48 p-1">
+                <div className="px-2 py-2 border-b border-gray-100">
+                  <p className="text-sm font-medium text-gray-900 truncate">{userProfile?.admin_name || userProfile?.display_name || 'Administrator'}</p>
+                  <p className="text-xs text-gray-500 truncate">{userProfile?.email || 'No email'}</p>
+                </div>
+                <div className="py-1">
+                  <DropdownMenuItem onClick={handleProfileClick} className="flex items-center space-x-2 px-2 py-1.5 cursor-pointer text-sm">
+                    <User className="w-4 h-4" />
+                    <span>Profile</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator className="my-1" />
+                  <DropdownMenuItem onClick={handleLogout} className="flex items-center space-x-2 px-2 py-1.5 cursor-pointer text-sm text-red-600 hover:text-red-700 hover:bg-red-50">
+                    <LogOut className="w-4 h-4" />
+                    <span>Log out</span>
+                  </DropdownMenuItem>
+                </div>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         </div>
       </div>
     </header>

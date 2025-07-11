@@ -8,6 +8,7 @@ import { AppProvider } from "@/contexts/AppContext";
 import Index from "./pages/Index";
 import JobDetails from "./pages/JobDetails";
 import AdminLogin from "./pages/AdminLogin";
+import ResetPassword from "./pages/ResetPassword";
 import AdminDashboard from "./pages/AdminDashboard";
 import ApplicationTracker from "./pages/ApplicationTracker";
 import NotFound from "./pages/NotFound";
@@ -27,6 +28,7 @@ const App = () => (
             <Route path="/track/:token" element={<ApplicationTracker />} />
             <Route path="/track" element={<ApplicationTracker />} />
             <Route path="/admin/login" element={<AdminLogin />} />
+            <Route path="/admin/reset-password" element={<ResetPassword />} />
             <Route path="/admin" element={<AdminDashboard />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />

@@ -31,6 +31,7 @@ const SubmissionsTable: React.FC<SubmissionsTableProps> = ({
               <TableHead className="font-semibold min-w-[150px]">Position</TableHead>
               <TableHead className="font-semibold min-w-[120px]">Applied Date</TableHead>
               <TableHead className="font-semibold min-w-[140px]">Location</TableHead>
+              <TableHead className="font-semibold min-w-[130px]">HR Manager</TableHead>
               <TableHead className="font-semibold min-w-[100px]">Status</TableHead>
               <TableHead className="font-semibold text-right min-w-[160px]">Actions</TableHead>
             </TableRow>
@@ -38,7 +39,7 @@ const SubmissionsTable: React.FC<SubmissionsTableProps> = ({
           <TableBody>
             {submissions.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={6} className="text-center py-8 text-gray-500">
+                <TableCell colSpan={7} className="text-center py-8 text-gray-500">
                   No applications found matching your criteria.
                 </TableCell>
               </TableRow>
@@ -61,6 +62,9 @@ const SubmissionsTable: React.FC<SubmissionsTableProps> = ({
                   </TableCell>
                   <TableCell className="min-w-[140px]">
                     <span className="text-gray-600 text-sm">{application.cityState}</span>
+                  </TableCell>
+                  <TableCell className="min-w-[130px]">
+                    <span className="text-gray-600 text-sm">{application.hrManagerName || 'Unassigned'}</span>
                   </TableCell>
                   <TableCell className="min-w-[100px]">
                     <Badge variant={getStatusBadgeVariant(application.status)} className="text-xs">

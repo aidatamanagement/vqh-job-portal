@@ -23,7 +23,18 @@ export const useSubmissions = () => {
 
       const { data, error } = await supabase
         .from('job_applications')
-        .select('*')
+        .select(`
+          *,
+          jobs!inner(
+            id,
+            title,
+            hr_manager:profiles!hr_manager_id (
+              admin_name,
+              display_name,
+              email
+            )
+          )
+        `)
         .order('created_at', { ascending: false });
 
       if (error) {
@@ -50,8 +61,11 @@ export const useSubmissions = () => {
         earliestStartDate: item.earliest_start_date || '',
         cityState: item.city_state || '',
         coverLetter: item.cover_letter || '',
+        coverLetterUrl: item.cover_letter_url,
         resumeUrl: getResumeUrl(item.id),
         additionalDocsUrls: item.additional_docs_urls || [],
+        hrManagerName: item.jobs?.hr_manager ? (item.jobs.hr_manager.admin_name || item.jobs.hr_manager.display_name || 'Unknown') : 'Unassigned',
+        hrManagerEmail: item.jobs?.hr_manager?.email || undefined,
         status: item.status as 'application_submitted' | 'under_review' | 'shortlisted' | 'interviewed' | 'hired' | 'rejected' | 'waiting_list',
         notes: '',
         trackingToken: item.tracking_token,

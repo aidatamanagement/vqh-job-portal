@@ -45,7 +45,11 @@ const ApplicationDetailsModal: React.FC<ApplicationDetailsModalProps> = ({
           </div>
 
           {/* Cover Letter */}
-          <CoverLetterSection coverLetter={selectedApplication.coverLetter} />
+          <CoverLetterSection 
+            coverLetter={selectedApplication.coverLetter} 
+            coverLetterUrl={selectedApplication.coverLetterUrl}
+            onOpenFileViewer={onOpenFileViewer}
+          />
 
           {/* Attachments */}
           <AttachmentsSection

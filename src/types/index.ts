@@ -9,6 +9,9 @@ export interface Job {
   isActive: boolean;
   isUrgent?: boolean;
   applicationDeadline?: string;
+  hrManagerId?: string;
+  hrManagerName?: string;
+  hrManagerEmail?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -42,8 +45,11 @@ export interface JobApplication {
   earliestStartDate: string;
   cityState: string;
   coverLetter: string;
+  coverLetterUrl?: string;
   resumeUrl?: string;
   additionalDocsUrls: string[];
+  hrManagerName?: string;
+  hrManagerEmail?: string;
   status: 'application_submitted' | 'under_review' | 'shortlisted' | 'interviewed' | 'hired' | 'rejected' | 'waiting_list';
   notes?: string;
   trackingToken: string;
@@ -58,7 +64,15 @@ export interface User {
   email: string;
   role: UserRole;
   displayName?: string;
+  location?: string;
   createdAt: string;
+}
+
+export interface HRManager {
+  id: string;
+  email: string;
+  name: string;
+  role: UserRole;
 }
 
 export interface FilterState {
