@@ -33,16 +33,13 @@ const Header: React.FC = () => {
       <div className="container mx-auto p-0 flex items-center justify-between">
         {/* Logo and Title */}
         <div className="flex items-center space-x-3 cursor-pointer group" onClick={handleLogoClick}>
-          <div className="w-8 h-8 md:w-10 md:h-10 bg-primary rounded-lg flex items-center justify-center group-hover:scale-105 transition-transform duration-200">
-            <span className="text-white font-bold text-sm md:text-lg">VQH</span>
-          </div>
-          <div className="hidden sm:block">
-            <h1 className="text-xl md:text-2xl font-bold text-gray-900">ViaQuest Hospice</h1>
-            <p className="text-xs md:text-sm text-gray-600">Compassionate Career Opportunities</p>
-          </div>
-          <div className="sm:hidden">
-            <h1 className="text-lg font-bold text-gray-900">ViaQuest Hospice</h1>
-          </div>
+                     <div className="w-32 h-32 md:w-40 md:h-40 rounded-lg flex items-center justify-center group-hover:scale-105 transition-transform duration-200">
+             <img 
+               src="/images/LOGO.svg" 
+               alt="ViaQuest Hospice Logo" 
+               className="w-full h-full object-contain"
+             />
+           </div>
         </div>
 
         {/* Authentication Controls */}

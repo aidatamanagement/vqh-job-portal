@@ -49,12 +49,12 @@ const AdminHeader: React.FC<AdminHeaderProps> = ({ onMenuClick, onNavigate }) =>
             className="flex items-center space-x-3 cursor-pointer group"
             onClick={handleLogoClick}
           >
-            <div className="w-8 h-8 lg:w-10 lg:h-10 bg-primary rounded-lg flex items-center justify-center group-hover:scale-105 transition-transform duration-200">
-              <span className="text-white font-bold text-sm lg:text-lg">VQH</span>
-            </div>
-            <div className="hidden sm:block">
-              <h1 className="text-base lg:text-lg font-bold text-gray-900">ViaQuest Hospice</h1>
-              <p className="text-xs text-gray-600">Administrative Dashboard</p>
+            <div className="w-32 h-32 lg:w-40 lg:h-40 rounded-lg flex items-center justify-center group-hover:scale-105 transition-transform duration-200">
+              <img 
+                src="/images/LOGO.svg" 
+                alt="ViaQuest Hospice Logo" 
+                className="w-full h-full object-contain"
+              />
             </div>
           </div>
         </div>

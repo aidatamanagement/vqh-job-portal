@@ -1071,3 +1071,37 @@ This implementation provides a much more professional and organized approach to 
 - Direct navigation to routes works properly
 - Faster loading of static assets due to caching
 - Improved security protection for end users 
+
+## 2025-01-05 - Admin Login Page Redesign
+- **AdminLogin.tsx**: Complete redesign to match split-screen layout from provided image
+  - Left side: signin.svg image covers entire left panel (no background gradients)
+  - Right side: Clean white background with left-aligned login form
+  - Updated styling to match modern design with proper spacing and colors
+  - Maintained all existing functionality (login, password reset, form validation)
+  - Added responsive design with mobile-first approach
+  - Updated button styling with blue theme and loading states
+  - Enhanced form inputs with proper focus states and icons
+  - Updated image styling to `object-cover` for full left side coverage
+  - Changed form alignment from center to left (aligned with email/password inputs)
+  - Updated input fields to have circular/rounded styling (`rounded-full`)
+  - Increased input height to `h-14` and button height to `h-14` for better visual balance
+  - Enhanced button with circular white icon background for arrow
+
+## 2025-01-05 - Logo Update in Navigation
+- **Header.tsx**: Replaced text-based "VQH" logo with LOGO.svg image
+  - Removed `bg-primary` background and text span elements
+  - Added `<img>` element with `src="/images/LOGO.svg"`
+  - Increased logo dimensions to `w-32 h-32 md:w-40 md:h-40` for maximum navbar prominence
+  - Used `object-contain` for proper scaling and aspect ratio
+- **AdminHeader.tsx**: Replaced text-based "VQH" logo with LOGO.svg image  
+  - Consistent implementation with main header
+  - Increased logo dimensions to `w-32 h-32 lg:w-40 lg:h-40` for maximum navbar prominence
+  - Maintained same styling and responsive behavior
+  - Both header components now use the actual company logo with prominent sizing
+
+## 2025-01-05 - Vercel Security Headers Update
+- **vercel.json**: Added Content Security Policy for iframe embedding
+  - Replaced `X-Frame-Options: DENY` with CSP `frame-ancestors` directive
+  - Allows embedding from 'self' and `https://white-walrus-512047.hostingersite.com`
+  - Maintains security while enabling controlled iframe embedding
+  - CSP frame-ancestors takes precedence over X-Frame-Options in modern browsers 

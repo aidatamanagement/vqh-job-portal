@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { useAppContext } from '@/contexts/AppContext';
 import { useNavigate } from 'react-router-dom';
 import { toast } from '@/hooks/use-toast';
-import { Lock, Mail, Eye, EyeOff } from 'lucide-react';
+import { Lock, Mail, Eye, EyeOff, ArrowLeft } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 
 const AdminLogin: React.FC = () => {
@@ -103,20 +103,30 @@ const AdminLogin: React.FC = () => {
 
   if (showForgotPassword) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center py-12 px-4 animate-slide-up">
-        <div className="max-w-md w-full space-y-8">
-          <div className="text-center animate-slide-up">
-            <div className="w-16 h-16 bg-primary rounded-full flex items-center justify-center mx-auto mb-4">
-              <Mail className="w-8 h-8 text-white" />
-            </div>
-            <h2 className="text-3xl font-bold text-gray-900">Reset Password</h2>
-            <p className="text-gray-600 mt-2">Enter your email to receive reset instructions</p>
-          </div>
+      <div className="min-h-screen flex">
+        {/* Left Side - SVG Image */}
+        <div className="hidden lg:flex lg:w-1/2 relative">
+          <img 
+            src="/images/signin.svg" 
+            alt="ViaQuest Hospice" 
+            className="w-full h-full object-cover"
+          />
+        </div>
 
-          <Card className="p-8 animate-slide-up-delayed">
+        {/* Right Side - Reset Password Form */}
+        <div className="flex-1 lg:w-1/2 flex items-center justify-start px-4 sm:px-6 lg:px-20 bg-white">
+          <div className="max-w-md w-full space-y-8">
+            <div className="text-left">
+              <div className="w-16 h-16 bg-blue-600 rounded-full flex items-center justify-center mb-4">
+                <Mail className="w-8 h-8 text-white" />
+              </div>
+              <h2 className="text-3xl font-bold text-gray-900">Reset Password</h2>
+              <p className="text-gray-600 mt-2">Enter your email to receive reset instructions</p>
+            </div>
+
             <form onSubmit={handlePasswordReset} className="space-y-6">
               <div>
-                <Label htmlFor="resetEmail" className="text-gray-900">Email Address</Label>
+                <Label htmlFor="resetEmail" className="text-sm font-medium text-gray-700">Email Address</Label>
                 <div className="relative mt-1">
                   <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
                   <Input 
@@ -124,91 +134,139 @@ const AdminLogin: React.FC = () => {
                     type="email" 
                     value={resetEmail} 
                     onChange={e => setResetEmail(e.target.value)} 
-                    className="pl-10" 
-                    placeholder="admin@hospicecare.com" 
+                    className="pl-10 h-14 border border-gray-300 rounded-full focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900" 
+                    placeholder="Enter you Email Address" 
                     disabled={isResetting} 
                   />
                 </div>
               </div>
 
-              <Button type="submit" className="w-full bg-primary hover:bg-primary/90 py-3" disabled={isResetting}>
+              <Button 
+                type="submit" 
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white h-14 rounded-full text-sm font-medium flex items-center justify-center" 
+                disabled={isResetting}
+              >
                 {isResetting ? (
                   <div className="flex items-center space-x-2">
-                    <div className="spinner" />
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
                     <span>Sending...</span>
                   </div>
                 ) : 'Send Reset Email'}
               </Button>
             </form>
 
-            <div className="mt-6 pt-6 border-t border-gray-200 text-center">
+            <div className="text-left">
               <button 
                 onClick={() => setShowForgotPassword(false)}
-                className="text-sm text-primary hover:underline"
+                className="text-sm text-blue-600 hover:underline flex items-center"
               >
-                ← Back to Login
+                <ArrowLeft className="w-4 h-4 mr-1" />
+                Back to Login
               </button>
             </div>
-          </Card>
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center py-12 px-4 animate-slide-up">
-      <div className="max-w-md w-full space-y-8">
-        <div className="text-center animate-slide-up">
-          <div className="w-16 h-16 bg-primary rounded-full flex items-center justify-center mx-auto mb-4">
-            <Lock className="w-8 h-8 text-white" />
-          </div>
-          <h2 className="text-3xl font-bold text-gray-900">Admin Login</h2>
-          <p className="text-gray-600 mt-2">Sign in to access the dashboard</p>
-        </div>
+    <div className="min-h-screen flex">
+      {/* Left Side - SVG Image */}
+      <div className="hidden lg:flex lg:w-1/2 relative">
+        <img 
+          src="/images/signin.svg" 
+          alt="ViaQuest Hospice" 
+          className="w-full h-full object-cover"
+        />
+      </div>
 
-        <Card className="p-8 animate-slide-up-delayed">
+      {/* Right Side - Login Form */}
+      <div className="flex-1 lg:w-1/2 flex items-center justify-start px-4 sm:px-6 lg:px-20 bg-white">
+        <div className="max-w-md w-full space-y-8">
+          <div className="text-left">
+            <h2 className="text-3xl font-bold text-gray-900">Admin Login</h2>
+            <p className="text-gray-600 mt-2">Sign in to access the dashboard</p>
+          </div>
+
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
-              <Label htmlFor="email" className="text-gray-900">Email Address</Label>
+              <Label htmlFor="email" className="text-sm font-medium text-gray-700">Email Address</Label>
               <div className="relative mt-1">
                 <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                <Input id="email" type="email" value={formData.email} onChange={e => handleInputChange('email', e.target.value)} className="pl-10" placeholder="admin@hospicecare.com" disabled={isLoading} />
+                <Input 
+                  id="email" 
+                  type="email" 
+                  value={formData.email} 
+                  onChange={e => handleInputChange('email', e.target.value)} 
+                  className="pl-10 h-14 border border-gray-300 rounded-full focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900" 
+                  placeholder="Enter you Email Address" 
+                  disabled={isLoading} 
+                />
               </div>
             </div>
 
             <div>
-              <Label htmlFor="password" className="text-gray-900">Password</Label>
+              <Label htmlFor="password" className="text-sm font-medium text-gray-700">Password</Label>
               <div className="relative mt-1">
                 <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                <Input id="password" type={showPassword ? 'text' : 'password'} value={formData.password} onChange={e => handleInputChange('password', e.target.value)} className="pl-10 pr-10" placeholder="Enter your password" disabled={isLoading} />
-                <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600" disabled={isLoading}>
+                <Input 
+                  id="password" 
+                  type={showPassword ? 'text' : 'password'} 
+                  value={formData.password} 
+                  onChange={e => handleInputChange('password', e.target.value)} 
+                  className="pl-10 pr-10 h-14 border border-gray-300 rounded-full focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900" 
+                  placeholder="Enter your Password" 
+                  disabled={isLoading} 
+                />
+                <button 
+                  type="button" 
+                  onClick={() => setShowPassword(!showPassword)} 
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600" 
+                  disabled={isLoading}
+                >
                   {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                 </button>
               </div>
             </div>
 
-            <Button type="submit" className="w-full bg-primary hover:bg-primary/90 py-3" disabled={isLoading}>
-              {isLoading ? <div className="flex items-center space-x-2">
-                  <div className="spinner" />
+            <Button 
+              type="submit" 
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white h-14 rounded-full text-sm font-medium flex items-center justify-center" 
+              disabled={isLoading}
+            >
+              {isLoading ? (
+                <div className="flex items-center space-x-2">
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
                   <span>Signing in...</span>
-                </div> : 'Sign In'}
+                </div>
+              ) : (
+                <div className="flex items-center space-x-2">
+                  <span>Sign In</span>
+                  <div className="w-5 h-5 bg-white rounded-full flex items-center justify-center">
+                    <ArrowLeft className="w-3 h-3 text-blue-600 rotate-180" />
+                  </div>
+                </div>
+              )}
             </Button>
           </form>
 
-          <div className="mt-6 pt-6 border-t border-gray-200 text-center">
+          <div className="text-left space-y-4">
             <button 
               onClick={() => setShowForgotPassword(true)}
-              className="text-sm text-primary hover:underline mt-2"
+              className="text-sm text-gray-600 hover:text-gray-900 block"
             >
               Forgot your password?
             </button>
+            
+            <button 
+              onClick={() => navigate('/')}
+              className="flex items-center text-sm text-blue-600 hover:text-blue-700"
+            >
+              <ArrowLeft className="w-4 h-4 mr-1" />
+              Back to Job Portal
+            </button>
           </div>
-        </Card>
-
-        <div className="text-center animate-slide-up-delayed-2">
-          <Button variant="ghost" onClick={() => navigate('/')} className="text-gray-600 hover:text-gray-900">
-            ← Back to Job Portal
-          </Button>
         </div>
       </div>
     </div>
