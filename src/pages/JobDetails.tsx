@@ -6,7 +6,6 @@ import { Badge } from '@/components/ui/badge';
 import { ArrowLeft, MapPin, Calendar, Clock, Users, AlertTriangle, Briefcase, Info } from 'lucide-react';
 import { useAppContext } from '@/contexts/AppContext';
 import ApplicationModal from '@/components/ApplicationModal';
-import Header from '@/components/Header';
 import CursorGlow from '@/components/CursorGlow';
 
 const JobDetails: React.FC = () => {
@@ -25,7 +24,6 @@ const JobDetails: React.FC = () => {
     return (
       <div className="min-h-screen bg-white relative">
         <CursorGlow />
-        <Header />
         <div className="min-h-screen bg-gray-50 flex items-center justify-center">
           <div className="text-center">
             <h2 className="text-2xl font-bold text-gray-900 mb-4">Job Not Found</h2>
@@ -72,7 +70,6 @@ const JobDetails: React.FC = () => {
   return (
     <div className="min-h-screen bg-white relative">
       <CursorGlow />
-      <Header />
       <div className="min-h-screen bg-gray-50">
         <div className="container mx-auto px-4 py-8">
           <div className="max-w-7xl mx-auto">

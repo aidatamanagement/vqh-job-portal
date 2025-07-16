@@ -1,91 +1,161 @@
 
-import React, { useState, useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Search } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import JobCard from '@/components/JobCard';
-import JobFilters from '@/components/JobFilters';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Search, Filter, X } from 'lucide-react';
 import { useAppContext } from '@/contexts/AppContext';
-import { FilterState } from '@/types';
+import { useNavigate } from 'react-router-dom';
+import { Job } from '@/types';
+
+interface FilterState {
+  search: string;
+  location: string;
+  position: string;
+  employmentType: string;
+  sortBy: 'newest' | 'oldest';
+}
 
 const JobsList: React.FC = () => {
   const { jobs, isDataLoading } = useAppContext();
-  const [displayCount, setDisplayCount] = useState(12);
+  const navigate = useNavigate();
+
+  // Filter state
   const [filters, setFilters] = useState<FilterState>({
     search: '',
-    positions: [],
     location: '',
-    sortBy: 'newest',
+    position: '',
+    employmentType: '',
+    sortBy: 'newest'
   });
 
-  // Filter and sort jobs
-  const filteredJobs = useMemo(() => {
-    let filtered = jobs.filter(job => job.isActive);
+  // Get unique values for filter options
+  const filterOptions = useMemo(() => {
+    const activeJobs = jobs.filter(job => job.isActive);
+    
+    const locations = [...new Set(activeJobs.map(job => job.location))].sort();
+    const positions = [...new Set(activeJobs.map(job => job.position))].sort();
+    const employmentTypes = [...new Set(
+      activeJobs.flatMap(job => job.facilities)
+    )].filter(facility => 
+      facility.toLowerCase().includes('time') || 
+      facility.toLowerCase().includes('remote') ||
+      facility.toLowerCase().includes('contract') ||
+      facility.toLowerCase().includes('temporary')
+    ).sort();
 
-    // Search filter
+    return { locations, positions, employmentTypes };
+  }, [jobs]);
+
+  // Filter and group jobs
+  const jobsByDepartment = useMemo(() => {
+    let filteredJobs = jobs.filter(job => job.isActive);
+
+    // Apply search filter
     if (filters.search) {
       const searchLower = filters.search.toLowerCase();
-      filtered = filtered.filter(job =>
+      filteredJobs = filteredJobs.filter(job =>
         job.title.toLowerCase().includes(searchLower) ||
         job.description.toLowerCase().includes(searchLower) ||
-        job.position.toLowerCase().includes(searchLower)
+        job.position.toLowerCase().includes(searchLower) ||
+        job.location.toLowerCase().includes(searchLower) ||
+        job.facilities.some(facility => facility.toLowerCase().includes(searchLower))
       );
     }
 
-    // Position filter
-    if (filters.positions.length > 0) {
-      filtered = filtered.filter(job =>
-        filters.positions.includes(job.position)
-      );
-    }
-
-    // Location filter
+    // Apply location filter
     if (filters.location) {
-      filtered = filtered.filter(job => job.location === filters.location);
+      filteredJobs = filteredJobs.filter(job => job.location === filters.location);
     }
 
-    // Sort
-    filtered.sort((a, b) => {
+    // Apply position filter
+    if (filters.position) {
+      filteredJobs = filteredJobs.filter(job => job.position === filters.position);
+    }
+
+    // Apply employment type filter
+    if (filters.employmentType) {
+      filteredJobs = filteredJobs.filter(job => 
+        job.facilities.includes(filters.employmentType)
+      );
+    }
+
+    // Sort jobs
+    filteredJobs.sort((a, b) => {
       const dateA = new Date(a.createdAt).getTime();
       const dateB = new Date(b.createdAt).getTime();
       return filters.sortBy === 'newest' ? dateB - dateA : dateA - dateB;
     });
 
-    return filtered;
+    // Group by department
+    const grouped = filteredJobs.reduce((acc, job) => {
+      const department = job.position;
+      if (!acc[department]) {
+        acc[department] = [];
+      }
+      acc[department].push(job);
+      return acc;
+    }, {} as Record<string, Job[]>);
+
+    // Sort departments alphabetically
+    const sortedDepartments = Object.keys(grouped).sort();
+    const result: { department: string; jobs: Job[] }[] = [];
+    
+    sortedDepartments.forEach(department => {
+      result.push({ department, jobs: grouped[department] });
+    });
+
+    return result;
   }, [jobs, filters]);
 
-  const displayedJobs = filteredJobs.slice(0, displayCount);
-  const hasMore = displayCount < filteredJobs.length;
-
-  const handleLoadMore = () => {
-    setDisplayCount(prev => prev + 12);
+  const handleApplyClick = (jobId: string) => {
+    navigate(`/job/${jobId}`);
   };
+
+  const handleFilterChange = (key: keyof FilterState, value: string) => {
+    setFilters(prev => ({ ...prev, [key]: value }));
+  };
+
+  const clearFilters = () => {
+    setFilters({
+      search: '',
+      location: '',
+      position: '',
+      employmentType: '',
+      sortBy: 'newest'
+    });
+  };
+
+  const hasActiveFilters = filters.search || filters.location || filters.position || filters.employmentType;
+  const totalJobs = jobsByDepartment.reduce((sum, dept) => sum + dept.jobs.length, 0);
 
   // Show loading state while data is being fetched
   if (isDataLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 animate-slide-up">
-        <div className="container mx-auto px-4 py-8">
+      <div className="min-h-screen bg-white text-gray-900">
+        <div className="max-w-6xl mx-auto px-6 py-8">
           <div className="space-y-8">
-            {/* Page Header */}
-            <div className="text-center space-y-4 animate-slide-up">
-              <h1 className="text-4xl font-bold text-gray-900">
-                Join Our Mission of Compassionate Care
-              </h1>
-              <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-                Discover meaningful career opportunities in hospice care where you can make a real difference in patients' and families' lives.
-              </p>
+            {/* Filter skeleton */}
+            <div className="space-y-4">
+              <Skeleton className="h-12 w-full bg-gray-200" />
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <Skeleton className="h-10 bg-gray-200" />
+                <Skeleton className="h-10 bg-gray-200" />
+                <Skeleton className="h-10 bg-gray-200" />
+                <Skeleton className="h-10 bg-gray-200" />
+              </div>
             </div>
-
-            {/* Loading skeleton for filters */}
-            <div className="animate-slide-up-delayed">
-              <Skeleton className="h-20 w-full" />
-            </div>
-
-            {/* Loading skeleton for jobs grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-slide-up-delayed-2">
-              {Array.from({ length: 6 }).map((_, index) => (
-                <Skeleton key={index} className="h-64 w-full" />
+            {/* Jobs skeleton */}
+            <div className="space-y-8">
+              {Array.from({ length: 3 }).map((_, index) => (
+                <div key={index} className="space-y-6">
+                  <Skeleton className="h-6 w-40 bg-gray-200" />
+                  {Array.from({ length: 3 }).map((_, jobIndex) => (
+                    <Skeleton key={jobIndex} className="h-16 w-full bg-gray-200" />
+                  ))}
+                </div>
               ))}
             </div>
           </div>
@@ -95,72 +165,191 @@ const JobsList: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 animate-slide-up">
-      <div className="container mx-auto px-4 py-8">
+    <div className="min-h-screen bg-white text-gray-900">
+      <div className="max-w-6xl mx-auto px-6 py-8">
         <div className="space-y-8">
-          {/* Page Header */}
-          <div className="text-center space-y-4 animate-slide-up">
-            <h1 className="text-4xl font-bold text-gray-900">
-              Join Our Mission of Compassionate Care
-            </h1>
-            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-              Discover meaningful career opportunities in hospice care where you can make a real difference in patients' and families' lives.
-            </p>
-          </div>
+          {/* Search and Filters */}
+          <div className="space-y-4">
+            {/* Search Bar */}
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+              <Input
+                placeholder="Search jobs, locations, or keywords..."
+                value={filters.search}
+                onChange={(e) => handleFilterChange('search', e.target.value)}
+                className="pl-10 h-12 text-base"
+              />
+            </div>
 
-          {/* Filters */}
-          <div className="animate-slide-up-delayed">
-            <JobFilters
-              filters={filters}
-              onFiltersChange={setFilters}
-              totalJobs={filteredJobs.length}
-            />
-          </div>
+            {/* Filter Row */}
+            <div className="flex flex-col md:flex-row gap-4">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 flex-1">
+                {/* Location Filter */}
+                <Select value={filters.location || 'all'} onValueChange={(value) => handleFilterChange('location', value === 'all' ? '' : value)}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="All Locations" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Locations</SelectItem>
+                    {filterOptions.locations.map(location => (
+                      <SelectItem key={location} value={location}>{location}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
 
-          {/* Jobs Grid */}
-          {displayedJobs.length > 0 ? (
-            <>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-slide-up-delayed-2">
-                {displayedJobs.map((job, index) => (
-                  <div 
-                    key={job.id} 
-                    className="animate-slide-up opacity-0" 
-                    style={{ 
-                      animationDelay: `${0.8 + index * 0.1}s`,
-                      animationFillMode: 'forwards'
-                    }}
-                  >
-                    <JobCard job={job} />
-                  </div>
-                ))}
+                {/* Position Filter */}
+                <Select value={filters.position || 'all'} onValueChange={(value) => handleFilterChange('position', value === 'all' ? '' : value)}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="All Positions" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Positions</SelectItem>
+                    {filterOptions.positions.map(position => (
+                      <SelectItem key={position} value={position}>{position}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+
+                {/* Employment Type Filter */}
+                <Select value={filters.employmentType || 'all'} onValueChange={(value) => handleFilterChange('employmentType', value === 'all' ? '' : value)}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Employment Type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Types</SelectItem>
+                    {filterOptions.employmentTypes.map(type => (
+                      <SelectItem key={type} value={type}>{type}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+
+                {/* Sort Filter */}
+                <Select value={filters.sortBy} onValueChange={(value: 'newest' | 'oldest') => handleFilterChange('sortBy', value)}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="newest">Newest First</SelectItem>
+                    <SelectItem value="oldest">Oldest First</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
 
-              {/* Load More Button */}
-              {hasMore && (
-                <div className="flex justify-center pt-8 animate-slide-up-delayed-3">
-                  <Button
-                    onClick={handleLoadMore}
-                    variant="outline"
-                    size="lg"
-                    className="bg-white hover:bg-gray-50 border-primary text-primary hover:text-primary"
-                  >
-                    Load More Jobs ({filteredJobs.length - displayCount} remaining)
-                  </Button>
-                </div>
+              {/* Clear Filters */}
+              {hasActiveFilters && (
+                <Button
+                  variant="outline"
+                  onClick={clearFilters}
+                  className="flex items-center gap-2 whitespace-nowrap"
+                >
+                  <X className="w-4 h-4" />
+                  Clear Filters
+                </Button>
               )}
-            </>
-          ) : (
-            <div className="text-center py-12 animate-slide-up-delayed-2">
-              <div className="max-w-md mx-auto">
-                <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Search className="w-8 h-8 text-gray-400" />
+            </div>
+
+            {/* Results Count */}
+            <div className="flex items-center justify-between text-sm text-gray-600">
+              <div className="flex items-center gap-2">
+                <Filter className="w-4 h-4" />
+                <span>{totalJobs} job{totalJobs !== 1 ? 's' : ''} found</span>
+              </div>
+              {hasActiveFilters && (
+                <span>Filtered from {jobs.filter(job => job.isActive).length} total jobs</span>
+              )}
+            </div>
+          </div>
+
+          {/* Jobs by Department */}
+          {jobsByDepartment.length > 0 ? (
+            <div className="space-y-8">
+              {jobsByDepartment.map(({ department, jobs }) => (
+                <div key={department} className="space-y-4">
+                  {/* Department Header */}
+                  <h2 className="text-xl font-medium text-gray-700 border-b border-gray-300 pb-3">
+                    {department} ({jobs.length})
+                  </h2>
+
+                  {/* Jobs in this department */}
+                  <div className="space-y-1">
+                    {jobs.map((job) => (
+                      <div 
+                        key={job.id}
+                        className="flex items-center justify-between py-3 border-b border-gray-200 last:border-b-0 hover:bg-gray-50 transition-colors duration-200 rounded-lg px-4"
+                      >
+                        {/* Job Title & Employment Info */}
+                        <div className="flex-1">
+                          <h3 className="text-xl font-medium text-gray-900 hover:text-gray-700 transition-colors cursor-pointer">
+                            {job.title}
+                          </h3>
+                          {/* Employment Type & Benefits */}
+                          {job.facilities.length > 0 && (
+                            <div className="flex flex-wrap gap-2 mt-2">
+                              {job.facilities.map((facility, index) => (
+                                <Badge 
+                                  key={index} 
+                                  variant="outline" 
+                                  className="bg-gray-100 border-gray-300 text-gray-700 text-xs hover:bg-gray-200"
+                                >
+                                  {facility}
+                                </Badge>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Location Badge */}
+                        <div className="flex-shrink-0 mx-8">
+                          <Badge 
+                            variant="outline" 
+                            className="bg-transparent border-gray-300 text-gray-700 hover:bg-gray-100"
+                          >
+                            📍 {job.location}
+                          </Badge>
+                        </div>
+
+                        {/* Apply Button */}
+                        <div className="flex-shrink-0">
+                          <Button
+                            onClick={() => handleApplyClick(job.id)}
+                            variant="outline"
+                            className="bg-transparent border-gray-300 text-gray-900 hover:text-white transition-all duration-200 px-6"
+                            style={{ 
+                              '--tw-hover-bg': '#005586'
+                            } as React.CSSProperties}
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.backgroundColor = '#005586';
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.backgroundColor = 'transparent';
+                            }}
+                          >
+                            Apply for position
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                  No jobs found
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-8">
+              <div className="max-w-md mx-auto">
+                <h3 className="text-2xl font-semibold text-gray-900 mb-4">
+                  {hasActiveFilters ? 'No jobs match your filters' : 'No open positions'}
                 </h3>
-                <p className="text-gray-600">
-                  Try adjusting your search criteria or browse all available positions.
+                <p className="text-gray-600 text-lg mb-4">
+                  {hasActiveFilters 
+                    ? 'Try adjusting your search criteria or clearing filters.' 
+                    : 'We\'re not currently hiring, but check back soon for new opportunities.'
+                  }
                 </p>
+                {hasActiveFilters && (
+                  <Button onClick={clearFilters} variant="outline">
+                    Clear All Filters
+                  </Button>
+                )}
               </div>
             </div>
           )}
