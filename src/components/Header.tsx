@@ -29,11 +29,11 @@ const Header: React.FC = () => {
     await logout();
     navigate('/');
   };
-  return <header className="bg-white border-b border-gray-200 px-4 py-4 animate-slide-down">
-      <div className="container mx-auto p-0 flex items-center justify-between">
+  return <header className="bg-white border-b border-gray-200 px-2 py-2 animate-slide-down">
+      <div className="container mx-auto flex items-center justify-between">
         {/* Logo and Title */}
-        <div className="flex items-center space-x-3 cursor-pointer group" onClick={handleLogoClick}>
-                     <div className="w-32 h-32 md:w-40 md:h-40 rounded-lg flex items-center justify-center group-hover:scale-105 transition-transform duration-200">
+        <div className="flex items-center cursor-pointer group" onClick={handleLogoClick}>
+                     <div className="w-12 h-12 md:w-16 md:h-16 rounded-lg flex items-center justify-center group-hover:scale-105 transition-transform duration-200">
              <img 
                src="/images/LOGO.svg" 
                alt="ViaQuest Hospice Logo" 
@@ -43,7 +43,7 @@ const Header: React.FC = () => {
         </div>
 
         {/* Authentication Controls */}
-        <div className="flex items-center space-x-2 md:space-x-4">
+        <div className="flex items-center space-x-1 md:space-x-2">
           {isAuthenticated ? <>
               {/* Mobile Menu for Authenticated Users */}
               <div className="md:hidden">
@@ -71,10 +71,10 @@ const Header: React.FC = () => {
               </div>
 
               {/* Desktop Menu for Authenticated Users */}
-              <div className="hidden md:flex items-center space-x-4">
+              <div className="hidden md:flex items-center space-x-2">
                 {/* User Profile Avatar */}
                 <div 
-                  className="flex items-center space-x-2 px-3 py-2 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors duration-200"
+                  className="flex items-center space-x-1 px-2 py-1 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors duration-200"
                   onClick={() => setIsProfileModalOpen(true)}
                 >
                   <Avatar className="w-6 h-6">
@@ -96,14 +96,14 @@ const Header: React.FC = () => {
                 </div>
 
                 {/* Admin Access */}
-                {userProfile?.role === 'admin' && <Button variant="outline" size="sm" onClick={handleAdminClick} className="flex items-center space-x-2">
+                {userProfile?.role === 'admin' && <Button variant="outline" size="sm" onClick={handleAdminClick} className="flex items-center space-x-1">
                     <Settings className="w-4 h-4" />
                     <span className="hidden lg:inline">Admin Panel</span>
                     <span className="lg:hidden">Admin</span>
                   </Button>}
 
                 {/* Logout Button */}
-                <Button variant="outline" size="sm" onClick={handleLogout} className="flex items-center space-x-2 hover:bg-red-50 hover:border-red-200 hover:text-red-700">
+                <Button variant="outline" size="sm" onClick={handleLogout} className="flex items-center space-x-1 hover:bg-red-50 hover:border-red-200 hover:text-red-700">
                   <LogOut className="w-4 h-4" />
                   <span className="hidden lg:inline">Logout</span>
                 </Button>
