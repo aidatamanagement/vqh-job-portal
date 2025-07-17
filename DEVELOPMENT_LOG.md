@@ -1,5 +1,61 @@
 # VQH Job Portal - Development Log
 
+## Recent Updates
+
+### January 3, 2025
+- **12:45 PM:** Updated `index.html` to use `icon.svg` from images folder as favicon
+  - Added `<link rel="icon" type="image/svg+xml" href="/images/Icon.svg" />` to head section
+  - Replaces missing favicon with proper SVG icon
+
+- **1:30 PM:** Implemented Document Parsing Feature for Auto-Filling Job Posts
+  - **New File:** `src/hooks/useDocumentParser.ts` - Document parsing service with AI-powered data extraction
+  - **Updated:** `src/components/admin/PostJob.tsx` - Added file upload UI and auto-fill functionality
+  
+  **Features Added:**
+  - Drag-and-drop file upload with visual feedback
+  - Support for .txt files (PDF/DOC support planned for next update)
+  - AI-powered job data extraction from document text
+  - Smart matching of extracted data with existing positions, locations, and facilities
+  - Preview extracted data before applying to form
+  - Auto-population of all form fields: title, description, position, location, benefits, urgency status
+  - File validation (type and size limits)
+  - Comprehensive error handling and user feedback
+  
+  **Technical Implementation:**
+  - Pattern-based text extraction for job titles, locations, positions, benefits
+  - Smart keyword detection for urgency and employment types
+  - Fuzzy matching with existing master data (positions, locations, facilities)
+  - Real-time parsing with loading states and progress indicators
+  - Non-destructive form population (preserves existing data if no match found)
+
+- **2:15 PM:** Fixed Document Parsing Issues
+  - **Fixed:** Application deadline extraction now supports multiple date formats
+    - Supports "January 15, 2025", "01/15/2025", and "2025-01-15" formats
+    - Converts to proper HTML datetime-local format for form input
+  - **Fixed:** Job description formatting and content extraction
+    - Removes metadata lines (title, location, benefits) from description
+    - Extracts only actual job content between "Job Description:" and "Benefits Package:"
+    - Improved paragraph formatting and line breaks
+    - No longer includes raw document metadata in description field
+
+- **2:45 PM:** Fixed Admin Dashboard URL Navigation Issue
+  - **Problem:** URLs weren't changing when navigating between admin dashboard pages
+  - **Root Cause:** Admin dashboard was using state-based navigation instead of URL-based routing
+  - **Solution:** Implemented proper React Router navigation with URL synchronization
+  - **Changes Made:**
+    - Updated `src/pages/AdminDashboard.tsx` to use `useNavigate` and `useLocation` hooks
+    - Modified `src/App.tsx` to use wildcard routing (`/admin/*`) for admin pages
+    - Replaced `useState` for current view with URL path extraction
+    - All navigation now updates the URL properly (e.g., `/admin/post-job`, `/admin/submissions`)
+  - **Benefits:**
+    - URLs now reflect current page state
+    - Browser back/forward buttons work correctly
+    - Direct URL access to specific admin pages
+    - Better SEO and user experience
+    - Bookmarkable admin pages
+
+---
+
 ## Project Status
 **Date:** December 30, 2024  
 **Status:** ✅ Connection Working, RLS Policies Disabled  

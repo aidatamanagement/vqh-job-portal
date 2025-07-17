@@ -7,11 +7,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Plus, X, Briefcase, MapPin, Settings as SettingsIcon, Award, AlertTriangle, Calendar, Loader2, Users } from 'lucide-react';
+import { Plus, X, Briefcase, MapPin, Settings as SettingsIcon, Award, AlertTriangle, Calendar, Loader2, Users, Upload, FileText, CheckCircle, AlertCircle } from 'lucide-react';
 import { useAppContext } from '@/contexts/AppContext';
 import { toast } from '@/hooks/use-toast';
 import RichTextEditor from '@/components/ui/rich-text-editor';
 import { HRManager } from '@/types';
+import { useDocumentParser } from '@/hooks/useDocumentParser';
 
 const PostJob: React.FC = () => {
   const { 
@@ -29,9 +30,18 @@ const PostJob: React.FC = () => {
     fetchHRManagers,
     isLoading
   } = useAppContext();
+  
+  const { parseDocument, isParsingDocument } = useDocumentParser();
+  
   const [activeTab, setActiveTab] = useState('create-job');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [hrManagers, setHRManagers] = useState<HRManager[]>([]);
+  
+  // Document parsing state
+  const [uploadedFile, setUploadedFile] = useState<File | null>(null);
+  const [parsedData, setParsedData] = useState<any>(null);
+  const [showParsePreview, setShowParsePreview] = useState(false);
+  const [isDragOver, setIsDragOver] = useState(false);
   
   // Job form state
   const [jobForm, setJobForm] = useState({
@@ -305,6 +315,151 @@ const PostJob: React.FC = () => {
     }
   };
 
+  // File handling functions for document parsing
+  const handleFileUpload = async (file: File) => {
+    if (!file) return;
+    
+    // Validate file type
+    const allowedTypes = [
+      'text/plain',
+      'application/pdf',
+      'application/msword',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+    ];
+    
+    const allowedExtensions = ['.txt', '.pdf', '.doc', '.docx'];
+    const fileExtension = file.name.toLowerCase().substring(file.name.lastIndexOf('.'));
+    
+    if (!allowedTypes.includes(file.type) && !allowedExtensions.includes(fileExtension)) {
+      toast({
+        title: "Unsupported File Type",
+        description: "Please upload a .txt, .pdf, .doc, or .docx file",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // File size limit (10MB)
+    if (file.size > 10 * 1024 * 1024) {
+      toast({
+        title: "File Too Large",
+        description: "Please upload a file smaller than 10MB",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setUploadedFile(file);
+
+    try {
+      const extractedData = await parseDocument(file);
+      setParsedData(extractedData);
+      setShowParsePreview(true);
+    } catch (error) {
+      console.error('Document parsing failed:', error);
+      setUploadedFile(null);
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragOver(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragOver(false);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragOver(false);
+    
+    const files = Array.from(e.dataTransfer.files);
+    if (files.length > 0) {
+      handleFileUpload(files[0]);
+    }
+  };
+
+  const applyParsedData = () => {
+    if (!parsedData) return;
+
+    // Apply extracted data to form, only if values are present
+    if (parsedData.title) {
+      setJobForm(prev => ({ ...prev, title: parsedData.title }));
+    }
+    
+    if (parsedData.description) {
+      setJobForm(prev => ({ ...prev, description: parsedData.description }));
+    }
+    
+    if (parsedData.position) {
+      // Try to match with existing positions
+      const matchingPosition = positions.find(pos => 
+        pos.name.toLowerCase().includes(parsedData.position.toLowerCase()) ||
+        parsedData.position.toLowerCase().includes(pos.name.toLowerCase())
+      );
+      if (matchingPosition) {
+        setJobForm(prev => ({ ...prev, position: matchingPosition.name }));
+      }
+    }
+    
+    if (parsedData.location) {
+      // Try to match with existing locations
+      const matchingLocation = locations.find(loc => 
+        loc.name.toLowerCase().includes(parsedData.location.toLowerCase()) ||
+        parsedData.location.toLowerCase().includes(loc.name.toLowerCase())
+      );
+      if (matchingLocation) {
+        setJobForm(prev => ({ ...prev, location: matchingLocation.name }));
+      }
+    }
+    
+    if (parsedData.facilities && parsedData.facilities.length > 0) {
+      // Match extracted facilities with existing ones
+      const matchingFacilities = parsedData.facilities.filter(extractedFacility =>
+        facilities.some(facility => 
+          facility.name.toLowerCase().includes(extractedFacility.toLowerCase()) ||
+          extractedFacility.toLowerCase().includes(facility.name.toLowerCase())
+        )
+      ).map(extractedFacility => {
+        const match = facilities.find(facility => 
+          facility.name.toLowerCase().includes(extractedFacility.toLowerCase()) ||
+          extractedFacility.toLowerCase().includes(facility.name.toLowerCase())
+        );
+        return match ? match.name : extractedFacility;
+      });
+      
+      setJobForm(prev => ({ 
+        ...prev, 
+        facilities: [...new Set([...prev.facilities, ...matchingFacilities])]
+      }));
+    }
+    
+    if (parsedData.isUrgent !== undefined) {
+      setJobForm(prev => ({ ...prev, isUrgent: parsedData.isUrgent }));
+    }
+    
+    if (parsedData.applicationDeadline) {
+      setJobForm(prev => ({ ...prev, applicationDeadline: parsedData.applicationDeadline }));
+    }
+
+    setShowParsePreview(false);
+    setParsedData(null);
+    setUploadedFile(null);
+
+    toast({
+      title: "Data Applied Successfully",
+      description: "Job form has been populated with extracted data. Please review and adjust as needed.",
+    });
+  };
+
+  const clearParsedData = () => {
+    setShowParsePreview(false);
+    setParsedData(null);
+    setUploadedFile(null);
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center space-x-3 animate-fade-in-up">
@@ -329,6 +484,125 @@ const PostJob: React.FC = () => {
         </TabsList>
 
         <TabsContent value="create-job" className="space-y-6">
+          {/* Document Upload Section */}
+          <Card className="p-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-2">
+                <Upload className="w-4 h-4 text-gray-500" />
+                <span className="text-sm font-medium text-gray-700">Auto-Fill from Document</span>
+              </div>
+              
+              {!uploadedFile && !showParsePreview && (
+                <label className="flex items-center space-x-2 text-primary hover:text-primary/90 cursor-pointer text-sm">
+                  <FileText className="w-4 h-4" />
+                  <span>Upload</span>
+                  <input
+                    type="file"
+                    accept=".txt,.pdf,.doc,.docx"
+                    onChange={(e) => e.target.files && handleFileUpload(e.target.files[0])}
+                    className="hidden"
+                    disabled={isParsingDocument}
+                  />
+                </label>
+              )}
+            </div>
+            
+            {uploadedFile && !showParsePreview && (
+              <div className="mt-2 text-xs text-gray-500">
+                {uploadedFile.name} • {Math.round(uploadedFile.size / 1024)}KB
+              </div>
+            )}
+
+              {isParsingDocument && (
+                <div className="flex items-center justify-center space-x-3 p-8">
+                  <Loader2 className="w-6 h-6 animate-spin text-primary" />
+                  <div className="text-left">
+                    <p className="text-sm font-medium text-gray-900">
+                      Analyzing document...
+                    </p>
+                    <p className="text-xs text-gray-500">
+                      Extracting job data with AI
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {showParsePreview && parsedData && (
+                <div className="text-left space-y-4">
+                  <div className="flex items-center justify-between">
+                    <h4 className="text-md font-semibold text-gray-900 flex items-center gap-2">
+                      <CheckCircle className="w-5 h-5 text-green-500" />
+                      Extracted Data Preview
+                    </h4>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={clearParsedData}
+                    >
+                      <X className="w-4 h-4" />
+                    </Button>
+                  </div>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-gray-50 rounded-lg">
+                    {parsedData.title && (
+                      <div>
+                        <Label className="text-xs font-medium text-gray-600">Title</Label>
+                        <p className="text-sm text-gray-900">{parsedData.title}</p>
+                      </div>
+                    )}
+                    {parsedData.position && (
+                      <div>
+                        <Label className="text-xs font-medium text-gray-600">Position</Label>
+                        <p className="text-sm text-gray-900">{parsedData.position}</p>
+                      </div>
+                    )}
+                    {parsedData.location && (
+                      <div>
+                        <Label className="text-xs font-medium text-gray-600">Location</Label>
+                        <p className="text-sm text-gray-900">{parsedData.location}</p>
+                      </div>
+                    )}
+                    {parsedData.facilities && parsedData.facilities.length > 0 && (
+                      <div>
+                        <Label className="text-xs font-medium text-gray-600">Benefits/Type</Label>
+                        <div className="flex flex-wrap gap-1 mt-1">
+                          {parsedData.facilities.map((facility, index) => (
+                            <Badge key={index} variant="secondary" className="text-xs">
+                              {facility}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    {parsedData.isUrgent && (
+                      <div className="flex items-center gap-2">
+                        <AlertTriangle className="w-4 h-4 text-red-500" />
+                        <span className="text-sm text-red-600 font-medium">Marked as Urgent</span>
+                      </div>
+                    )}
+                  </div>
+                  
+                  <div className="flex space-x-3">
+                    <Button 
+                      type="button"
+                      onClick={applyParsedData}
+                      className="bg-primary hover:bg-primary/90"
+                    >
+                      Apply to Form
+                    </Button>
+                    <Button 
+                      type="button"
+                      variant="outline"
+                      onClick={clearParsedData}
+                    >
+                      Discard
+                    </Button>
+                  </div>
+                </div>
+              )}
+          </Card>
+
           <Card className="p-6">
             <form onSubmit={handleJobSubmit} className="space-y-6">
               {/* Basic Information */}

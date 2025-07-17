@@ -1,5 +1,6 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useAppContext } from '@/contexts/AppContext';
 import AdminHeader from '@/components/admin/AdminHeader';
 import AdminSidebar from '@/components/admin/AdminSidebar';
@@ -36,8 +37,37 @@ type AdminView =
 
 const AdminDashboard: React.FC = () => {
   const { isAuthenticated } = useAppContext();
-  const [currentView, setCurrentView] = useState<AdminView>('dashboard');
+  const navigate = useNavigate();
+  const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  // Extract current view from URL path
+  const getCurrentViewFromPath = (pathname: string): AdminView => {
+    const path = pathname.split('/').pop() || 'dashboard';
+    
+    // Map URL paths to AdminView types
+    const pathToView: Record<string, AdminView> = {
+      'admin': 'dashboard',
+      'dashboard': 'dashboard',
+      'post-job': 'post-job',
+      'manage-jobs': 'manage-jobs',
+      'submissions': 'submissions',
+      'interviews': 'interviews',
+      'email-management': 'email-management',
+      'guide-training': 'guide-training',
+      'salespeople': 'salespeople',
+      'visit-logs': 'visit-logs',
+      'crm-reports': 'crm-reports',
+      'training-videos': 'training-videos',
+      'content-manager': 'content-manager',
+      'settings': 'settings',
+      'profile-settings': 'profile-settings'
+    };
+    
+    return pathToView[path] || 'dashboard';
+  };
+
+  const currentView = getCurrentViewFromPath(location.pathname);
 
   // Show login page if not authenticated - handled by AdminLogin route
   if (!isAuthenticated) {
@@ -45,7 +75,12 @@ const AdminDashboard: React.FC = () => {
   }
 
   const handleNavigate = (view: AdminView) => {
-    setCurrentView(view);
+    // Navigate to the appropriate URL
+    if (view === 'dashboard') {
+      navigate('/admin');
+    } else {
+      navigate(`/admin/${view}`);
+    }
   };
 
   const renderContent = () => {
@@ -89,7 +124,7 @@ const AdminDashboard: React.FC = () => {
       <div className="h-16 bg-white border-b border-gray-200 relative z-50">
         <AdminHeader 
           onMenuClick={() => setSidebarOpen(!sidebarOpen)} 
-          onNavigate={(view) => setCurrentView(view as AdminView)}
+          onNavigate={(view) => handleNavigate(view as AdminView)}
         />
       </div>
       
@@ -107,7 +142,7 @@ const AdminDashboard: React.FC = () => {
         <div className="hidden lg:block relative z-40">
           <AdminSidebar 
             currentView={currentView} 
-            onViewChange={setCurrentView} 
+            onViewChange={handleNavigate} 
           />
         </div>
         
@@ -119,7 +154,7 @@ const AdminDashboard: React.FC = () => {
           <AdminSidebar 
             currentView={currentView} 
             onViewChange={(view) => {
-              setCurrentView(view);
+              handleNavigate(view);
               setSidebarOpen(false); // Close sidebar on mobile after selection
             }}
             isMobile={true}
