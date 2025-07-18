@@ -29,6 +29,12 @@ serve(async (req) => {
     // Get the request body
     const { email, password, user_metadata } = await req.json()
 
+    console.log('Received user_metadata:', user_metadata)
+    console.log('Location from metadata:', user_metadata?.location)
+    console.log('Location type:', typeof user_metadata?.location)
+    console.log('Location === null:', user_metadata?.location === null)
+    console.log('Location === "none":', user_metadata?.location === 'none')
+
     // Validate required fields
     if (!email || !password) {
       return new Response(
@@ -73,6 +79,11 @@ serve(async (req) => {
 
     // Create or update the user's profile with role and other metadata
     if (user?.user && user_metadata) {
+      const finalLocation = user_metadata.location === 'none' ? null : user_metadata.location || null;
+      console.log('Creating profile with location:', user_metadata.location)
+      console.log('Final location value:', finalLocation)
+      console.log('Final location type:', typeof finalLocation)
+      
       const { error: profileError } = await supabaseAdmin
         .from('profiles')
         .upsert({
@@ -81,6 +92,7 @@ serve(async (req) => {
           role: role,
           admin_name: user_metadata.admin_name,
           display_name: user_metadata.display_name,
+          location: finalLocation,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString()
         })

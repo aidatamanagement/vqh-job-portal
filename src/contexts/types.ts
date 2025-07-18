@@ -56,7 +56,7 @@ export interface AppContextType {
   fetchJobs: () => Promise<void>;
   fetchApplications: () => Promise<void>;
   fetchMasterData: () => Promise<void>;
-  fetchHRManagers: () => Promise<HRManager[]>;
+  fetchHRManagers: (selectedLocation?: string) => Promise<HRManager[]>;
   fetchSalespeople: () => Promise<void>;
   fetchVisitLogs: () => Promise<void>;
   fetchTrainingVideos: () => Promise<void>;

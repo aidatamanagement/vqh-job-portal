@@ -94,7 +94,7 @@ const JobPreviewModal: React.FC<JobPreviewModalProps> = ({ job, isOpen, onClose 
 
                   <div>
                     <h1 className="text-3xl font-bold text-gray-900 mb-4">
-                      {job.title}
+                      {job.position}
                     </h1>
                     <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-6">
                       <div className="flex items-center" style={{ color: '#005586' }}>
@@ -198,11 +198,8 @@ const JobPreviewModal: React.FC<JobPreviewModalProps> = ({ job, isOpen, onClose 
                         <div className="flex items-start space-x-3">
                           <User className="w-5 h-5 text-primary mt-0.5" />
                           <div>
-                            <p className="text-sm font-medium text-gray-900">HR Contact</p>
+                            <p className="text-sm font-medium text-gray-900">Manager</p>
                             <p className="text-sm text-gray-600">{job.hrManagerName}</p>
-                            {job.hrManagerEmail && (
-                              <p className="text-xs text-gray-500">{job.hrManagerEmail}</p>
-                            )}
                           </div>
                         </div>
                       )}

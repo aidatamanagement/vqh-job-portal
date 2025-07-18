@@ -7,28 +7,65 @@ export const useAdminOperations = (
   fetchJobs: () => Promise<void>,
   fetchMasterData: () => Promise<void>
 ) => {
-  // Fetch HR managers for job assignment
-  const fetchHRManagers = useCallback(async (): Promise<HRManager[]> => {
+  // Fetch Managers for job assignment
+  const fetchHRManagers = useCallback(async (selectedLocation?: string): Promise<HRManager[]> => {
     try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('id, email, admin_name, display_name, role')
-        .in('role', ['admin', 'hr'])
-        .order('admin_name');
+      let data;
+      let error;
+      
+      if (selectedLocation) {
+        // If location is provided, fetch all admins and HR managers from that location
+        const { data: adminsData, error: adminsError } = await supabase
+          .from('profiles')
+          .select('id, email, admin_name, display_name, role, location, profile_image_url')
+          .eq('role', 'admin')
+          .order('admin_name');
+          
+        const { data: hrData, error: hrError } = await supabase
+          .from('profiles')
+          .select('id, email, admin_name, display_name, role, location, profile_image_url')
+          .eq('role', 'hr')
+          .eq('location', selectedLocation)
+          .order('admin_name');
+          
+        if (adminsError || hrError) {
+          console.error('Error fetching managers:', adminsError || hrError);
+          return [];
+        }
+        
+        data = [...(adminsData || []), ...(hrData || [])];
+      } else {
+        // If no location provided, show all admins and HR managers
+        const result = await supabase
+          .from('profiles')
+          .select('id, email, admin_name, display_name, role, location, profile_image_url')
+          .in('role', ['admin', 'hr'])
+          .order('admin_name');
+          
+        data = result.data;
+        error = result.error;
+      }
 
       if (error) {
-        console.error('Error fetching HR managers:', error);
+        console.error('Error fetching Managers:', error);
         return [];
       }
 
-      return (data || []).map(profile => ({
+      const managers = (data || []).map(profile => ({
         id: profile.id,
         email: profile.email,
         name: profile.admin_name || profile.display_name || profile.email,
-        role: profile.role as 'admin' | 'hr'
+        role: profile.role as 'admin' | 'hr',
+        location: profile.location,
+        profile_image_url: profile.profile_image_url
       }));
+      
+      console.log('Fetched managers:', managers);
+      console.log('Selected location:', selectedLocation);
+      
+      return managers;
     } catch (error) {
-      console.error('Error fetching HR managers:', error);
+      console.error('Error fetching Managers:', error);
       return [];
     }
   }, []);

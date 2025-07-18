@@ -88,10 +88,10 @@ const JobFilters: React.FC<JobFiltersProps> = ({
 
           <Select value={filterHRManager} onValueChange={setFilterHRManager}>
             <SelectTrigger>
-              <SelectValue placeholder="All HR Managers" />
+              <SelectValue placeholder="All Managers" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All HR Managers</SelectItem>
+              <SelectItem value="all">All Managers</SelectItem>
               {hrManagers.map((manager) => (
                 <SelectItem key={manager.id} value={manager.id}>
                   {manager.name}

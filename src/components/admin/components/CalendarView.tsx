@@ -50,8 +50,8 @@ export interface CalendarInterview {
   last_name?: string;
   applied_position?: string;
   city_state?: string;
-  job_title?: string;
   job_location?: string;
+  job_position?: string;
   meeting_url?: string;
   phone?: string;
 }

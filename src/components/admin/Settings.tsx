@@ -78,13 +78,24 @@ const Settings: React.FC = () => {
   
   // Profile form state
   const [profileForm, setProfileForm] = useState({
-    fullName: userProfile?.admin_name || userProfile?.display_name || '',
+    fullName: '',
     email: user?.email || '',
-    location: userProfile?.location || 'none',
+    location: 'none',
     currentPassword: '',
     newPassword: '',
     confirmPassword: '',
   });
+
+  // Update profile form when userProfile changes
+  useEffect(() => {
+    if (userProfile) {
+      setProfileForm(prev => ({
+        ...prev,
+        fullName: userProfile.admin_name || userProfile.display_name || '',
+        location: userProfile.location || 'none',
+      }));
+    }
+  }, [userProfile]);
 
   // New admin form state
   const [newAdminForm, setNewAdminForm] = useState({
@@ -106,7 +117,7 @@ const Settings: React.FC = () => {
   const userRoles: { label: string; value: UserRole; description: string }[] = [
     { label: 'Administrator', value: 'admin', description: 'Full system access' },
     { label: 'Recruiter', value: 'recruiter', description: 'Job and application management' },
-    { label: 'HR Manager', value: 'hr', description: 'People and visit management' },
+    { label: 'Manager', value: 'hr', description: 'People and visit management' },
     { label: 'Trainer', value: 'trainer', description: 'Training content management' },
     { label: 'Content Manager', value: 'content_manager', description: 'Content and media management' },
   ];
@@ -168,9 +179,8 @@ const Settings: React.FC = () => {
   };
 
   const handleNewAdminInputChange = (field: string, value: string) => {
-    // Convert "none" back to empty string for location field
-    const actualValue = field === 'location' && value === 'none' ? '' : value;
-    setNewAdminForm(prev => ({ ...prev, [field]: actualValue }));
+    // For location field, keep "none" as is - don't convert to empty string
+    setNewAdminForm(prev => ({ ...prev, [field]: value }));
   };
 
   const handleEditUserInputChange = (field: string, value: string) => {
@@ -346,6 +356,14 @@ const Settings: React.FC = () => {
 
     try {
       console.log('Creating new user via admin function:', newAdminForm.email, newAdminForm.role);
+      console.log('Location being sent:', newAdminForm.location);
+      console.log('Location after conversion:', newAdminForm.location === 'none' ? null : newAdminForm.location);
+      console.log('Full user_metadata:', {
+        display_name: newAdminForm.fullName,
+        admin_name: newAdminForm.fullName,
+        role: newAdminForm.role,
+        location: newAdminForm.location === 'none' ? null : newAdminForm.location
+      });
       
       // Use the admin function to create user without auto-login
       const { data, error } = await supabase.functions.invoke('admin-create-user', {
@@ -355,7 +373,8 @@ const Settings: React.FC = () => {
           user_metadata: {
             display_name: newAdminForm.fullName,
             admin_name: newAdminForm.fullName,
-            role: newAdminForm.role
+            role: newAdminForm.role,
+            location: newAdminForm.location === 'none' ? null : newAdminForm.location
           }
         }
       });
@@ -387,7 +406,8 @@ const Settings: React.FC = () => {
             data: {
               display_name: newAdminForm.fullName,
               admin_name: newAdminForm.fullName,
-              role: newAdminForm.role
+              role: newAdminForm.role,
+              location: newAdminForm.location === 'none' ? null : newAdminForm.location
             }
           }
         });
@@ -419,7 +439,8 @@ const Settings: React.FC = () => {
             .update({
               role: newAdminForm.role,
               admin_name: newAdminForm.fullName,
-              display_name: newAdminForm.fullName
+              display_name: newAdminForm.fullName,
+              location: newAdminForm.location === 'none' ? null : newAdminForm.location
             })
             .eq('id', authData.user.id);
 
@@ -498,42 +519,43 @@ const Settings: React.FC = () => {
     }
   };
 
-  const removeUser = async (userId: string, userEmail: string) => {
-    // Prevent removing the currently logged-in user
+  const deleteUser = async (userId: string, userEmail: string) => {
+    // Prevent deleting the currently logged-in user
     if (userId === user?.id) {
       toast({
-        title: "Cannot Remove",
-        description: "Cannot remove your own account",
+        title: "Cannot Delete",
+        description: "Cannot delete your own account",
         variant: "destructive",
       });
       return;
     }
 
-    // Only allow admins to remove users
+    // Only allow admins to delete users
     if (!isAdmin) {
       toast({
         title: "Permission Denied",
-        description: "Only administrators can remove users",
+        description: "Only administrators can delete users",
         variant: "destructive",
       });
       return;
     }
 
-    if (window.confirm(`Are you sure you want to remove user ${userEmail}?`)) {
+    if (window.confirm(`Are you sure you want to permanently delete user ${userEmail}? This action cannot be undone and will remove the user from both the database and authentication system.`)) {
       setIsLoading(true);
       
       try {
-        // Update the profile role to 'recruiter' instead of deleting
-        const { error } = await supabase
-          .from('profiles')
-          .update({ role: 'recruiter' })
-          .eq('id', userId);
+        // Delete user from both profiles table and auth table using admin API
+        const { data, error } = await supabase.functions.invoke('admin-delete-user', {
+          body: {
+            user_id: userId
+          }
+        });
 
         if (error) {
-          console.error('Error removing user:', error);
+          console.error('Error deleting user:', error);
           toast({
             title: "Error",
-            description: "Failed to remove user",
+            description: error.message || "Failed to delete user",
             variant: "destructive",
           });
           return;
@@ -543,14 +565,14 @@ const Settings: React.FC = () => {
         await fetchAllUsers();
 
         toast({
-          title: "User Removed",
-          description: `User ${userEmail} has been removed`,
+          title: "User Deleted",
+          description: `User ${userEmail} has been permanently deleted from the system`,
         });
       } catch (error) {
-        console.error('Error removing user:', error);
+        console.error('Error deleting user:', error);
         toast({
           title: "Error",
-          description: "Failed to remove user",
+          description: "Failed to delete user",
           variant: "destructive",
         });
       } finally {
@@ -734,7 +756,7 @@ const Settings: React.FC = () => {
                         <Badge variant={getRoleBadgeVariant(userProfile?.role as UserRole)} className="text-sm px-3 py-1">
                           {userRoles.find(r => r.value === userProfile?.role)?.label || 'Unknown'}
                         </Badge>
-                        {userProfile?.role === 'admin' && <Crown className="w-5 h-5 text-yellow-500" />}
+                        {userProfile?.role === 'admin'}
                       </div>
                     </div>
 
@@ -1117,7 +1139,7 @@ const Settings: React.FC = () => {
                             <Badge variant={getRoleBadgeVariant(userItem.role)} className="text-xs">
                               {userRoles.find(r => r.value === userItem.role)?.label || userItem.role}
                             </Badge>
-                            {userItem.role === 'admin' && <Crown className="w-4 h-4 text-yellow-500" />}
+                            {userItem.role === 'admin'}
                           </div>
                           <p className="text-sm text-gray-600">{userItem.email}</p>
                           {userItem.location && (
@@ -1144,7 +1166,7 @@ const Settings: React.FC = () => {
                                 <Edit className="w-4 h-4" />
                               </Button>
                               <Button
-                                onClick={() => removeUser(userItem.id, userItem.email)}
+                                onClick={() => deleteUser(userItem.id, userItem.email)}
                                 variant="ghost"
                                 size="sm"
                                 className="text-red-600 hover:text-red-700 hover:bg-red-50"
@@ -1195,7 +1217,7 @@ const Settings: React.FC = () => {
                         <SelectItem key={role.value} value={role.value}>
                           <div className="flex items-center justify-between w-full">
                             <span>{role.label}</span>
-                            {role.value === 'admin' && <Crown className="w-4 h-4 text-yellow-500 ml-2" />}
+                            {role.value === 'admin'}
                           </div>
                         </SelectItem>
                       ))}
@@ -1348,7 +1370,7 @@ const Settings: React.FC = () => {
                         <SelectItem key={role.value} value={role.value}>
                           <div className="flex items-center justify-between w-full">
                             <span>{role.label}</span>
-                            {role.value === 'admin' && <Crown className="w-4 h-4 text-yellow-500 ml-2" />}
+                            {role.value === 'admin'}
                           </div>
                         </SelectItem>
                       ))}

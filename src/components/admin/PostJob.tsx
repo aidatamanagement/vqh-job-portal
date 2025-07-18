@@ -63,11 +63,30 @@ const PostJob: React.FC = () => {
   const [isAddingLocation, setIsAddingLocation] = useState(false);
   const [isAddingFacility, setIsAddingFacility] = useState(false);
 
-  // Fetch master data and HR managers on component mount
+  // Fetch master data and Managers on component mount
   useEffect(() => {
     fetchMasterData();
     fetchHRManagers().then(setHRManagers);
   }, [fetchMasterData, fetchHRManagers]);
+
+  // Fetch managers when location changes
+  useEffect(() => {
+    console.log('Location changed to:', jobForm.location);
+    if (jobForm.location) {
+      console.log('Fetching managers for location:', jobForm.location);
+      fetchHRManagers(jobForm.location).then(managers => {
+        console.log('Received managers:', managers);
+        setHRManagers(managers);
+      });
+      // Clear manager selection when location changes
+      setJobForm(prev => ({ ...prev, hrManagerId: '' }));
+    } else {
+      console.log('No location selected, clearing managers');
+      // If no location selected, clear managers and manager selection
+      setHRManagers([]);
+      setJobForm(prev => ({ ...prev, hrManagerId: '' }));
+    }
+  }, [jobForm.location, fetchHRManagers]);
 
   const handleJobInputChange = (field: string, value: string | boolean) => {
     setJobForm(prev => ({ ...prev, [field]: value }));
@@ -106,7 +125,7 @@ const PostJob: React.FC = () => {
     if (!jobForm.description || !jobForm.position || !jobForm.location || !jobForm.hrManagerId) {
       toast({
         title: "Missing Required Fields",
-        description: "Please fill in all required fields including HR Manager",
+        description: "Please fill in all required fields including Manager",
         variant: "destructive",
       });
       setIsSubmitting(false);
@@ -598,10 +617,10 @@ const PostJob: React.FC = () => {
                 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div>
-                    <Label htmlFor="position">Position Category *</Label>
+                    <Label htmlFor="position">Position*</Label>
                     <Select value={jobForm.position} onValueChange={(value) => handleJobInputChange('position', value)} disabled={isSubmitting}>
                       <SelectTrigger className="mt-1">
-                        <SelectValue placeholder={positions.length === 0 ? "Loading positions..." : "Select position category"} />
+                        <SelectValue placeholder={positions.length === 0 ? "Loading positions..." : "Select position"} />
                       </SelectTrigger>
                       <SelectContent>
                         {positions.map((position) => (
@@ -630,25 +649,70 @@ const PostJob: React.FC = () => {
                   </div>
 
                   <div>
-                    <Label htmlFor="hrManager">Assigned HR Manager *</Label>
-                    <Select value={jobForm.hrManagerId} onValueChange={(value) => handleJobInputChange('hrManagerId', value)} disabled={isSubmitting}>
+                    <Label htmlFor="hrManager">Assigned Manager *</Label>
+                    <Select 
+                      value={jobForm.hrManagerId} 
+                      onValueChange={(value) => handleJobInputChange('hrManagerId', value)} 
+                      disabled={isSubmitting || !jobForm.location}
+                    >
                       <SelectTrigger className="mt-1">
-                        <SelectValue placeholder={hrManagers.length === 0 ? "Loading HR managers..." : "Select HR manager"} />
+                        <SelectValue placeholder={
+                          !jobForm.location 
+                            ? "Select location first" 
+                            : hrManagers.length === 0 
+                              ? "Loading Managers..." 
+                              : "Select Manager"
+                        } />
                       </SelectTrigger>
                       <SelectContent>
                         {hrManagers.map((manager) => (
                           <SelectItem key={manager.id} value={manager.id}>
-                            <div className="flex items-center space-x-2">
-                              <Users className="w-4 h-4" />
-                              <span>{manager.name}</span>
-                              <span className="text-xs text-gray-500">({manager.email})</span>
+                            <div className="flex items-center space-x-3">
+                              <div className="flex-shrink-0">
+                                {manager.profile_image_url ? (
+                                  <img
+                                    src={manager.profile_image_url}
+                                    alt={manager.name}
+                                    className="w-8 h-8 rounded-full object-cover"
+                                    onError={(e) => {
+                                      // Fallback to initials if image fails to load
+                                      const target = e.target as HTMLImageElement;
+                                      target.style.display = 'none';
+                                      target.nextElementSibling?.classList.remove('hidden');
+                                    }}
+                                  />
+                                ) : null}
+                                <div className={`w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-sm font-medium text-primary ${manager.profile_image_url ? 'hidden' : ''}`}>
+                                  {manager.name.charAt(0).toUpperCase()}
+                                </div>
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center space-x-2">
+                                  <span className="font-medium truncate">{manager.name}</span>
+                                  <Badge variant="outline" className="text-xs">
+                                    {manager.role === 'admin' ? 'Admin' : 'HR Manager'}
+                                  </Badge>
+                                </div>
+                                <div className="flex items-center space-x-2 text-xs text-muted-foreground">
+                                  <span className="truncate">{manager.email}</span>
+                                  {manager.location && (
+                                    <>
+                                      <span>•</span>
+                                      <span className="text-blue-600">{manager.location}</span>
+                                    </>
+                                  )}
+                                </div>
+                              </div>
                             </div>
                           </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
                     <p className="text-xs text-gray-500 mt-1">
-                      HR manager will handle all applicants for this job
+                      {!jobForm.location 
+                        ? "Please select a location first to see available managers"
+                        : "Manager will handle all applicants for this job"
+                      }
                     </p>
                   </div>
                 </div>

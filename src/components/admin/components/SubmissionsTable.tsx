@@ -31,7 +31,7 @@ const SubmissionsTable: React.FC<SubmissionsTableProps> = ({
               <TableHead className="font-semibold min-w-[150px]">Position</TableHead>
               <TableHead className="font-semibold min-w-[120px]">Applied Date</TableHead>
               <TableHead className="font-semibold min-w-[140px]">Location</TableHead>
-              <TableHead className="font-semibold min-w-[130px]">HR Manager</TableHead>
+              <TableHead className="font-semibold min-w-[130px]">Manager</TableHead>
               <TableHead className="font-semibold min-w-[100px]">Status</TableHead>
               <TableHead className="font-semibold text-right min-w-[160px]">Actions</TableHead>
             </TableRow>
@@ -61,7 +61,7 @@ const SubmissionsTable: React.FC<SubmissionsTableProps> = ({
                     <span className="text-gray-600 text-sm">{formatDate(application.createdAt)}</span>
                   </TableCell>
                   <TableCell className="min-w-[140px]">
-                    <span className="text-gray-600 text-sm">{application.cityState}</span>
+                    <span className="text-gray-600 text-sm">{application.jobLocation || 'Unknown Location'}</span>
                   </TableCell>
                   <TableCell className="min-w-[130px]">
                     <span className="text-gray-600 text-sm">{application.hrManagerName || 'Unassigned'}</span>

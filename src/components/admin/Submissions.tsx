@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { JobApplication } from '@/types';
 import { useSubmissions } from './hooks/useSubmissions';
 import SubmissionsHeader from './components/SubmissionsHeader';
@@ -7,6 +7,7 @@ import SubmissionsStatusTabs from './components/SubmissionsStatusTabs';
 import ApplicationDetailsModal from './components/ApplicationDetailsModal';
 import FileViewerModal from './components/FileViewerModal';
 import { useStatusUpdate } from '@/hooks/useStatusUpdate';
+import { useAppContext } from '@/contexts/AppContext';
 import { toast } from '@/hooks/use-toast';
 import {
   getUniquePositions,
@@ -20,6 +21,7 @@ const Submissions: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [positionFilter, setPositionFilter] = useState<string>('all');
+  const [locationFilter, setLocationFilter] = useState<string>('all');
   const [hrManagerFilter, setHrManagerFilter] = useState<string>('all');
   const [sortBy, setSortBy] = useState<'date' | 'name' | 'position' | 'hrManager'>('date');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
@@ -35,9 +37,15 @@ const Submissions: React.FC = () => {
   } = useSubmissions();
 
   const { updateApplicationStatus } = useStatusUpdate();
+  const { positions, locations, fetchMasterData } = useAppContext();
+
+  // Fetch master data on component mount
+  useEffect(() => {
+    fetchMasterData();
+  }, [fetchMasterData]);
 
   const filteredSubmissions = sortSubmissions(
-    filterSubmissions(submissions, searchTerm, statusFilter, positionFilter, hrManagerFilter),
+    filterSubmissions(submissions, searchTerm, statusFilter, positionFilter, locationFilter, hrManagerFilter),
     sortBy,
     sortOrder
   );
@@ -111,6 +119,8 @@ const Submissions: React.FC = () => {
         setSearchTerm={setSearchTerm}
         positionFilter={positionFilter}
         setPositionFilter={setPositionFilter}
+        locationFilter={locationFilter}
+        setLocationFilter={setLocationFilter}
         statusFilter={statusFilter}
         setStatusFilter={setStatusFilter}
         hrManagerFilter={hrManagerFilter}
@@ -119,7 +129,8 @@ const Submissions: React.FC = () => {
         setSortBy={setSortBy}
         sortOrder={sortOrder}
         setSortOrder={setSortOrder}
-        uniquePositions={uniquePositions}
+        positions={positions}
+        locations={locations}
         uniqueHrManagers={uniqueHrManagers}
       />
 

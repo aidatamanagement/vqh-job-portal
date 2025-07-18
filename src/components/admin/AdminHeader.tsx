@@ -33,7 +33,7 @@ const AdminHeader: React.FC<AdminHeaderProps> = ({ onMenuClick, onNavigate }) =>
     <header className="bg-white border-b border-gray-200 px-4 lg:px-6 h-16 flex items-center">
       <div className="flex items-center justify-between w-full">
         {/* Mobile Menu Button and Logo */}
-        <div className="flex items-center space-x-3">
+        <div className="flex items-center space-x-2">
           {/* Mobile Menu Button */}
           <Button
             variant="ghost"
@@ -46,10 +46,10 @@ const AdminHeader: React.FC<AdminHeaderProps> = ({ onMenuClick, onNavigate }) =>
           
           {/* Logo and Title */}
           <div 
-            className="flex items-center space-x-3 cursor-pointer group"
+            className="flex items-center cursor-pointer group"
             onClick={handleLogoClick}
           >
-            <div className="w-32 h-32 lg:w-40 lg:h-40 rounded-lg flex items-center justify-center group-hover:scale-105 transition-transform duration-200">
+            <div className="w-8 h-8 lg:w-10 lg:h-10 rounded-lg flex items-center justify-center group-hover:scale-105 transition-transform duration-200">
               <img 
                 src="/images/LOGO.svg" 
                 alt="ViaQuest Hospice Logo" 

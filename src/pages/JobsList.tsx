@@ -60,8 +60,8 @@ const JobsList: React.FC = () => {
     };
   }, [jobs, positions, locations]);
 
-  // Filter and group jobs
-  const jobsByDepartment = useMemo(() => {
+  // Filter jobs
+  const filteredJobs = useMemo(() => {
     let filteredJobs = jobs.filter(job => job.isActive);
 
     // Apply search filter
@@ -100,25 +100,7 @@ const JobsList: React.FC = () => {
       return filters.sortBy === 'newest' ? dateB - dateA : dateA - dateB;
     });
 
-    // Group by department
-    const grouped = filteredJobs.reduce((acc, job) => {
-      const department = job.position;
-      if (!acc[department]) {
-        acc[department] = [];
-      }
-      acc[department].push(job);
-      return acc;
-    }, {} as Record<string, Job[]>);
-
-    // Sort departments alphabetically
-    const sortedDepartments = Object.keys(grouped).sort();
-    const result: { department: string; jobs: Job[] }[] = [];
-    
-    sortedDepartments.forEach(department => {
-      result.push({ department, jobs: grouped[department] });
-    });
-
-    return result;
+    return filteredJobs;
   }, [jobs, filters]);
 
   const handleApplyClick = (jobId: string) => {
@@ -140,7 +122,7 @@ const JobsList: React.FC = () => {
   };
 
   const hasActiveFilters = filters.search || filters.location || filters.position || filters.employmentType;
-  const totalJobs = jobsByDepartment.reduce((sum, dept) => sum + dept.jobs.length, 0);
+  const totalJobs = filteredJobs.length;
 
   // Show loading state while data is being fetched
   if (isDataLoading) {
@@ -271,75 +253,66 @@ const JobsList: React.FC = () => {
             </div>
           </div>
 
-          {/* Jobs by Department */}
-          {jobsByDepartment.length > 0 ? (
-            <div className="space-y-8">
-              {jobsByDepartment.map(({ department, jobs }) => (
-                <div key={department} className="space-y-4">
-                  {/* Department Header */}
-                  <h2 className="text-xl font-medium text-gray-700 border-b border-gray-300 pb-3">
-                    {department} ({jobs.length})
-                  </h2>
-
-                  {/* Jobs in this department */}
-                  <div className="space-y-1">
-                    {jobs.map((job) => (
-                      <div 
-                        key={job.id}
-                        className="flex items-center justify-between py-3 border-b border-gray-200 last:border-b-0 hover:bg-gray-50 transition-colors duration-200 rounded-lg px-4"
-                      >
-                        {/* Job Title & Employment Info */}
-                        <div className="flex-1">
-                          <h3 className="text-xl font-medium text-gray-900 hover:text-gray-700 transition-colors cursor-pointer">
-                            {job.title}
-                          </h3>
-                          {/* Employment Type & Benefits */}
-                          {job.facilities.length > 0 && (
-                            <div className="flex flex-wrap gap-2 mt-2">
-                              {job.facilities.map((facility, index) => (
-                                <Badge 
-                                  key={index} 
-                                  variant="outline" 
-                                  className="bg-gray-100 border-gray-300 text-gray-700 text-xs hover:bg-gray-200"
-                                >
-                                  {facility}
-                                </Badge>
-                              ))}
-                            </div>
-                          )}
-                        </div>
-
-                        {/* Location Badge */}
-                        <div className="flex-shrink-0 mx-8">
+          {/* Jobs List */}
+          {filteredJobs.length > 0 ? (
+            <div className="space-y-1">
+              {filteredJobs.map((job) => (
+                <div 
+                  key={job.id}
+                  className="flex items-center justify-between py-3 border-b border-gray-200 last:border-b-0 hover:bg-gray-50 transition-colors duration-200 rounded-lg px-4"
+                >
+                  {/* Job Title & Employment Info */}
+                  <div className="flex-1">
+                    <h3 className="text-xl font-medium text-gray-900 hover:text-gray-700 transition-colors cursor-pointer">
+                      {job.title}
+                    </h3>
+                                              <p className="text-base font-medium text-gray-900 mt-1">
+                            {job.position}
+                          </p>
+                    {/* Employment Type & Benefits */}
+                    {job.facilities.length > 0 && (
+                      <div className="flex flex-wrap gap-2 mt-2">
+                        {job.facilities.map((facility, index) => (
                           <Badge 
+                            key={index} 
                             variant="outline" 
-                            className="bg-transparent border-gray-300 text-gray-700 hover:bg-gray-100"
+                            className="bg-gray-100 border-gray-300 text-gray-700 text-xs hover:bg-gray-200"
                           >
-                            📍 {job.location}
+                            {facility}
                           </Badge>
-                        </div>
-
-                        {/* Apply Button */}
-                        <div className="flex-shrink-0">
-                          <Button
-                            onClick={() => handleApplyClick(job.id)}
-                            variant="outline"
-                            className="bg-transparent border-gray-300 text-gray-900 hover:text-white transition-all duration-200 px-6"
-                            style={{ 
-                              '--tw-hover-bg': '#005586'
-                            } as React.CSSProperties}
-                            onMouseEnter={(e) => {
-                              e.currentTarget.style.backgroundColor = '#005586';
-                            }}
-                            onMouseLeave={(e) => {
-                              e.currentTarget.style.backgroundColor = 'transparent';
-                            }}
-                          >
-                            Apply for position
-                          </Button>
-                        </div>
+                        ))}
                       </div>
-                    ))}
+                    )}
+                  </div>
+
+                  {/* Location Badge */}
+                  <div className="flex-shrink-0 mx-8">
+                    <Badge 
+                      variant="outline" 
+                      className="bg-transparent border-gray-300 text-gray-700 hover:bg-gray-100"
+                    >
+                      📍 {job.location}
+                    </Badge>
+                  </div>
+
+                  {/* Apply Button */}
+                  <div className="flex-shrink-0">
+                    <Button
+                      onClick={() => handleApplyClick(job.id)}
+                      variant="outline"
+                      className="bg-transparent border-gray-300 text-gray-900 hover:text-white transition-all duration-200 px-6"
+                      style={{ 
+                        '--tw-hover-bg': '#005586'
+                      } as React.CSSProperties}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.backgroundColor = '#005586';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.backgroundColor = 'transparent';
+                      }}
+                    >
+                      Apply for position
+                    </Button>
                   </div>
                 </div>
               ))}

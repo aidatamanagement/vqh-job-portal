@@ -40,7 +40,7 @@ const ProfileSettings: React.FC = () => {
   const userRoles: { label: string; value: UserRole; description: string }[] = [
     { label: 'Administrator', value: 'admin', description: 'Full system access' },
     { label: 'Recruiter', value: 'recruiter', description: 'Job and application management' },
-    { label: 'HR Manager', value: 'hr', description: 'People and visit management' },
+    { label: 'Manager', value: 'hr', description: 'People and visit management' },
     { label: 'Trainer', value: 'trainer', description: 'Training content management' },
     { label: 'Content Manager', value: 'content_manager', description: 'Content and media management' },
   ];
@@ -304,7 +304,7 @@ const ProfileSettings: React.FC = () => {
                     <Badge variant={getRoleBadgeVariant(userProfile?.role as UserRole)} className="text-sm px-3 py-1">
                       {userRoles.find(r => r.value === userProfile?.role)?.label || 'Unknown'}
                     </Badge>
-                    {userProfile?.role === 'admin' && <Crown className="w-5 h-5 text-yellow-500" />}
+                    {userProfile?.role === 'admin'}
                   </div>
                 </div>
 

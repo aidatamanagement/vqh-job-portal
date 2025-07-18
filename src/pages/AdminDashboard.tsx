@@ -162,7 +162,7 @@ const AdminDashboard: React.FC = () => {
         </div>
         
         {/* Main Content Area - Only this scrolls */}
-        <main className="flex-1 overflow-y-auto bg-gray-50 animate-slide-up-delayed transition-all duration-300">
+        <main className="flex-1 overflow-y-auto bg-gray-50 animate-slide-up-delayed transition-all duration-300 lg:ml-16">
           <div className="px-4 lg:px-8 py-4 lg:py-8">
             <div className="max-w-7xl mx-auto pt-4">
               {renderContent()}

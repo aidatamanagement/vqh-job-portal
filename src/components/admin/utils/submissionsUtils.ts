@@ -94,6 +94,7 @@ export const filterSubmissions = (
   searchTerm: string,
   statusFilter: string,
   positionFilter: string,
+  locationFilter: string,
   hrManagerFilter: string
 ) => {
   return submissions.filter(submission => {
@@ -102,13 +103,16 @@ export const filterSubmissions = (
       submission.lastName.toLowerCase().includes(searchTerm.toLowerCase()) ||
       submission.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
       submission.appliedPosition.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      submission.cityState.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (submission.jobLocation && submission.jobLocation.toLowerCase().includes(searchTerm.toLowerCase())) ||
       (submission.hrManagerName && submission.hrManagerName.toLowerCase().includes(searchTerm.toLowerCase()));
     
     const matchesStatus = statusFilter === 'all' || submission.status === statusFilter;
     const matchesPosition = positionFilter === 'all' || submission.appliedPosition === positionFilter;
+    const matchesLocation = locationFilter === 'all' || submission.jobLocation === locationFilter;
     const matchesHrManager = hrManagerFilter === 'all' || submission.hrManagerName === hrManagerFilter;
     
-    return matchesSearch && matchesStatus && matchesPosition && matchesHrManager;
+    return matchesSearch && matchesStatus && matchesPosition && matchesLocation && matchesHrManager;
   });
 };
 

@@ -10,6 +10,8 @@ interface SubmissionsFiltersProps {
   setSearchTerm: (term: string) => void;
   positionFilter: string;
   setPositionFilter: (filter: string) => void;
+  locationFilter: string;
+  setLocationFilter: (filter: string) => void;
   statusFilter: string;
   setStatusFilter: (filter: string) => void;
   hrManagerFilter: string;
@@ -18,7 +20,8 @@ interface SubmissionsFiltersProps {
   setSortBy: (sort: 'date' | 'name' | 'position' | 'hrManager') => void;
   sortOrder: 'asc' | 'desc';
   setSortOrder: (order: 'asc' | 'desc') => void;
-  uniquePositions: string[];
+  positions: Array<{ id: string; name: string }>;
+  locations: Array<{ id: string; name: string }>;
   uniqueHrManagers: string[];
 }
 
@@ -27,6 +30,8 @@ const SubmissionsFilters: React.FC<SubmissionsFiltersProps> = ({
   setSearchTerm,
   positionFilter,
   setPositionFilter,
+  locationFilter,
+  setLocationFilter,
   statusFilter,
   setStatusFilter,
   hrManagerFilter,
@@ -35,14 +40,16 @@ const SubmissionsFilters: React.FC<SubmissionsFiltersProps> = ({
   setSortBy,
   sortOrder,
   setSortOrder,
-  uniquePositions,
+  positions,
+  locations,
   uniqueHrManagers
 }) => {
-  const hasActiveFilters = searchTerm !== '' || positionFilter !== 'all' || statusFilter !== 'all' || hrManagerFilter !== 'all';
+  const hasActiveFilters = searchTerm !== '' || positionFilter !== 'all' || locationFilter !== 'all' || statusFilter !== 'all' || hrManagerFilter !== 'all';
 
   const clearAllFilters = () => {
     setSearchTerm('');
     setPositionFilter('all');
+    setLocationFilter('all');
     setStatusFilter('all');
     setHrManagerFilter('all');
     setSortBy('date');
@@ -62,7 +69,7 @@ const SubmissionsFilters: React.FC<SubmissionsFiltersProps> = ({
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
               <Input
-                placeholder="Search by name, email, position, or HR manager..."
+                placeholder="Search by name, email, position, or Manager..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-10"
@@ -76,18 +83,30 @@ const SubmissionsFilters: React.FC<SubmissionsFiltersProps> = ({
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Positions</SelectItem>
-              {uniquePositions.map(position => (
-                <SelectItem key={position} value={position}>{position}</SelectItem>
+              {positions.map(position => (
+                <SelectItem key={position.id} value={position.name}>{position.name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          <Select value={locationFilter} onValueChange={setLocationFilter}>
+            <SelectTrigger className="w-full sm:w-48">
+              <SelectValue placeholder="All Locations" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Locations</SelectItem>
+              {locations.map(location => (
+                <SelectItem key={location.id} value={location.name}>{location.name}</SelectItem>
               ))}
             </SelectContent>
           </Select>
 
           <Select value={hrManagerFilter} onValueChange={setHrManagerFilter}>
             <SelectTrigger className="w-full sm:w-48">
-              <SelectValue placeholder="All HR Managers" />
+              <SelectValue placeholder="All Managers" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All HR Managers</SelectItem>
+              <SelectItem value="all">All Managers</SelectItem>
               <SelectItem value="Unassigned">Unassigned</SelectItem>
               {uniqueHrManagers.map(manager => (
                 <SelectItem key={manager} value={manager}>{manager}</SelectItem>
@@ -124,7 +143,7 @@ const SubmissionsFilters: React.FC<SubmissionsFiltersProps> = ({
                 <SelectItem value="date">Date Applied</SelectItem>
                 <SelectItem value="name">Candidate Name</SelectItem>
                 <SelectItem value="position">Position</SelectItem>
-                <SelectItem value="hrManager">HR Manager</SelectItem>
+                <SelectItem value="hrManager">Manager</SelectItem>
               </SelectContent>
             </Select>
             <Button

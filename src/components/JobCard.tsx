@@ -41,7 +41,7 @@ const JobCard: React.FC<JobCardProps> = ({ job }) => {
       <div className="space-y-3 flex-1 flex flex-col">
         {/* Position and Location */}
         <div className="flex justify-between items-center">
-          <p className="text-sm text-primary font-medium">
+          <p className="text-base font-semibold text-gray-900">
             {job.position}
           </p>
           <div className="flex items-center text-gray-600 text-sm">

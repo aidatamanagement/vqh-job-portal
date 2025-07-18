@@ -22,7 +22,7 @@ const ManageJobs: React.FC = () => {
   const [jobForm, setJobForm] = useState<Partial<Job> & { customFacility?: string }>({});
   const [hrManagers, setHRManagers] = useState<HRManager[]>([]);
 
-  // Fetch HR managers on component mount
+  // Fetch Managers on component mount
   useEffect(() => {
     fetchHRManagers().then(setHRManagers);
   }, [fetchHRManagers]);
@@ -151,7 +151,7 @@ const ManageJobs: React.FC = () => {
     if (!editingJob || !jobForm.description || !jobForm.position || !jobForm.location || !jobForm.hrManagerId) {
       toast({
         title: "Missing Required Fields",
-        description: "Please fill in all required fields including HR Manager",
+        description: "Please fill in all required fields including Manager",
         variant: "destructive",
       });
       return;

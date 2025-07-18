@@ -3,6 +3,91 @@
 ## Recent Updates
 
 ### January 3, 2025
+- **6:45 PM:** Changed Submissions Location Column to Show Job Location Instead of Applicant Location
+  - **Problem:** Location column in submissions table was showing applicant's city/state instead of job location
+  - **Changes Made:**
+    - Updated `src/components/admin/hooks/useSubmissions.ts` - Added job location to database query and data transformation
+    - Updated `src/types/index.ts` - Added jobLocation field to JobApplication interface
+    - Updated `src/components/admin/components/SubmissionsTable.tsx` - Changed to display job location instead of cityState
+    - Updated `src/components/admin/utils/submissionsUtils.ts` - Changed location filter to filter by job location
+    - Added job location to search functionality
+  - **Result:** Submissions table now shows job location in the location column, and location filter filters by job location
+
+- **6:30 PM:** Enhanced Submissions Filters to Show All Master Data Positions and Locations
+  - **Problem:** Submissions filters were only showing positions/locations from current submissions instead of all available options from database
+  - **Changes Made:**
+    - Updated `src/components/admin/Submissions.tsx` - Added useAppContext to fetch master data, added location filter state
+    - Updated `src/components/admin/utils/submissionsUtils.ts` - Added location filter parameter to filterSubmissions function
+    - Updated `src/components/admin/components/SubmissionsFilters.tsx` - Changed to accept master data arrays, added location filter dropdown
+    - Now shows all available positions and locations from database regardless of current submissions
+    - Added location to search functionality for better filtering
+  - **Result:** Users can now filter submissions by all available positions and locations from master data, not just those in current submissions
+
+- **6:15 PM:** Fixed Interview-Application Join to Display Actual Applicant Names
+  - **Problem:** Interviews were showing with "Unknown" names despite job_applications table having actual applicant names
+  - **Changes Made:**
+    - Updated `src/components/admin/Interviews.tsx` - Fixed the join query to properly connect interviews to job_applications via application_id
+    - Added manual fallback to fetch applications if join fails
+    - Enhanced debugging with detailed logging of interview and application data
+    - Improved data transformation to properly extract applicant names from joined data
+    - Added fallback logic that manually queries job_applications table if join fails
+  - **Result:** Interviews now properly display actual applicant names from the job_applications table
+
+- **6:00 PM:** Fixed Interview Display Issue - Allow Viewing Without Calendly Configuration
+  - **Problem:** Interviews component was blocking display when Calendly wasn't configured, preventing users from seeing existing interviews
+  - **Changes Made:**
+    - Updated `src/components/admin/Interviews.tsx` - Modified Calendly configuration check to allow viewing existing interviews
+    - Added fallback display logic to show interviews even without Calendly setup
+    - Improved query strategy with basic query first, then enhanced query with joins
+    - Added better error handling and debugging logs
+    - Enhanced data transformation to handle both joined and basic data
+  - **Result:** Users can now view existing interviews regardless of Calendly configuration status
+
+- **5:45 PM:** Enhanced Interview Loading to Fetch Applicant Names from Related Table
+  - **Problem:** User wanted to get actual applicant names from job_applications table instead of fallback values
+  - **Changes Made:**
+    - Updated `src/components/admin/Interviews.tsx` - Changed primary query to use inner join with job_applications to ensure applicant names are fetched
+    - Updated fallback query to use left joins instead of simple query to still get applicant names when possible
+    - Simplified data transformation since we now always have applicant data from related table
+    - Maintained fallback values for edge cases where related data might be missing
+  - **Result:** Interviews now display actual applicant names from the job_applications table with reliable fallback handling
+
+- **5:30 PM:** Fixed Interview Loading Issues with Robust Query Handling
+  - **Problem:** Interviews were failing to load due to inner join constraints and missing related data
+  - **Changes Made:**
+    - Updated `src/components/admin/Interviews.tsx` - Changed from inner joins to left joins to handle missing related records
+    - Added fallback simple query if complex join fails
+    - Enhanced error logging with detailed error information
+    - Added null safety in data transformation with default values
+    - Improved handling of both complex and simple query results
+  - **Result:** Interviews now load reliably even with missing job application or job data, with graceful fallbacks
+
+- **5:15 PM:** Fixed Scheduled Interviews to Remove Title References
+  - **Problem:** Interviews components were still trying to fetch and display job titles which have been removed from the database
+  - **Changes Made:**
+    - Updated `src/components/admin/Interviews.tsx` - Removed title field from database query and data transformation
+    - Updated `src/components/admin/components/CalendarView.tsx` - Removed job_title from interface and component props
+    - Updated `src/components/admin/components/InterviewsTable.tsx` - Removed job_title from interface
+    - Updated CalendarView props mapping to use job_position instead of job_title
+  - **Result:** Scheduled interviews now work correctly without title references, using position names instead
+
+- **5:00 PM:** Updated Submissions to Show Position Names from Jobs Table
+  - **Problem:** User wanted submissions to show position names from the related jobs table instead of stored position IDs
+  - **Changes Made:**
+    - Updated `src/components/admin/hooks/useSubmissions.ts` - Added position field to database query and use jobs.position instead of applied_position
+    - Modified data transformation to prioritize position from jobs table with fallback to applied_position
+    - Added fallback to "Unknown Position" if neither is available
+  - **Result:** Submissions now display actual position names from the jobs table instead of potentially outdated position IDs
+
+- **4:45 PM:** Removed Job Title from Submissions Section
+  - **Problem:** User wanted to remove job title references from submissions section to complete title field removal
+  - **Changes Made:**
+    - Updated `src/components/admin/hooks/useSubmissions.ts` - Removed title field from database query (no longer fetching title from jobs table)
+    - Updated `src/components/admin/JobPreviewModal.tsx` - Changed main heading from job title to position
+    - Updated `src/components/admin/PostJob.tsx` - Changed label from "Position title*" to "Position*" for consistency
+    - Updated placeholder text from "Select position title" to "Select position"
+  - **Result:** Submissions section now operates completely without title references, job preview shows position as primary heading
+
 - **4:30 PM:** Removed Job Title from Manage Jobs Section
   - **Problem:** User wanted to remove job title display and editing from the Manage Jobs page to match database changes
   - **Changes Made:**
@@ -191,7 +276,46 @@
 
 ### 12. ✅ **Hover-to-Expand Dashboard Sidebar Implemented**
 - **Problem:** User wanted main dashboard sidebar to be always collapsed, expand on hover (like Supabase), and not push content
-- **Implementation:** 
+- **Implementation:**
+
+### 13. ✅ **User Creation Location Fix**
+- **Problem:** When creating new users in settings, location field was not being saved properly
+- **Root Cause:** Location field was not being passed to admin-create-user function and not handled in edge function
+- **Additional Issue:** "none" value was being converted to empty string, causing location to not be saved properly
+- **Fix:** 
+  - Updated Settings.tsx to pass location in user_metadata when calling admin-create-user function
+  - Updated fallback signup method to include location in user metadata
+  - Updated admin-create-user edge function to handle location field in profile creation
+  - Fixed "none" value handling - now properly converts to null in database instead of empty string
+  - Added proper form state initialization with useEffect to handle userProfile loading
+  - Added debugging logs to track location value flow
+- **Files Updated:** Settings.tsx, supabase/functions/admin-create-user/index.ts
+- **Result:** New users now have location properly saved during creation without requiring manual edit
+
+### 14. ✅ **User Deactivation vs Deletion Clarification**
+- **Problem:** User deletion functionality was misleading - it was actually demoting users to recruiter role instead of deleting them
+- **Root Cause:** The removeUser function was using soft delete (role change) but UI messaging suggested actual deletion
+- **Fix:** 
+  - Renamed removeUser function to deactivateUser for clarity
+  - Updated all UI messaging to reflect "deactivate" instead of "remove"
+  - Updated confirmation dialog to clearly state user will be demoted to recruiter
+  - Updated toast messages to indicate deactivation rather than deletion
+  - Maintained soft delete approach for data safety
+- **Files Updated:** Settings.tsx
+- **Result:** Clear distinction between user deactivation (soft delete) and actual deletion, preventing confusion
+
+### 15. ✅ **True User Deletion Implementation**
+- **Problem:** User requested actual deletion of users from both profiles table and auth table
+- **Root Cause:** Previous implementation only used soft delete (role demotion)
+- **Fix:** 
+  - Created new admin-delete-user edge function to handle true user deletion
+  - Updated Settings.tsx to use the new edge function for permanent deletion
+  - Edge function deletes user from both profiles table and auth.users table
+  - Updated UI messaging to clearly indicate permanent deletion
+  - Added proper confirmation dialog with warning about irreversible action
+  - Maintained admin-only access control
+- **Files Updated:** Settings.tsx, supabase/functions/admin-delete-user/index.ts
+- **Result:** Admins can now permanently delete users from both database and authentication system 
   - Converted fixed-width sidebar to hover-based expand/collapse system
   - Added overlay mode that doesn't affect content layout
   - Implemented separate mobile and desktop behaviors

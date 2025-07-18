@@ -42,6 +42,7 @@ export interface JobApplication {
   email: string;
   phone: string;
   appliedPosition: string;
+  jobLocation?: string;
   earliestStartDate: string;
   cityState: string;
   coverLetter: string;
@@ -73,6 +74,8 @@ export interface HRManager {
   email: string;
   name: string;
   role: UserRole;
+  location?: string;
+  profile_image_url?: string;
 }
 
 export interface FilterState {

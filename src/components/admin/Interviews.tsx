@@ -43,7 +43,6 @@ interface Interview {
   applied_position?: string;
   city_state?: string;
   // From join with jobs
-  job_title?: string;
   job_location?: string;
   job_position?: string;
 }
@@ -167,51 +166,124 @@ const Interviews: React.FC = () => {
     try {
       console.log('Loading interviews from database...');
       
-      // Build the query with proper joins
-      let query = supabase
+      // First, let's check if there are any interviews at all
+      const basicQuery = supabase
         .from('interviews')
-        .select(`
-          *,
-          job_applications!inner(
-            first_name,
-            last_name,
-            phone,
-            applied_position,
-            city_state,
-            jobs!inner(
-              title,
-              location,
-              position
-            )
-          )
-        `)
-        .gte('created_at', new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()) // Only last 30 days
+        .select('*')
+        .gte('created_at', new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString())
         .order('scheduled_time', { ascending: false });
 
-      const { data, error } = await query;
-
-      if (error) {
-        console.error('Error loading interviews:', error);
+      const basicResult = await basicQuery;
+      
+      if (basicResult.error) {
+        console.error('Basic query failed:', basicResult.error);
         toast({
           title: "Error",
-          description: "Failed to load interviews. Please try again.",
+          description: `Failed to load interviews: ${basicResult.error.message}`,
           variant: "destructive",
         });
         return;
       }
 
-      // Flatten the joined data
-      let flattenedInterviews = (data || []).map(interview => ({
-        ...interview,
-        first_name: interview.job_applications?.first_name,
-        last_name: interview.job_applications?.last_name,
-        phone: interview.job_applications?.phone,
-        applied_position: interview.job_applications?.applied_position,
-        city_state: interview.job_applications?.city_state,
-        job_title: interview.job_applications?.jobs?.title,
-        job_location: interview.job_applications?.jobs?.location,
-        job_position: interview.job_applications?.jobs?.position,
-      }));
+      console.log('Basic interviews found:', basicResult.data?.length || 0);
+
+      if (!basicResult.data || basicResult.data.length === 0) {
+        console.log('No interviews found in the last 30 days');
+        setInterviews([]);
+        return;
+      }
+
+      // Try a simple join first without specifying the foreign key name
+      let query = supabase
+        .from('interviews')
+        .select(`
+          *,
+          job_applications(
+            id,
+            first_name,
+            last_name,
+            phone,
+            applied_position,
+            city_state,
+            email,
+            jobs(
+              location,
+              position
+            )
+          )
+        `)
+        .gte('created_at', new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString())
+        .order('scheduled_time', { ascending: false });
+
+      let { data, error } = await query;
+
+      if (error) {
+        console.error('Joined query failed, trying manual lookup:', error);
+        // If the joined query fails, try to manually fetch applicant data
+        data = basicResult.data;
+        
+        // Try to fetch applicant data manually for each interview
+        if (data && data.length > 0) {
+          const applicationIds = data.map(interview => interview.application_id).filter(Boolean);
+          
+          if (applicationIds.length > 0) {
+            const { data: applications, error: appError } = await supabase
+              .from('job_applications')
+              .select(`
+                *,
+                jobs(
+                  location,
+                  position
+                )
+              `)
+              .in('id', applicationIds);
+            
+            if (!appError && applications) {
+              console.log('Manually fetched applications:', applications.length);
+              
+              // Map applications by ID for quick lookup
+              const appMap = new Map(applications.map(app => [app.id, app]));
+              
+              // Enhance interview data with application data
+              data = data.map(interview => ({
+                ...interview,
+                job_applications: appMap.get(interview.application_id) || null
+              }));
+            } else {
+              console.error('Failed to manually fetch applications:', appError);
+            }
+          }
+        }
+        
+        console.log('Using enhanced interview data:', data);
+      } else {
+        console.log('Joined query successful, raw interview data:', data);
+      }
+
+      // Flatten the data with applicant names from related table
+      let flattenedInterviews = (data || []).map(interview => {
+        // The join should give us job_applications data
+        const application = interview.job_applications;
+        
+        console.log('Interview data:', {
+          id: interview.id,
+          application_id: interview.application_id,
+          candidate_email: interview.candidate_email,
+          has_application: !!application,
+          application_name: application ? `${application.first_name} ${application.last_name}` : 'No application data'
+        });
+        
+        return {
+          ...interview,
+          first_name: application?.first_name || 'Unknown',
+          last_name: application?.last_name || 'Candidate',
+          phone: application?.phone || '',
+          applied_position: application?.applied_position || 'Unknown Position',
+          city_state: application?.city_state || '',
+          job_location: application?.jobs?.location || 'Unknown Location',
+          job_position: application?.jobs?.position || 'Unknown Position',
+        };
+      });
 
       // Apply role-based filtering
       if (userProfile?.role !== 'admin') {
@@ -229,6 +301,7 @@ const Interviews: React.FC = () => {
 
       setInterviews(flattenedInterviews);
       console.log(`Loaded ${flattenedInterviews.length} interviews`);
+      console.log('Sample interview data:', flattenedInterviews[0]);
       
       if (userProfile?.role !== 'admin') {
         console.log(`Filtered to user location: ${userProfile?.location}`);
@@ -619,7 +692,7 @@ const Interviews: React.FC = () => {
           </div>
           <div>
             <h1 className="font-bold text-gray-900" style={{ fontSize: '1.3rem' }}>Scheduled Interviews</h1>
-            <p className="text-sm text-gray-600">Calendly integration required</p>
+            <p className="text-sm text-gray-600">Viewing existing interviews</p>
           </div>
         </div>
 
@@ -630,7 +703,7 @@ const Interviews: React.FC = () => {
               <div>
                 <p className="font-medium text-yellow-800">Calendly Not Configured</p>
                 <p className="text-yellow-700 text-sm">
-                  To manage interviews, you need to configure your Calendly integration first.
+                  You can view existing interviews, but automatic scheduling requires Calendly integration.
                 </p>
               </div>
               
@@ -654,6 +727,84 @@ const Interviews: React.FC = () => {
             </div>
           </AlertDescription>
         </Alert>
+
+        {/* Show interviews even without Calendly configuration */}
+        {isLoading ? (
+          <Card>
+            <CardContent className="flex justify-center items-center py-12">
+              <div className="flex flex-col items-center space-y-4">
+                <RefreshCw className="w-8 h-8 animate-spin text-primary" />
+                <p className="text-gray-600">Loading interviews...</p>
+              </div>
+            </CardContent>
+          </Card>
+        ) : (
+          <>
+            {/* Conditional View Based on viewType */}
+            {viewType === 'calendar' ? (
+              <CalendarView
+                interviews={interviews.map(interview => ({
+                  id: interview.id,
+                  candidate_email: interview.candidate_email,
+                  scheduled_time: interview.scheduled_time,
+                  status: interview.status,
+                  first_name: interview.first_name,
+                  last_name: interview.last_name,
+                  applied_position: interview.applied_position,
+                  city_state: interview.city_state,
+                  job_location: interview.job_location,
+                  job_position: interview.job_position,
+                  meeting_url: interview.meeting_url,
+                  phone: interview.phone,
+                }))}
+                isLoading={isLoading}
+                onUpdateStatus={updateInterviewStatus}
+              />
+            ) : (
+              <>
+                {/* Filters - only shown in table view */}
+                <Card>
+                  <CardContent className="pt-6">
+                    <div className="flex flex-col sm:flex-row gap-4">
+                      <div className="relative flex-1">
+                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                        <Input
+                          placeholder="Search by candidate name, email, or position..."
+                          value={searchTerm}
+                          onChange={(e) => setSearchTerm(e.target.value)}
+                          className="pl-10"
+                        />
+                      </div>
+                      
+                      <Select value={statusFilter} onValueChange={setStatusFilter}>
+                        <SelectTrigger className="w-full sm:w-48">
+                          <div className="flex items-center">
+                            <Filter className="w-4 h-4 mr-2" />
+                            <SelectValue placeholder="Filter by status" />
+                          </div>
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">All Statuses</SelectItem>
+                          <SelectItem value="scheduled">Scheduled</SelectItem>
+                          <SelectItem value="completed">Completed</SelectItem>
+                          <SelectItem value="cancelled">Cancelled</SelectItem>
+                          <SelectItem value="no_show">No Show</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Interviews Table */}
+                <InterviewsTable
+                  interviews={filteredInterviews}
+                  isLoading={isLoading}
+                  onUpdateStatus={updateInterviewStatus}
+                />
+              </>
+            )}
+          </>
+        )}
       </div>
     );
   }
@@ -769,8 +920,8 @@ const Interviews: React.FC = () => {
             last_name: interview.last_name,
             applied_position: interview.applied_position,
             city_state: interview.city_state,
-            job_title: interview.job_title,
             job_location: interview.job_location,
+            job_position: interview.job_position,
             meeting_url: interview.meeting_url,
             phone: interview.phone,
           }))}

@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -15,6 +15,7 @@ import {
   Users
 } from 'lucide-react';
 import { Job, JobPosition, JobLocation, JobFacility, HRManager } from '@/types';
+import { useAppContext } from '@/contexts/AppContext';
 
 interface EditJobModalProps {
   editingJob: Job | null;
@@ -43,6 +44,26 @@ const EditJobModal: React.FC<EditJobModalProps> = ({
   onSave,
   onAddCustomFacility,
 }) => {
+  const { fetchHRManagers } = useAppContext();
+  const [filteredManagers, setFilteredManagers] = useState<HRManager[]>(hrManagers);
+
+  // Fetch managers when location changes
+  useEffect(() => {
+    if (jobForm.location) {
+      fetchHRManagers(jobForm.location).then(setFilteredManagers);
+      // Clear manager selection when location changes
+      if (jobForm.hrManagerId) {
+        onInputChange('hrManagerId', '');
+      }
+    } else {
+      // If no location selected, clear managers and manager selection
+      setFilteredManagers([]);
+      if (jobForm.hrManagerId) {
+        onInputChange('hrManagerId', '');
+      }
+    }
+  }, [jobForm.location, fetchHRManagers, jobForm.hrManagerId, onInputChange]);
+
   return (
     <Dialog open={!!editingJob} onOpenChange={onClose}>
       <DialogContent className="w-[95vw] max-w-3xl max-h-[90vh] overflow-y-auto mx-auto">
@@ -94,28 +115,70 @@ const EditJobModal: React.FC<EditJobModalProps> = ({
               </div>
 
               <div>
-                <Label htmlFor="edit-hrManager" className="text-sm font-medium">Assigned HR Manager *</Label>
+                <Label htmlFor="edit-hrManager" className="text-sm font-medium">Assigned Manager *</Label>
                 <Select 
                   value={jobForm.hrManagerId || ''} 
                   onValueChange={(value) => onInputChange('hrManagerId', value)}
+                  disabled={!jobForm.location}
                 >
                   <SelectTrigger className="mt-1">
-                    <SelectValue placeholder="Select HR manager" />
+                    <SelectValue placeholder={
+                      !jobForm.location 
+                        ? "Select location first" 
+                        : filteredManagers.length === 0 
+                          ? "Loading Managers..." 
+                          : "Select Manager"
+                    } />
                   </SelectTrigger>
                   <SelectContent>
-                    {hrManagers.map((manager) => (
+                    {filteredManagers.map((manager) => (
                       <SelectItem key={manager.id} value={manager.id}>
-                        <div className="flex items-center space-x-2">
-                          <Users className="w-4 h-4" />
-                          <span>{manager.name}</span>
-                          <span className="text-xs text-gray-500">({manager.email})</span>
+                        <div className="flex items-center space-x-3">
+                          <div className="flex-shrink-0">
+                            {manager.profile_image_url ? (
+                              <img
+                                src={manager.profile_image_url}
+                                alt={manager.name}
+                                className="w-8 h-8 rounded-full object-cover"
+                                onError={(e) => {
+                                  // Fallback to initials if image fails to load
+                                  const target = e.target as HTMLImageElement;
+                                  target.style.display = 'none';
+                                  target.nextElementSibling?.classList.remove('hidden');
+                                }}
+                              />
+                            ) : null}
+                            <div className={`w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-sm font-medium text-primary ${manager.profile_image_url ? 'hidden' : ''}`}>
+                              {manager.name.charAt(0).toUpperCase()}
+                            </div>
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center space-x-2">
+                              <span className="font-medium truncate">{manager.name}</span>
+                              <Badge variant="outline" className="text-xs">
+                                {manager.role === 'admin' ? 'Admin' : 'HR Manager'}
+                              </Badge>
+                            </div>
+                            <div className="flex items-center space-x-2 text-xs text-muted-foreground">
+                              <span className="truncate">{manager.email}</span>
+                              {manager.location && (
+                                <>
+                                  <span>•</span>
+                                  <span className="text-blue-600">{manager.location}</span>
+                                </>
+                              )}
+                            </div>
+                          </div>
                         </div>
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
                 <p className="text-xs text-gray-500 mt-1">
-                  HR manager will handle all applicants for this job
+                  {!jobForm.location 
+                    ? "Please select a location first to see available managers"
+                    : "Manager will handle all applicants for this job"
+                  }
                 </p>
               </div>
             </div>
