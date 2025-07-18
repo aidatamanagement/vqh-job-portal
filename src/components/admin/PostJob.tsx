@@ -45,7 +45,6 @@ const PostJob: React.FC = () => {
   
   // Job form state
   const [jobForm, setJobForm] = useState({
-    title: '',
     description: '',
     position: '',
     location: '',
@@ -104,7 +103,7 @@ const PostJob: React.FC = () => {
     e.preventDefault();
     setIsSubmitting(true);
     
-    if (!jobForm.title || !jobForm.description || !jobForm.position || !jobForm.location || !jobForm.hrManagerId) {
+    if (!jobForm.description || !jobForm.position || !jobForm.location || !jobForm.hrManagerId) {
       toast({
         title: "Missing Required Fields",
         description: "Please fill in all required fields including HR Manager",
@@ -130,7 +129,6 @@ const PostJob: React.FC = () => {
     }
 
     const jobData = {
-      title: jobForm.title,
       description: jobForm.description,
       position: jobForm.position,
       location: jobForm.location,
@@ -148,7 +146,6 @@ const PostJob: React.FC = () => {
     if (success) {
       // Reset form
       setJobForm({
-        title: '',
         description: '',
         position: '',
         location: '',
@@ -161,7 +158,7 @@ const PostJob: React.FC = () => {
 
       toast({
         title: "Job Posted Successfully",
-        description: `Your job posting "${jobData.title}" is now live${jobData.isUrgent ? ' and marked as urgent' : ''}${jobData.applicationDeadline ? ' with application deadline set' : ''}`,
+        description: `Your job posting for ${jobData.position} in ${jobData.location} is now live${jobData.isUrgent ? ' and marked as urgent' : ''}${jobData.applicationDeadline ? ' with application deadline set' : ''}`,
       });
     } else {
       toast({
@@ -385,10 +382,6 @@ const PostJob: React.FC = () => {
     if (!parsedData) return;
 
     // Apply extracted data to form, only if values are present
-    if (parsedData.title) {
-      setJobForm(prev => ({ ...prev, title: parsedData.title }));
-    }
-    
     if (parsedData.description) {
       setJobForm(prev => ({ ...prev, description: parsedData.description }));
     }
@@ -545,12 +538,6 @@ const PostJob: React.FC = () => {
                   </div>
                   
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-gray-50 rounded-lg">
-                    {parsedData.title && (
-                      <div>
-                        <Label className="text-xs font-medium text-gray-600">Title</Label>
-                        <p className="text-sm text-gray-900">{parsedData.title}</p>
-                      </div>
-                    )}
                     {parsedData.position && (
                       <div>
                         <Label className="text-xs font-medium text-gray-600">Position</Label>
@@ -609,18 +596,6 @@ const PostJob: React.FC = () => {
               <div className="space-y-4">
                 <h3 className="text-lg font-semibold text-gray-900">Basic Information</h3>
                 
-                <div>
-                  <Label htmlFor="title">Job Title *</Label>
-                  <Input
-                    id="title"
-                    value={jobForm.title}
-                    onChange={(e) => handleJobInputChange('title', e.target.value)}
-                    className="mt-1"
-                    placeholder="e.g., Compassionate Registered Nurse - Home Care"
-                    disabled={isSubmitting}
-                  />
-                </div>
-
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div>
                     <Label htmlFor="position">Position Category *</Label>

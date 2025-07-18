@@ -54,7 +54,7 @@ const ManageJobCard: React.FC<ManageJobCardProps> = ({
           <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2">
             <div className="flex-1">
               <div className="flex items-center gap-2 mb-1">
-                <h3 className="text-lg sm:text-xl font-semibold text-gray-900 break-words">{job.title}</h3>
+                <h3 className="text-lg sm:text-xl font-semibold text-gray-900 break-words">{job.position}</h3>
                 {job.isUrgent && (
                   <Badge variant="destructive" className="flex items-center gap-1 text-xs">
                     <AlertTriangle className="w-3 h-3" />
@@ -62,7 +62,6 @@ const ManageJobCard: React.FC<ManageJobCardProps> = ({
                   </Badge>
                 )}
               </div>
-              <p className="text-primary font-medium text-sm sm:text-base">{job.position}</p>
               {job.applicationDeadline && (
                 <p className={`text-xs flex items-center gap-1 mt-1 ${
                   isDeadlinePassed(job.applicationDeadline) ? 'text-red-600' : 

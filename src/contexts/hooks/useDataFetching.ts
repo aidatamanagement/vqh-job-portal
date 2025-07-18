@@ -166,12 +166,14 @@ export const useDataFetching = (user: User | null, userProfile: any | null) => {
         console.log('Fetched positions:', positionsData.length, 'items');
       } else {
         console.log('Could not fetch positions from database, will extract from jobs');
+        console.log('Positions error:', positionsError);
         if (isMounted.current) {
           setPositions([]);
         }
       }
 
       // Try to fetch locations
+      console.log('Attempting to fetch locations from job_locations table...');
       const { data: locationsData, error: locationsError } = await supabase
         .from('job_locations')
         .select('*')
@@ -186,9 +188,11 @@ export const useDataFetching = (user: User | null, userProfile: any | null) => {
         if (isMounted.current) {
           setLocations(transformedLocations);
         }
-        console.log('Fetched locations:', locationsData.length, 'items');
+        console.log('✅ Successfully fetched locations:', locationsData.length, 'items');
+        console.log('Location names:', locationsData.map(l => l.name));
       } else {
-        console.log('Could not fetch locations from database, will extract from jobs');
+        console.log('❌ Could not fetch locations from database, will extract from jobs');
+        console.log('Locations error:', locationsError);
         if (isMounted.current) {
           setLocations([]);
         }

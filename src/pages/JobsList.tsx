@@ -19,7 +19,7 @@ interface FilterState {
 }
 
 const JobsList: React.FC = () => {
-  const { jobs, isDataLoading } = useAppContext();
+  const { jobs, positions, locations, isDataLoading } = useAppContext();
   const navigate = useNavigate();
 
   // Filter state
@@ -35,8 +35,15 @@ const JobsList: React.FC = () => {
   const filterOptions = useMemo(() => {
     const activeJobs = jobs.filter(job => job.isActive);
     
-    const locations = [...new Set(activeJobs.map(job => job.location))].sort();
-    const positions = [...new Set(activeJobs.map(job => job.position))].sort();
+    // Use master data for locations and positions, fallback to job data if master data is empty
+    const availableLocations = locations.length > 0 
+      ? locations.map(loc => loc.name).sort()
+      : [...new Set(activeJobs.map(job => job.location))].sort();
+    
+    const availablePositions = positions.length > 0 
+      ? positions.map(pos => pos.name).sort()
+      : [...new Set(activeJobs.map(job => job.position))].sort();
+    
     const employmentTypes = [...new Set(
       activeJobs.flatMap(job => job.facilities)
     )].filter(facility => 
@@ -46,8 +53,12 @@ const JobsList: React.FC = () => {
       facility.toLowerCase().includes('temporary')
     ).sort();
 
-    return { locations, positions, employmentTypes };
-  }, [jobs]);
+    return { 
+      locations: availableLocations, 
+      positions: availablePositions, 
+      employmentTypes 
+    };
+  }, [jobs, positions, locations]);
 
   // Filter and group jobs
   const jobsByDepartment = useMemo(() => {

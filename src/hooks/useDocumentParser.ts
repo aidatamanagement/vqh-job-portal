@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { toast } from '@/hooks/use-toast';
 
 interface ParsedJobData {
-  title?: string;
   description?: string;
   position?: string;
   location?: string;
@@ -96,18 +95,7 @@ export function useDocumentParser() {
     
     const extracted: ParsedJobData = {};
 
-    // Try to extract title (usually first line or line with "title", "position")
-    const titleLine = lines.find(line => 
-      line.includes('title:') || 
-      line.includes('position:') ||
-      line.includes('job:')
-    );
-    if (titleLine) {
-      extracted.title = titleLine.split(':')[1]?.trim() || lines[0];
-    } else {
-      // Use first non-empty line as title
-      extracted.title = lines.find(line => line.trim().length > 0) || '';
-    }
+    // Note: Title is now auto-generated from position and location, so we don't extract it
 
     // Extract location
     const locationKeywords = ['location:', 'where:', 'remote', 'on-site', 'hybrid'];

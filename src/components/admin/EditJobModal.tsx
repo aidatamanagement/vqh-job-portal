@@ -48,22 +48,12 @@ const EditJobModal: React.FC<EditJobModalProps> = ({
       <DialogContent className="w-[95vw] max-w-3xl max-h-[90vh] overflow-y-auto mx-auto">
         <DialogHeader>
           <DialogTitle className="text-xl sm:text-2xl font-bold text-gray-900 pr-6">
-            Edit Job: {editingJob?.title}
+            Edit Job: {editingJob?.position} in {editingJob?.location}
           </DialogTitle>
         </DialogHeader>
 
         {editingJob && (
           <div className="space-y-4 sm:space-y-6 mt-4 sm:mt-6">
-            <div>
-              <Label htmlFor="edit-title" className="text-sm font-medium">Job Title *</Label>
-              <Input
-                id="edit-title"
-                value={jobForm.title || ''}
-                onChange={(e) => onInputChange('title', e.target.value)}
-                className="mt-1"
-              />
-            </div>
-
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
                 <Label htmlFor="edit-position" className="text-sm font-medium">Position Category *</Label>
