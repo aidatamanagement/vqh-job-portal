@@ -16,11 +16,12 @@ export const useSubmissions = () => {
   const [deletingApplication, setDeletingApplication] = useState<string | null>(null);
 
   // Fetch submissions from Supabase
-  const fetchSubmissions = async () => {
+  const fetchSubmissions = async (retryCount = 0) => {
     try {
       setLoading(true);
-      console.log('Fetching submissions from Supabase...');
+      console.log(`Fetching submissions from Supabase... (attempt ${retryCount + 1})`);
 
+      // Query using office_location column (which exists in your database)
       const { data, error } = await supabase
         .from('job_applications')
         .select(`
@@ -28,7 +29,7 @@ export const useSubmissions = () => {
           jobs!inner(
             id,
             position,
-            location,
+            office_location,
             hr_manager:profiles!hr_manager_id (
               admin_name,
               display_name,
@@ -40,15 +41,40 @@ export const useSubmissions = () => {
 
       if (error) {
         console.error('Error fetching submissions:', error);
+        console.error('Error details:', {
+          message: error.message,
+          details: error.details,
+          hint: error.hint,
+          code: error.code
+        });
+        
+        // More specific error messages
+        let errorDescription = "Failed to load submissions. Please try again.";
+        if (error.message?.includes('permission denied')) {
+          errorDescription = "Permission denied. Please check your admin access.";
+        } else if (error.message?.includes('column') && error.message?.includes('does not exist')) {
+          errorDescription = "Database schema issue. Please run the database migration.";
+        } else if (error.message?.includes('function') && error.message?.includes('does not exist')) {
+          errorDescription = "Database function missing. Please run the database migration.";
+        }
+        
         toast({
           title: "Error",
-          description: "Failed to load submissions. Please try again.",
+          description: errorDescription,
           variant: "destructive",
         });
+        // Retry once if it's the first attempt
+        if (retryCount === 0) {
+          console.log('Retrying with simplified query...');
+          return fetchSubmissions(1);
+        }
         return;
       }
 
-      console.log('Fetched submissions:', data);
+      console.log('Fetched submissions successfully:', {
+        count: data?.length || 0,
+        sample: data?.slice(0, 2)
+      });
 
       // Transform data to match the expected format
       const transformedSubmissions: JobApplication[] = data.map(item => ({
@@ -59,7 +85,7 @@ export const useSubmissions = () => {
         email: item.email,
         phone: item.phone || '',
         appliedPosition: item.jobs?.position || item.applied_position || 'Unknown Position',
-        jobLocation: item.jobs?.location || 'Unknown Location',
+        jobLocation: item.jobs?.office_location || 'Unknown Location',
         earliestStartDate: item.earliest_start_date || '',
         cityState: item.city_state || '',
         coverLetter: item.cover_letter || '',

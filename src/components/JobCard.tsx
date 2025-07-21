@@ -44,9 +44,12 @@ const JobCard: React.FC<JobCardProps> = ({ job }) => {
           <p className="text-base font-semibold text-gray-900">
             {job.position}
           </p>
-          <div className="flex items-center text-gray-600 text-sm">
-            <MapPin className="w-4 h-4 mr-1 flex-shrink-0" />
-            <span className="whitespace-nowrap">{job.location}</span>
+          <div className="flex flex-col items-end text-gray-600 text-sm">
+            <div className="flex items-center">
+              <MapPin className="w-4 h-4 mr-1 flex-shrink-0" />
+              <span className="whitespace-nowrap">Office: {job.officeLocation}</span>
+            </div>
+            <span className="text-xs whitespace-nowrap">Work: {job.workLocation}</span>
           </div>
         </div>
 

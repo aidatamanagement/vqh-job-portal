@@ -1,5 +1,18 @@
 # Vqh Job Portal Updates
 
+## January 3, 2025
+
+### Fixed Submissions Page Office Location Column Issue (13:15)
+- **Issue Resolution**: Fixed submissions page to use `office_location` column instead of `location`
+- **Database Confirmation**: User confirmed database has `office_location` column, not `location`
+- **useSubmissions.ts Update**: Removed fallback logic and simplified query to use only `office_location`
+- **Interviews.tsx Fix**: Updated interviews page to also use `office_location` column consistently
+- **Query Simplification**: Removed complex fallback logic since `office_location` column exists
+- **Data Mapping**: Updated `jobLocation` mapping to use `item.jobs?.office_location` directly
+- **Error Handling**: Maintained enhanced error handling with specific error messages
+- **Consistency**: Both submissions and interviews pages now use the same column structure
+- **Files Updated**: `src/components/admin/hooks/useSubmissions.ts`, `src/components/admin/Interviews.tsx`
+
 ## December 30, 2024
 
 ### Enhanced Position Name Visibility (20:00)

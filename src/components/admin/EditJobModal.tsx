@@ -47,22 +47,22 @@ const EditJobModal: React.FC<EditJobModalProps> = ({
   const { fetchHRManagers } = useAppContext();
   const [filteredManagers, setFilteredManagers] = useState<HRManager[]>(hrManagers);
 
-  // Fetch managers when location changes
+  // Fetch managers when office location changes
   useEffect(() => {
-    if (jobForm.location) {
-      fetchHRManagers(jobForm.location).then(setFilteredManagers);
-      // Clear manager selection when location changes
+    if (jobForm.officeLocation) {
+      fetchHRManagers(jobForm.officeLocation).then(setFilteredManagers);
+      // Clear manager selection when office location changes
       if (jobForm.hrManagerId) {
         onInputChange('hrManagerId', '');
       }
     } else {
-      // If no location selected, clear managers and manager selection
+      // If no office location selected, clear managers and manager selection
       setFilteredManagers([]);
       if (jobForm.hrManagerId) {
         onInputChange('hrManagerId', '');
       }
     }
-  }, [jobForm.location, fetchHRManagers, jobForm.hrManagerId, onInputChange]);
+  }, [jobForm.officeLocation, fetchHRManagers, jobForm.hrManagerId, onInputChange]);
 
   return (
     <Dialog open={!!editingJob} onOpenChange={onClose}>
@@ -96,13 +96,13 @@ const EditJobModal: React.FC<EditJobModalProps> = ({
               </div>
 
               <div>
-                <Label htmlFor="edit-location" className="text-sm font-medium">Location *</Label>
+                <Label htmlFor="edit-officeLocation" className="text-sm font-medium">Office Location *</Label>
                 <Select 
-                  value={jobForm.location || ''} 
-                  onValueChange={(value) => onInputChange('location', value)}
+                  value={jobForm.officeLocation || ''} 
+                  onValueChange={(value) => onInputChange('officeLocation', value)}
                 >
                   <SelectTrigger className="mt-1">
-                    <SelectValue />
+                    <SelectValue placeholder="Select office location" />
                   </SelectTrigger>
                   <SelectContent>
                     {locations.map((location) => (
@@ -115,16 +115,31 @@ const EditJobModal: React.FC<EditJobModalProps> = ({
               </div>
 
               <div>
+                <Label htmlFor="edit-workLocation" className="text-sm font-medium">Work Location *</Label>
+                <Input
+                  id="edit-workLocation"
+                  type="text"
+                  value={jobForm.workLocation || ''}
+                  onChange={(e) => onInputChange('workLocation', e.target.value)}
+                  placeholder="e.g., Remote, On-site, Hybrid, Field work, etc."
+                  className="mt-1"
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  Where the actual work will be performed
+                </p>
+              </div>
+
+              <div>
                 <Label htmlFor="edit-hrManager" className="text-sm font-medium">Assigned Manager *</Label>
                 <Select 
                   value={jobForm.hrManagerId || ''} 
                   onValueChange={(value) => onInputChange('hrManagerId', value)}
-                  disabled={!jobForm.location}
+                  disabled={!jobForm.officeLocation}
                 >
                   <SelectTrigger className="mt-1">
                     <SelectValue placeholder={
-                      !jobForm.location 
-                        ? "Select location first" 
+                      !jobForm.officeLocation 
+                        ? "Select office location first" 
                         : filteredManagers.length === 0 
                           ? "Loading Managers..." 
                           : "Select Manager"
@@ -175,8 +190,8 @@ const EditJobModal: React.FC<EditJobModalProps> = ({
                   </SelectContent>
                 </Select>
                 <p className="text-xs text-gray-500 mt-1">
-                  {!jobForm.location 
-                    ? "Please select a location first to see available managers"
+                  {!jobForm.officeLocation 
+                    ? "Please select an office location first to see available managers"
                     : "Manager will handle all applicants for this job"
                   }
                 </p>

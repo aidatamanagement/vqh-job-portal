@@ -101,9 +101,12 @@ const JobPreviewModal: React.FC<JobPreviewModalProps> = ({ job, isOpen, onClose 
                         <Briefcase className="w-4 h-4 mr-2" />
                         <span className="text-base">{job.position}</span>
                       </div>
-                      <div className="flex items-center" style={{ color: '#005586' }}>
-                        <MapPin className="w-4 h-4 mr-2" />
-                        <span className="text-base">{job.location}</span>
+                      <div className="flex flex-col" style={{ color: '#005586' }}>
+                        <div className="flex items-center">
+                          <MapPin className="w-4 h-4 mr-2" />
+                          <span className="text-base">Office: {job.officeLocation}</span>
+                        </div>
+                        <span className="text-sm ml-6">Work: {job.workLocation}</span>
                       </div>
                     </div>
                   </div>
@@ -158,8 +161,9 @@ const JobPreviewModal: React.FC<JobPreviewModalProps> = ({ job, isOpen, onClose 
                       <div className="flex items-start space-x-3">
                         <MapPin className="w-5 h-5 text-primary mt-0.5" />
                         <div>
-                          <p className="text-sm font-medium text-gray-900">Location</p>
-                          <p className="text-sm text-gray-600">{job.location}</p>
+                          <p className="text-sm font-medium text-gray-900">Locations</p>
+                          <p className="text-sm text-gray-600">Office: {job.officeLocation}</p>
+                          <p className="text-sm text-gray-600">Work: {job.workLocation}</p>
                         </div>
                       </div>
                       

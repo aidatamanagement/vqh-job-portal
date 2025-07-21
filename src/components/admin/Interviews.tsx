@@ -207,7 +207,7 @@ const Interviews: React.FC = () => {
             city_state,
             email,
             jobs(
-              location,
+              office_location,
               position
             )
           )
@@ -232,7 +232,7 @@ const Interviews: React.FC = () => {
               .select(`
                 *,
                 jobs(
-                  location,
+                  office_location,
                   position
                 )
               `)
@@ -280,7 +280,7 @@ const Interviews: React.FC = () => {
           phone: application?.phone || '',
           applied_position: application?.applied_position || 'Unknown Position',
           city_state: application?.city_state || '',
-          job_location: application?.jobs?.location || 'Unknown Location',
+          job_location: application?.jobs?.office_location || 'Unknown Location',
           job_position: application?.jobs?.position || 'Unknown Position',
         };
       });

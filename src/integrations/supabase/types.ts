@@ -324,10 +324,12 @@ export type Database = {
           id: string
           is_active: boolean | null
           is_urgent: boolean | null
-          location: string
+          location: string | null
+          office_location: string
           position: string
           title: string
           updated_at: string | null
+          work_location: string | null
         }
         Insert: {
           application_deadline?: string | null
@@ -339,10 +341,12 @@ export type Database = {
           id?: string
           is_active?: boolean | null
           is_urgent?: boolean | null
-          location: string
+          location?: string | null
+          office_location: string
           position: string
           title: string
           updated_at?: string | null
+          work_location?: string | null
         }
         Update: {
           application_deadline?: string | null
@@ -354,10 +358,12 @@ export type Database = {
           id?: string
           is_active?: boolean | null
           is_urgent?: boolean | null
-          location?: string
+          location?: string | null
+          office_location?: string
           position?: string
           title?: string
           updated_at?: string | null
+          work_location?: string | null
         }
         Relationships: [
           {

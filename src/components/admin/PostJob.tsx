@@ -47,7 +47,8 @@ const PostJob: React.FC = () => {
   const [jobForm, setJobForm] = useState({
     description: '',
     position: '',
-    location: '',
+    officeLocation: '',
+    workLocation: '',
     facilities: [] as string[],
     customFacility: '',
     isUrgent: false,
@@ -69,24 +70,24 @@ const PostJob: React.FC = () => {
     fetchHRManagers().then(setHRManagers);
   }, [fetchMasterData, fetchHRManagers]);
 
-  // Fetch managers when location changes
+  // Fetch managers when office location changes
   useEffect(() => {
-    console.log('Location changed to:', jobForm.location);
-    if (jobForm.location) {
-      console.log('Fetching managers for location:', jobForm.location);
-      fetchHRManagers(jobForm.location).then(managers => {
+    console.log('Office location changed to:', jobForm.officeLocation);
+    if (jobForm.officeLocation) {
+      console.log('Fetching managers for office location:', jobForm.officeLocation);
+      fetchHRManagers(jobForm.officeLocation).then(managers => {
         console.log('Received managers:', managers);
         setHRManagers(managers);
       });
-      // Clear manager selection when location changes
+      // Clear manager selection when office location changes
       setJobForm(prev => ({ ...prev, hrManagerId: '' }));
     } else {
-      console.log('No location selected, clearing managers');
-      // If no location selected, clear managers and manager selection
+      console.log('No office location selected, clearing managers');
+      // If no office location selected, clear managers and manager selection
       setHRManagers([]);
       setJobForm(prev => ({ ...prev, hrManagerId: '' }));
     }
-  }, [jobForm.location, fetchHRManagers]);
+  }, [jobForm.officeLocation, fetchHRManagers]);
 
   const handleJobInputChange = (field: string, value: string | boolean) => {
     setJobForm(prev => ({ ...prev, [field]: value }));
@@ -122,10 +123,10 @@ const PostJob: React.FC = () => {
     e.preventDefault();
     setIsSubmitting(true);
     
-    if (!jobForm.description || !jobForm.position || !jobForm.location || !jobForm.hrManagerId) {
+    if (!jobForm.description || !jobForm.position || !jobForm.officeLocation || !jobForm.workLocation || !jobForm.hrManagerId) {
       toast({
         title: "Missing Required Fields",
-        description: "Please fill in all required fields including Manager",
+        description: "Please fill in all required fields including both location fields and Manager",
         variant: "destructive",
       });
       setIsSubmitting(false);
@@ -150,7 +151,8 @@ const PostJob: React.FC = () => {
     const jobData = {
       description: jobForm.description,
       position: jobForm.position,
-      location: jobForm.location,
+      officeLocation: jobForm.officeLocation,
+      workLocation: jobForm.workLocation,
       facilities: jobForm.facilities,
       isActive: true,
       isUrgent: jobForm.isUrgent,
@@ -167,7 +169,8 @@ const PostJob: React.FC = () => {
       setJobForm({
         description: '',
         position: '',
-        location: '',
+        officeLocation: '',
+        workLocation: '',
         facilities: [],
         customFacility: '',
         isUrgent: false,
@@ -417,14 +420,16 @@ const PostJob: React.FC = () => {
     }
     
     if (parsedData.location) {
-      // Try to match with existing locations
+      // Try to match with existing locations for office location
       const matchingLocation = locations.find(loc => 
         loc.name.toLowerCase().includes(parsedData.location.toLowerCase()) ||
         parsedData.location.toLowerCase().includes(loc.name.toLowerCase())
       );
       if (matchingLocation) {
-        setJobForm(prev => ({ ...prev, location: matchingLocation.name }));
+        setJobForm(prev => ({ ...prev, officeLocation: matchingLocation.name }));
       }
+      // Also set as work location initially (can be edited by user)
+      setJobForm(prev => ({ ...prev, workLocation: parsedData.location }));
     }
     
     if (parsedData.facilities && parsedData.facilities.length > 0) {
@@ -615,7 +620,7 @@ const PostJob: React.FC = () => {
               <div className="space-y-4">
                 <h3 className="text-lg font-semibold text-gray-900">Basic Information</h3>
                 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <Label htmlFor="position">Position*</Label>
                     <Select value={jobForm.position} onValueChange={(value) => handleJobInputChange('position', value)} disabled={isSubmitting}>
@@ -633,32 +638,16 @@ const PostJob: React.FC = () => {
                   </div>
 
                   <div>
-                    <Label htmlFor="location">Location *</Label>
-                    <Select value={jobForm.location} onValueChange={(value) => handleJobInputChange('location', value)} disabled={isSubmitting}>
-                      <SelectTrigger className="mt-1">
-                        <SelectValue placeholder={locations.length === 0 ? "Loading locations..." : "Select location"} />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {locations.map((location) => (
-                          <SelectItem key={location.id} value={location.name}>
-                            {location.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div>
                     <Label htmlFor="hrManager">Assigned Manager *</Label>
                     <Select 
                       value={jobForm.hrManagerId} 
                       onValueChange={(value) => handleJobInputChange('hrManagerId', value)} 
-                      disabled={isSubmitting || !jobForm.location}
+                      disabled={isSubmitting || !jobForm.officeLocation}
                     >
                       <SelectTrigger className="mt-1">
                         <SelectValue placeholder={
-                          !jobForm.location 
-                            ? "Select location first" 
+                          !jobForm.officeLocation 
+                            ? "Select office location first" 
                             : hrManagers.length === 0 
                               ? "Loading Managers..." 
                               : "Select Manager"
@@ -709,10 +698,55 @@ const PostJob: React.FC = () => {
                       </SelectContent>
                     </Select>
                     <p className="text-xs text-gray-500 mt-1">
-                      {!jobForm.location 
-                        ? "Please select a location first to see available managers"
+                      {!jobForm.officeLocation 
+                        ? "Please select an office location first to see available managers"
                         : "Manager will handle all applicants for this job"
                       }
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Location Information */}
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold text-gray-900 flex items-center space-x-2">
+                  <MapPin className="w-5 h-5" />
+                  <span>Location Information</span>
+                </h3>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="officeLocation">Office Location *</Label>
+                    <Select value={jobForm.officeLocation} onValueChange={(value) => handleJobInputChange('officeLocation', value)} disabled={isSubmitting}>
+                      <SelectTrigger className="mt-1">
+                        <SelectValue placeholder={locations.length === 0 ? "Loading locations..." : "Select office location"} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {locations.map((location) => (
+                          <SelectItem key={location.id} value={location.name}>
+                            {location.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <p className="text-xs text-gray-500 mt-1">
+                      Company office or branch location
+                    </p>
+                  </div>
+
+                  <div>
+                    <Label htmlFor="workLocation">Work Location *</Label>
+                    <Input
+                      id="workLocation"
+                      type="text"
+                      value={jobForm.workLocation}
+                      onChange={(e) => handleJobInputChange('workLocation', e.target.value)}
+                      placeholder="e.g., Remote, On-site, Hybrid, Field work, etc."
+                      className="mt-1"
+                      disabled={isSubmitting}
+                    />
+                    <p className="text-xs text-gray-500 mt-1">
+                      Where the actual work will be performed
                     </p>
                   </div>
                 </div>
