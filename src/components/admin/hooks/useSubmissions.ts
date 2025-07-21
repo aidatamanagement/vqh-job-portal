@@ -166,7 +166,7 @@ export const useSubmissions = () => {
   };
 
   // Update application status in Supabase (simplified - no email automation)
-  const updateApplicationStatus = async (id: string, newStatus: 'application_submitted' | 'under_review' | 'shortlisted' | 'interviewed' | 'hired' | 'rejected' | 'waiting_list') => {
+  const updateApplicationStatus = async (id: string, newStatus: 'application_submitted' | 'shortlisted_for_hr' | 'hr_interviewed' | 'shortlisted_for_manager' | 'manager_interviewed' | 'hired' | 'rejected' | 'waiting_list') => {
     try {
       console.log('Updating application status:', { id, newStatus });
 

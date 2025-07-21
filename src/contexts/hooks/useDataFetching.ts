@@ -23,11 +23,18 @@ export const useDataFetching = (user: User | null, userProfile: any | null) => {
     switch (status) {
       case 'interview_scheduled':
       case 'decisioning':
-        return 'interviewed';
-      case 'application_submitted':
+        return 'manager_interviewed';
       case 'under_review':
+        return 'shortlisted_for_hr'; // Map under_review to shortlisted_for_hr
       case 'shortlisted':
+        return 'shortlisted_for_hr'; // Map old shortlisted to shortlisted_for_hr
       case 'interviewed':
+        return 'manager_interviewed'; // Map old interviewed to manager_interviewed
+      case 'application_submitted':
+      case 'shortlisted_for_hr':
+      case 'hr_interviewed':
+      case 'shortlisted_for_manager':
+      case 'manager_interviewed':
       case 'hired':
       case 'rejected':
       case 'waiting_list':

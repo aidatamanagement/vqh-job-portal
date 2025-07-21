@@ -2,7 +2,64 @@
 
 ## January 3, 2025
 
-### Made Email Template Slug Editable with Database Updates (Current)
+### Added Waiting List to All Interview Steps (Current)
+- **User Request**: Add "waiting_list" as a valid transition option for all interview steps
+- **Database Function**: Updated validate_status_transition function to allow waiting_list from any step
+- **Frontend Logic**: Updated getValidNextStatuses to include waiting_list for all statuses
+- **Function Fix**: Added DROP FUNCTION before CREATE OR REPLACE to handle parameter name conflicts
+- **New Transitions**: All interview steps can now transition to waiting_list (except hired/rejected)
+- **Files Updated**: 
+  - `FIX_STATUS_CONSTRAINT.sql` (updated SQL script)
+  - `supabase/migrations/20250103000007_fix_status_constraint_for_new_flow.sql`
+  - `src/components/admin/utils/submissionsUtils.ts`
+- **Impact**: Admins can now move applications to waiting list from any interview stage
+
+### Fixed Status Update Constraint Error (Previous)
+- **Issue**: Status updates failing with "violates check constraint 'valid_status_check'" error
+- **Root Cause**: Database constraint only allowed old statuses, not new interview flow statuses
+- **Solution**: Created migration and SQL script to update constraint to include new statuses
+- **New Statuses Added**: shortlisted_for_hr, hr_interviewed, shortlisted_for_manager, manager_interviewed
+- **Database Migration**: `supabase/migrations/20250103000007_fix_status_constraint_for_new_flow.sql`
+- **Quick Fix Script**: `FIX_STATUS_CONSTRAINT.sql` for immediate application
+- **Status Mapping**: Updated existing records to map old statuses to new flow
+- **Transition Function**: Updated validate_status_transition function for new flow
+- **Files Created**: Migration file and standalone SQL script
+- **Impact**: Status updates will now work with the new multi-round interview flow
+
+### Removed Navigation Bar from Application Tracking Page (Previous)
+- **User Request**: Remove navigation bar from application tracking page
+- **Component Update**: Removed Header component import and usage from ApplicationTracker.tsx
+- **Clean Interface**: Application tracking page now has a cleaner, focused interface without navigation
+- **Better UX**: Candidates can focus on tracking their application without navigation distractions
+- **Files Updated**: `src/pages/ApplicationTracker.tsx`
+- **Impact**: Cleaner, more focused application tracking experience
+
+### Updated Interview Flow with HR and Manager Rounds (Previous)
+- **User Request**: Implement detailed interview flow with HR and Manager rounds
+- **New Flow**: application_submitted → shortlisted_for_hr → hr_interviewed → shortlisted_for_manager → manager_interviewed → hired/rejected
+- **Status Updates**: Added 4 new statuses: shortlisted_for_hr, hr_interviewed, shortlisted_for_manager, manager_interviewed
+- **Transition Logic**: Updated all status transition validation for the new multi-round flow
+- **Database Migration**: Created migration to update existing records and add new status constraints
+- **Type Updates**: Updated all TypeScript interfaces and type definitions for new statuses
+- **UI Components**: Updated status dropdowns, timeline, and status messages for new flow
+- **Email Automation**: Added new email templates for each interview round
+- **Backward Compatibility**: Added mapping logic to convert old statuses to new flow
+- **Files Updated**: Multiple files including status utilities, components, types, and database migration
+- **Impact**: Comprehensive interview process with clear progression through HR and Manager rounds
+
+### Removed Under Review Status from Interview Flow (Previous)
+- **User Request**: Remove "under_review" status and allow direct transition from "application_submitted" to "shortlisted"
+- **Status Flow Update**: Simplified application status flow by removing intermediate "under_review" step
+- **Transition Logic**: Updated all status transition validation to allow direct moves from submitted to shortlisted
+- **Database Migration**: Created migration to update existing "under_review" records to "shortlisted"
+- **Type Updates**: Removed "under_review" from all TypeScript interfaces and type definitions
+- **UI Components**: Updated status dropdowns, timeline, and status messages to reflect new flow
+- **Email Automation**: Removed "under_review" from email templates and automation triggers
+- **Backward Compatibility**: Added mapping logic to convert old "under_review" status to "shortlisted"
+- **Files Updated**: Multiple files including status utilities, components, types, and database migration
+- **Impact**: Streamlined interview process with faster progression from application to shortlisting
+
+### Made Email Template Slug Editable with Database Updates (Previous)
 - **User Request**: Remove disability to edit email slug, make it editable and ensure DB updates
 - **EditTemplateModal Enhancement**: Removed `disabled` attribute from slug input field
 - **Label Update**: Changed from "Slug (Read-only)" to just "Slug"

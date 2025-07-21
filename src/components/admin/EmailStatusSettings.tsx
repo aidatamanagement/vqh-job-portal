@@ -23,9 +23,10 @@ const EmailStatusSettings: React.FC = () => {
   // Updated status labels for new status flow
   const statusLabels = {
     'application_submitted': 'Application Submitted',
-    'under_review': 'Under Review',
-    'shortlisted': 'Shortlisted',
-    'interviewed': 'Interviewed',
+    'shortlisted_for_hr': 'Shortlisted for HR Round',
+    'hr_interviewed': 'HR Interviewed',
+    'shortlisted_for_manager': 'Shortlisted for Manager Interview',
+    'manager_interviewed': 'Manager Interviewed',
     'hired': 'Hired',
     'rejected': 'Rejected',
     'waiting_list': 'Waiting List',
@@ -34,9 +35,10 @@ const EmailStatusSettings: React.FC = () => {
   // Updated status descriptions for new status flow
   const statusDescriptions = {
     'application_submitted': 'Confirmation email sent when application is first submitted',
-    'under_review': 'Notification when application moves to review stage',
-    'shortlisted': 'Congratulations email when candidate is shortlisted',
-    'interviewed': 'Follow-up email after interview completion',
+    'shortlisted_for_hr': 'Congratulations email when candidate is shortlisted for HR round',
+    'hr_interviewed': 'Follow-up email after HR interview completion',
+    'shortlisted_for_manager': 'Congratulations email when candidate is shortlisted for manager interview',
+    'manager_interviewed': 'Follow-up email after manager interview completion',
     'hired': 'Welcome email for successful candidates',
     'rejected': 'Professional rejection notification',
     'waiting_list': 'Notification when candidate is placed on waiting list',

@@ -29,9 +29,10 @@ export interface ApplicationData {
 export const getTimelineSteps = (application: ApplicationData): TimelineStepData[] => {
   const statusOrder = [
     'application_submitted',
-    'under_review',
-    'shortlisted',
-    'interviewed',
+    'shortlisted_for_hr',
+    'hr_interviewed',
+    'shortlisted_for_manager',
+    'manager_interviewed',
     'hired',
     'rejected',
     'waiting_list'
@@ -50,38 +51,52 @@ export const getTimelineSteps = (application: ApplicationData): TimelineStepData
     date: application.created_at
   });
 
-  // Under Review
-  if (statusIndex >= 1) {
+
+
+  // Shortlisted for HR Round
+  if (statusIndex >= 1 && application.status !== 'rejected' && application.status !== 'waiting_list') {
     steps.push({
-      id: 'under_review',
-      title: 'Under Review',
-      description: 'Our team is reviewing your application',
-      icon: React.createElement(Eye, { className: "w-4 h-4" }),
+      id: 'shortlisted_for_hr',
+      title: 'Shortlisted for HR Round',
+      description: 'You have been shortlisted for HR interview',
+      icon: React.createElement(Users, { className: "w-4 h-4" }),
       status: statusIndex > 1 ? 'completed' : 'current',
       date: application.updated_at
     });
   }
 
-  // Shortlisted
+  // HR Interviewed
   if (statusIndex >= 2 && application.status !== 'rejected' && application.status !== 'waiting_list') {
     steps.push({
-      id: 'shortlisted',
-      title: 'Shortlisted',
-      description: 'You have been shortlisted for further consideration',
-      icon: React.createElement(Users, { className: "w-4 h-4" }),
+      id: 'hr_interviewed',
+      title: 'HR Interviewed',
+      description: 'HR interview has been completed',
+      icon: React.createElement(Calendar, { className: "w-4 h-4" }),
       status: statusIndex > 2 ? 'completed' : 'current',
       date: application.updated_at
     });
   }
 
-  // Interviewed
+  // Shortlisted for Manager Interview
   if (statusIndex >= 3 && application.status !== 'rejected' && application.status !== 'waiting_list') {
     steps.push({
-      id: 'interviewed',
-      title: 'Interviewed',
-      description: 'Interview has been completed',
-      icon: React.createElement(Calendar, { className: "w-4 h-4" }),
+      id: 'shortlisted_for_manager',
+      title: 'Shortlisted for Manager Interview',
+      description: 'You have been shortlisted for manager interview',
+      icon: React.createElement(Users, { className: "w-4 h-4" }),
       status: statusIndex > 3 ? 'completed' : 'current',
+      date: application.updated_at
+    });
+  }
+
+  // Manager Interviewed
+  if (statusIndex >= 4 && application.status !== 'rejected' && application.status !== 'waiting_list') {
+    steps.push({
+      id: 'manager_interviewed',
+      title: 'Manager Interviewed',
+      description: 'Manager interview has been completed',
+      icon: React.createElement(Calendar, { className: "w-4 h-4" }),
+      status: statusIndex > 4 ? 'completed' : 'current',
       date: application.updated_at
     });
   }

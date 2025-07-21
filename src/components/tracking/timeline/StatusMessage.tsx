@@ -7,21 +7,21 @@ interface StatusMessageProps {
 }
 
 const StatusMessage: React.FC<StatusMessageProps> = ({ status }) => {
-  if (status === 'application_submitted' || status === 'under_review') {
+  if (status === 'application_submitted') {
     return (
       <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mt-6">
         <div className="flex items-center gap-2">
           <Clock className="w-4 h-4 text-blue-600" />
-          <p className="text-blue-800 font-medium">Application Under Review</p>
+          <p className="text-blue-800 font-medium">Application Submitted</p>
         </div>
         <p className="text-blue-700 text-sm mt-1">
-          Your application is currently being reviewed by our team. We'll update the status as soon as possible.
+          Your application has been received and is being processed. We'll update the status as soon as possible.
         </p>
       </div>
     );
   }
 
-  if (status === 'shortlisted' || status === 'interviewed') {
+  if (status === 'shortlisted_for_hr' || status === 'hr_interviewed' || status === 'shortlisted_for_manager' || status === 'manager_interviewed') {
     return (
       <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mt-6">
         <div className="flex items-center gap-2">

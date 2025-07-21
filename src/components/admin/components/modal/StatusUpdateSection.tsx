@@ -8,7 +8,7 @@ import StatusTransitionValidator from '../../StatusTransitionValidator';
 import { useStatusUpdate } from '@/hooks/useStatusUpdate';
 import { toast } from '@/hooks/use-toast';
 
-type ApplicationStatus = 'application_submitted' | 'under_review' | 'shortlisted' | 'interviewed' | 'hired' | 'rejected' | 'waiting_list';
+type ApplicationStatus = 'application_submitted' | 'shortlisted_for_hr' | 'hr_interviewed' | 'shortlisted_for_manager' | 'manager_interviewed' | 'hired' | 'rejected' | 'waiting_list';
 
 interface StatusUpdateSectionProps {
   application: JobApplication;
@@ -25,9 +25,10 @@ const StatusUpdateSection: React.FC<StatusUpdateSectionProps> = ({
 
   const allStatusOptions = [
     { value: 'application_submitted', label: 'Application Submitted' },
-    { value: 'under_review', label: 'Under Review' },
-    { value: 'shortlisted', label: 'Shortlisted' },
-    { value: 'interviewed', label: 'Interviewed' },
+    { value: 'shortlisted_for_hr', label: 'Shortlisted for HR Round' },
+    { value: 'hr_interviewed', label: 'HR Interviewed' },
+    { value: 'shortlisted_for_manager', label: 'Shortlisted for Manager Interview' },
+    { value: 'manager_interviewed', label: 'Manager Interviewed' },
     { value: 'hired', label: 'Hired' },
     { value: 'rejected', label: 'Rejected' },
     { value: 'waiting_list', label: 'Waiting List' },

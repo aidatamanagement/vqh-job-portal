@@ -20,9 +20,10 @@ interface EmailVariables {
 // Define which statuses should trigger email notifications - updated for new status flow
 const EMAIL_ENABLED_STATUSES = {
   'application_submitted': true,
-  'under_review': true,
-  'shortlisted': true,
-  'interviewed': true,
+  'shortlisted_for_hr': true,
+  'hr_interviewed': true,
+  'shortlisted_for_manager': true,
+  'manager_interviewed': true,
   'hired': true,
   'rejected': true,
   'waiting_list': true,
@@ -31,9 +32,10 @@ const EMAIL_ENABLED_STATUSES = {
 // Map application statuses to email template slugs - updated for new status flow
 const STATUS_TO_TEMPLATE_MAP = {
   'application_submitted': 'application_submitted',
-  'under_review': 'under_review',
-  'shortlisted': 'shortlisted',
-  'interviewed': 'interviewed',
+  'shortlisted_for_hr': 'shortlisted_for_hr',
+  'hr_interviewed': 'hr_interviewed',
+  'shortlisted_for_manager': 'shortlisted_for_manager',
+  'manager_interviewed': 'manager_interviewed',
   'hired': 'hired',
   'rejected': 'application_rejected',
   'waiting_list': 'waiting_list',

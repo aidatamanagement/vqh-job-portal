@@ -64,7 +64,7 @@ const Submissions: React.FC = () => {
     }
   };
 
-  const handleUpdateApplicationStatus = async (id: string, newStatus: 'application_submitted' | 'under_review' | 'shortlisted' | 'interviewed' | 'hired' | 'rejected' | 'waiting_list') => {
+  const handleUpdateApplicationStatus = async (id: string, newStatus: 'application_submitted' | 'shortlisted_for_hr' | 'hr_interviewed' | 'shortlisted_for_manager' | 'manager_interviewed' | 'hired' | 'rejected' | 'waiting_list') => {
     try {
       console.log('Updating application status from Submissions:', { id, newStatus });
       const result = await updateApplicationStatus(id, newStatus);

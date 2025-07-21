@@ -38,13 +38,15 @@ export const getStatusBadgeVariant = (status: string) => {
 export const getStatusText = (status: string) => {
   switch (status) {
     case 'application_submitted':
-      return 'Submitted';
-    case 'under_review':
-      return 'Under Review';
-    case 'shortlisted':
-      return 'Shortlisted';
-    case 'interviewed':
-      return 'Interviewed';
+      return 'Application Submitted';
+    case 'shortlisted_for_hr':
+      return 'Shortlisted for HR Round';
+    case 'hr_interviewed':
+      return 'HR Interviewed';
+    case 'shortlisted_for_manager':
+      return 'Shortlisted for Manager Interview';
+    case 'manager_interviewed':
+      return 'Manager Interviewed';
     case 'hired':
       return 'Hired';
     case 'rejected':
@@ -59,13 +61,14 @@ export const getStatusText = (status: string) => {
 // Centralized status transition validation
 export const getValidNextStatuses = (currentStatus: string): string[] => {
   const validTransitions: Record<string, string[]> = {
-    'application_submitted': ['under_review', 'rejected'],
-    'under_review': ['shortlisted', 'rejected', 'waiting_list'],
-    'shortlisted': ['interviewed', 'rejected', 'waiting_list'],
-    'interviewed': ['hired', 'rejected', 'waiting_list'],
+    'application_submitted': ['shortlisted_for_hr', 'rejected', 'waiting_list'],
+    'shortlisted_for_hr': ['hr_interviewed', 'rejected', 'waiting_list'],
+    'hr_interviewed': ['shortlisted_for_manager', 'rejected', 'waiting_list'],
+    'shortlisted_for_manager': ['manager_interviewed', 'rejected', 'waiting_list'],
+    'manager_interviewed': ['hired', 'rejected', 'waiting_list'],
     'hired': [],
     'rejected': [],
-    'waiting_list': ['under_review', 'shortlisted', 'interviewed', 'hired', 'rejected']
+    'waiting_list': ['shortlisted_for_hr', 'shortlisted_for_manager', 'hired', 'rejected']
   };
 
   return validTransitions[currentStatus] || [];
@@ -230,7 +233,7 @@ export const deleteApplicationFromDatabase = async (applicationId: string) => {
 
 export const updateApplicationStatusInDatabase = async (
   id: string, 
-  newStatus: 'application_submitted' | 'under_review' | 'shortlisted' | 'interviewed' | 'hired' | 'rejected' | 'waiting_list'
+  newStatus: 'application_submitted' | 'shortlisted_for_hr' | 'hr_interviewed' | 'shortlisted_for_manager' | 'manager_interviewed' | 'hired' | 'rejected' | 'waiting_list'
 ) => {
   console.log('Updating application status:', { id, newStatus });
 

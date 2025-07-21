@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
-import Header from '@/components/Header';
+
 import ApplicationSearch from '@/components/tracking/ApplicationSearch';
 import ApplicationTimeline from '@/components/tracking/ApplicationTimeline';
 import ApplicationDetails from '@/components/tracking/ApplicationDetails';
@@ -52,11 +52,18 @@ const ApplicationTracker: React.FC = () => {
     switch (status) {
       case 'interview_scheduled':
       case 'decisioning':
-        return 'interviewed';
-      case 'application_submitted':
+        return 'manager_interviewed';
       case 'under_review':
+        return 'shortlisted_for_hr'; // Map under_review to shortlisted_for_hr
       case 'shortlisted':
+        return 'shortlisted_for_hr'; // Map old shortlisted to shortlisted_for_hr
       case 'interviewed':
+        return 'manager_interviewed'; // Map old interviewed to manager_interviewed
+      case 'application_submitted':
+      case 'shortlisted_for_hr':
+      case 'hr_interviewed':
+      case 'shortlisted_for_manager':
+      case 'manager_interviewed':
       case 'hired':
       case 'rejected':
       case 'waiting_list':
@@ -121,7 +128,6 @@ const ApplicationTracker: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-white">
-      <Header />
       <div className="bg-gray-50 py-8">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-8">

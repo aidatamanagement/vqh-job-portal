@@ -20,12 +20,14 @@ const StatusTransitionValidator: React.FC<StatusTransitionValidatorProps> = ({
     switch (status) {
       case 'application_submitted':
         return 'Application Submitted';
-      case 'under_review':
-        return 'Under Review';
-      case 'shortlisted':
-        return 'Shortlisted';
-      case 'interviewed':
-        return 'Interviewed';
+      case 'shortlisted_for_hr':
+        return 'Shortlisted for HR Round';
+      case 'hr_interviewed':
+        return 'HR Interviewed';
+      case 'shortlisted_for_manager':
+        return 'Shortlisted for Manager Interview';
+      case 'manager_interviewed':
+        return 'Manager Interviewed';
       case 'hired':
         return 'Hired';
       case 'rejected':
