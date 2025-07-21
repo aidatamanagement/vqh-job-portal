@@ -91,10 +91,10 @@ const SubmissionsFilters: React.FC<SubmissionsFiltersProps> = ({
 
           <Select value={locationFilter} onValueChange={setLocationFilter}>
             <SelectTrigger className="w-full sm:w-48">
-              <SelectValue placeholder="All Locations" />
+              <SelectValue placeholder="All Job Locations" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Locations</SelectItem>
+              <SelectItem value="all">All Job Locations</SelectItem>
               {locations.map(location => (
                 <SelectItem key={location.id} value={location.name}>{location.name}</SelectItem>
               ))}
