@@ -49,7 +49,7 @@ const ManageJobs: React.FC = () => {
     const matchesSearch = job.position.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          (job.hrManagerName && job.hrManagerName.toLowerCase().includes(searchTerm.toLowerCase()));
     const matchesPosition = filterPosition === 'all' || job.position === filterPosition;
-    const matchesLocation = filterLocation === 'all' || job.location === filterLocation;
+    const matchesLocation = filterLocation === 'all' || job.officeLocation === filterLocation;
     const matchesStatus = filterStatus === 'all' || 
                          (filterStatus === 'active' && job.isActive) ||
                          (filterStatus === 'inactive' && !job.isActive);
@@ -103,7 +103,8 @@ const ManageJobs: React.FC = () => {
     setJobForm({
       description: job.description,
       position: job.position,
-      location: job.location,
+      officeLocation: job.officeLocation,
+      workLocation: job.workLocation,
       facilities: [...job.facilities],
       isUrgent: job.isUrgent || false,
       applicationDeadline: job.applicationDeadline ? 

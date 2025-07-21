@@ -4,7 +4,8 @@ export interface Job {
   title?: string;
   description: string;
   position: string;
-  location: string;
+  officeLocation: string;
+  workLocation: string;
   facilities: string[];
   isActive: boolean;
   isUrgent?: boolean;

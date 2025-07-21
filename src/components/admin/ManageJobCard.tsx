@@ -88,9 +88,14 @@ const ManageJobCard: React.FC<ManageJobCardProps> = ({
 
           {/* Job details - Stack on mobile */}
           <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-6 text-sm text-gray-600">
-            <div className="flex items-center space-x-1">
-              <MapPin className="w-4 h-4 flex-shrink-0" />
-              <span className="truncate">{job.location}</span>
+            <div className="flex flex-col space-y-1">
+              <div className="flex items-center space-x-1">
+                <MapPin className="w-4 h-4 flex-shrink-0" />
+                <span className="truncate">Office: {job.officeLocation}</span>
+              </div>
+              <div className="flex items-center space-x-1 ml-5">
+                <span className="truncate text-xs">Work: {job.workLocation}</span>
+              </div>
             </div>
             <div className="flex items-center space-x-1">
               <Users className="w-4 h-4 flex-shrink-0" />

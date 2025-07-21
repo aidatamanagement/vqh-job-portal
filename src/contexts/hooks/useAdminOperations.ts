@@ -79,7 +79,8 @@ export const useAdminOperations = (
           title: jobData.title,
           description: jobData.description,
           position: jobData.position,
-          location: jobData.location,
+          office_location: jobData.officeLocation,
+          work_location: jobData.workLocation,
           facilities: jobData.facilities,
           is_active: jobData.isActive,
           is_urgent: jobData.isUrgent || false,
@@ -106,7 +107,8 @@ export const useAdminOperations = (
       if (jobData.title !== undefined) updateData.title = jobData.title;
       if (jobData.description !== undefined) updateData.description = jobData.description;
       if (jobData.position !== undefined) updateData.position = jobData.position;
-      if (jobData.location !== undefined) updateData.location = jobData.location;
+      if (jobData.officeLocation !== undefined) updateData.office_location = jobData.officeLocation;
+      if (jobData.workLocation !== undefined) updateData.work_location = jobData.workLocation;
       if (jobData.facilities !== undefined) updateData.facilities = jobData.facilities;
       if (jobData.isActive !== undefined) updateData.is_active = jobData.isActive;
       if (jobData.isUrgent !== undefined) updateData.is_urgent = jobData.isUrgent;

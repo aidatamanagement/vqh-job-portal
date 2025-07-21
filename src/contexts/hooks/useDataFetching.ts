@@ -67,7 +67,8 @@ export const useDataFetching = (user: User | null, userProfile: any | null) => {
         title: job.title,
         description: job.description,
         position: job.position,
-        location: job.location,
+        officeLocation: job.office_location || job.location, // Fallback to old location field for backward compatibility
+        workLocation: job.work_location || job.location, // Fallback to old location field for backward compatibility
         facilities: job.facilities || [],
         isActive: job.is_active,
         isUrgent: job.is_urgent || false,
