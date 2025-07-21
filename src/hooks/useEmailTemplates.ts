@@ -69,6 +69,24 @@ export const useEmailTemplates = () => {
     try {
       console.log('Creating template:', template);
       
+      // Validate slug format (alphanumeric and underscores only)
+      const slugRegex = /^[a-zA-Z0-9_]+$/;
+      if (!slugRegex.test(template.slug)) {
+        throw new Error('Slug can only contain letters, numbers, and underscores');
+      }
+
+      // Check if slug is unique
+      const { data: existingTemplates, error: checkError } = await supabase
+        .from('email_templates')
+        .select('id, slug')
+        .eq('slug', template.slug);
+
+      if (checkError) throw checkError;
+
+      if (existingTemplates && existingTemplates.length > 0) {
+        throw new Error('A template with this slug already exists');
+      }
+      
       const { error } = await supabase
         .from('email_templates')
         .insert({
@@ -100,9 +118,29 @@ export const useEmailTemplates = () => {
 
   const updateTemplate = async (template: EmailTemplate) => {
     try {
+      // Validate slug format (alphanumeric and underscores only)
+      const slugRegex = /^[a-zA-Z0-9_]+$/;
+      if (!slugRegex.test(template.slug)) {
+        throw new Error('Slug can only contain letters, numbers, and underscores');
+      }
+
+      // Check if slug is unique (excluding current template)
+      const { data: existingTemplates, error: checkError } = await supabase
+        .from('email_templates')
+        .select('id, slug')
+        .eq('slug', template.slug)
+        .neq('id', template.id);
+
+      if (checkError) throw checkError;
+
+      if (existingTemplates && existingTemplates.length > 0) {
+        throw new Error('A template with this slug already exists');
+      }
+
       const { error } = await supabase
         .from('email_templates')
         .update({
+          slug: template.slug,
           name: template.name,
           subject: template.subject,
           html_body: template.html_body,

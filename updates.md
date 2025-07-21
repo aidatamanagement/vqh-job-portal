@@ -2,6 +2,22 @@
 
 ## January 3, 2025
 
+### Made Email Template Slug Editable with Database Updates (Current)
+- **User Request**: Remove disability to edit email slug, make it editable and ensure DB updates
+- **EditTemplateModal Enhancement**: Removed `disabled` attribute from slug input field
+- **Label Update**: Changed from "Slug (Read-only)" to just "Slug"
+- **Functionality Added**: Added `onChange` handler to allow slug editing during template updates
+- **UX Improvement**: Added placeholder text "template_slug" for better user guidance
+- **Database Fix**: Updated `updateTemplate` function to include `slug` field in database updates
+- **Validation Added**: Added slug format validation (alphanumeric + underscores only)
+- **Uniqueness Check**: Added database check to ensure slug uniqueness before updates
+- **Consistency**: Applied same validation to both create and update operations
+- **Error Handling**: Clear error messages for invalid slugs or duplicate slugs
+- **Files Updated**: `src/components/admin/EditTemplateModal.tsx`, `src/hooks/useEmailTemplates.ts`
+- **Impact**: Users can now edit email template slugs and changes are properly saved to database
+
+// ... existing code ...
+
 ### Fixed Submissions Page Office Location Column Issue (13:15)
 - **Issue Resolution**: Fixed submissions page to use `office_location` column instead of `location`
 - **Database Confirmation**: User confirmed database has `office_location` column, not `location`

@@ -23,35 +23,51 @@ export const useStatusUpdate = () => {
         .from('job_applications')
         .select(`
           *,
-          jobs (location)
+          jobs (office_location, position)
         `)
         .eq('id', applicationId)
         .single();
 
       if (fetchError) {
         console.error('Error fetching current application:', fetchError);
-        throw fetchError;
+        throw new Error(`Failed to fetch application: ${fetchError.message}`);
+      }
+
+      if (!currentApplication) {
+        throw new Error('Application not found');
       }
 
       console.log('Current application data:', currentApplication);
 
       // Update the application status
+      const updateData: any = { 
+        status: newStatus,
+        updated_at: new Date().toISOString()
+      };
+
+      // Ensure applied_position is set if it's missing
+      if (!currentApplication.applied_position && currentApplication.jobs) {
+        updateData.applied_position = currentApplication.jobs.position || 'Unknown Position';
+      }
+
       const { data: updatedApplication, error } = await supabase
         .from('job_applications')
-        .update({ 
-          status: newStatus,
-          updated_at: new Date().toISOString()
-        })
+        .update(updateData)
         .eq('id', applicationId)
         .select(`
           *,
-          jobs (location)
+          jobs (office_location, position)
         `)
         .single();
 
       if (error) {
         console.error('Error updating application status:', error);
-        throw error;
+        console.error('Update data was:', updateData);
+        throw new Error(`Failed to update status: ${error.message}`);
+      }
+
+      if (!updatedApplication) {
+        throw new Error('Failed to retrieve updated application data');
       }
 
       console.log('Application status updated successfully:', updatedApplication);
@@ -104,7 +120,9 @@ export const useStatusUpdate = () => {
               createdAt: updatedApplication.created_at,
               updatedAt: updatedApplication.updated_at,
             },
-            updatedApplication.jobs ? { location: updatedApplication.jobs.location } : undefined
+            updatedApplication.jobs ? { 
+              location: updatedApplication.jobs.office_location 
+            } : undefined
           );
           
           console.log('Email notification result:', emailResult);

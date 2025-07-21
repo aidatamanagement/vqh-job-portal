@@ -116,12 +116,12 @@ const EditTemplateModal: React.FC<EditTemplateModalProps> = ({
                 />
               </div>
               <div>
-                <Label htmlFor="template-slug">Slug (Read-only)</Label>
+                <Label htmlFor="template-slug">Slug</Label>
                 <Input
                   id="template-slug"
                   value={editedTemplate.slug}
-                  disabled
-                  className="bg-gray-50"
+                  onChange={(e) => handleInputChange('slug', e.target.value)}
+                  placeholder="template_slug"
                 />
               </div>
             </div>
