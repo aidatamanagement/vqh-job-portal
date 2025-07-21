@@ -30,7 +30,7 @@ const SubmissionsTable: React.FC<SubmissionsTableProps> = ({
               <TableHead className="font-semibold min-w-[200px]">Candidate</TableHead>
               <TableHead className="font-semibold min-w-[150px]">Position</TableHead>
               <TableHead className="font-semibold min-w-[120px]">Applied Date</TableHead>
-              <TableHead className="font-semibold min-w-[140px]">Job Location</TableHead>
+              {/* <TableHead className="font-semibold min-w-[140px]">Job Location</TableHead> */}
               <TableHead className="font-semibold min-w-[130px]">Manager</TableHead>
               <TableHead className="font-semibold min-w-[100px]">Status</TableHead>
               <TableHead className="font-semibold text-right min-w-[160px]">Actions</TableHead>
@@ -39,7 +39,7 @@ const SubmissionsTable: React.FC<SubmissionsTableProps> = ({
           <TableBody>
             {submissions.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={7} className="text-center py-8 text-gray-500">
+                <TableCell colSpan={6} className="text-center py-8 text-gray-500">
                   No applications found matching your criteria.
                 </TableCell>
               </TableRow>
@@ -60,9 +60,9 @@ const SubmissionsTable: React.FC<SubmissionsTableProps> = ({
                   <TableCell className="min-w-[120px]">
                     <span className="text-gray-600 text-sm">{formatDate(application.createdAt)}</span>
                   </TableCell>
-                  <TableCell className="min-w-[140px]">
+                  {/* <TableCell className="min-w-[140px]">
                     <span className="text-gray-600 text-sm">{application.jobLocation || 'Unknown Location'}</span>
-                  </TableCell>
+                  </TableCell> */}
                   <TableCell className="min-w-[130px]">
                     <span className="text-gray-600 text-sm">{application.hrManagerName || 'Unassigned'}</span>
                   </TableCell>

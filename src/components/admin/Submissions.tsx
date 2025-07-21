@@ -45,7 +45,7 @@ const Submissions: React.FC = () => {
   }, [fetchMasterData]);
 
   const filteredSubmissions = sortSubmissions(
-    filterSubmissions(submissions, searchTerm, statusFilter, positionFilter, locationFilter, hrManagerFilter),
+    filterSubmissions(submissions, searchTerm, statusFilter, positionFilter, 'all', hrManagerFilter),
     sortBy,
     sortOrder
   );
@@ -119,8 +119,8 @@ const Submissions: React.FC = () => {
         setSearchTerm={setSearchTerm}
         positionFilter={positionFilter}
         setPositionFilter={setPositionFilter}
-        locationFilter={locationFilter}
-        setLocationFilter={setLocationFilter}
+        locationFilter={'all'}
+        setLocationFilter={() => {}}
         statusFilter={statusFilter}
         setStatusFilter={setStatusFilter}
         hrManagerFilter={hrManagerFilter}
@@ -130,7 +130,7 @@ const Submissions: React.FC = () => {
         sortOrder={sortOrder}
         setSortOrder={setSortOrder}
         positions={positions}
-        locations={locations}
+        locations={[]}
         uniqueHrManagers={uniqueHrManagers}
       />
 

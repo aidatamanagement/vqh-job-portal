@@ -21,6 +21,7 @@ export const useSubmissions = () => {
       setLoading(true);
       console.log('Fetching submissions from Supabase...');
 
+      // First, let's try to get jobs with basic fields only
       const { data, error } = await supabase
         .from('job_applications')
         .select(`
@@ -28,7 +29,6 @@ export const useSubmissions = () => {
           jobs!inner(
             id,
             position,
-            location,
             hr_manager:profiles!hr_manager_id (
               admin_name,
               display_name,
@@ -59,7 +59,7 @@ export const useSubmissions = () => {
         email: item.email,
         phone: item.phone || '',
         appliedPosition: item.jobs?.position || item.applied_position || 'Unknown Position',
-        jobLocation: item.jobs?.location || 'Unknown Location',
+        jobLocation: 'Not Available', // Will be updated once we determine the correct column
         earliestStartDate: item.earliest_start_date || '',
         cityState: item.city_state || '',
         coverLetter: item.cover_letter || '',
