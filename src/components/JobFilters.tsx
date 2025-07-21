@@ -28,7 +28,7 @@ const JobFilters: React.FC<JobFiltersProps> = ({ filters, onFiltersChange, total
 
   const availableLocations = locations.length > 0 
     ? locations 
-    : [...new Set(jobs.map(job => job.location))].map((location, index) => ({
+    : [...new Set(jobs.map(job => job.officeLocation))].map((location, index) => ({
         id: `loc-${index}`,
         name: location,
         createdAt: new Date().toISOString()

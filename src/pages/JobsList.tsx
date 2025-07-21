@@ -38,7 +38,7 @@ const JobsList: React.FC = () => {
     // Use master data for locations and positions, fallback to job data if master data is empty
     const availableLocations = locations.length > 0 
       ? locations.map(loc => loc.name).sort()
-      : [...new Set(activeJobs.map(job => job.location))].sort();
+      : [...new Set(activeJobs.map(job => job.officeLocation))].sort();
     
     const availablePositions = positions.length > 0 
       ? positions.map(pos => pos.name).sort()
@@ -71,14 +71,15 @@ const JobsList: React.FC = () => {
         job.title.toLowerCase().includes(searchLower) ||
         job.description.toLowerCase().includes(searchLower) ||
         job.position.toLowerCase().includes(searchLower) ||
-        job.location.toLowerCase().includes(searchLower) ||
+        job.officeLocation.toLowerCase().includes(searchLower) ||
+        job.workLocation.toLowerCase().includes(searchLower) ||
         job.facilities.some(facility => facility.toLowerCase().includes(searchLower))
       );
     }
 
     // Apply location filter
     if (filters.location) {
-      filteredJobs = filteredJobs.filter(job => job.location === filters.location);
+      filteredJobs = filteredJobs.filter(job => job.officeLocation === filters.location);
     }
 
     // Apply position filter
@@ -287,12 +288,20 @@ const JobsList: React.FC = () => {
 
                   {/* Location Badge */}
                   <div className="flex-shrink-0 mx-8">
-                    <Badge 
-                      variant="outline" 
-                      className="bg-transparent border-gray-300 text-gray-700 hover:bg-gray-100"
-                    >
-                      📍 {job.location}
-                    </Badge>
+                    <div className="flex flex-col gap-1">
+                      <Badge 
+                        variant="outline" 
+                        className="bg-transparent border-gray-300 text-gray-700 hover:bg-gray-100 text-xs"
+                      >
+                        🏢 Office: {job.officeLocation}
+                      </Badge>
+                      <Badge 
+                        variant="outline" 
+                        className="bg-transparent border-gray-300 text-gray-700 hover:bg-gray-100 text-xs"
+                      >
+                        💼 Work: {job.workLocation}
+                      </Badge>
+                    </div>
                   </div>
 
                   {/* Apply Button */}

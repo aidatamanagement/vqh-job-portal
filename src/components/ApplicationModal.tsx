@@ -190,7 +190,11 @@ const ApplicationModal: React.FC<ApplicationModalProps> = ({ isOpen, onClose, jo
         additionalDocsUrls.push(docUrl);
       }
 
+      // Generate tracking token for application tracking
+      const trackingToken = crypto.randomUUID();
+
       // Create application data for Supabase
+      // Try different possible column names for applied position
       const applicationData = {
         id: applicationId,
         job_id: job.id,
@@ -198,27 +202,52 @@ const ApplicationModal: React.FC<ApplicationModalProps> = ({ isOpen, onClose, jo
         last_name: formData.lastName,
         email: formData.email,
         phone: formData.phone,
+        // Try the expected column name first
         applied_position: job.position,
         earliest_start_date: formData.earliestStartDate,
         city_state: formData.cityState,
         cover_letter: formData.coverLetter,
         cover_letter_url: coverLetterUrl,
         additional_docs_urls: additionalDocsUrls,
+        tracking_token: trackingToken,
         status: 'application_submitted',
         user_id: null // Anonymous application
       };
 
       console.log('Submitting application data:', applicationData);
 
-      // Insert into Supabase
-      const { data, error } = await supabase
-        .from('job_applications')
-        .insert([applicationData])
-        .select()
-        .single();
+      // Try to insert into Supabase with better error handling
+      let insertResult;
+      try {
+        insertResult = await supabase
+          .from('job_applications')
+          .insert([applicationData])
+          .select()
+          .single();
+      } catch (insertError) {
+        console.error('First insert attempt failed:', insertError);
+        
+        // If applied_position fails, try alternative column names
+        const alternativeData = {
+          ...applicationData,
+          position: job.position, // Alternative column name
+        };
+        delete alternativeData.applied_position; // Remove the failing field
+        
+        console.log('Trying alternative data structure:', alternativeData);
+        
+        insertResult = await supabase
+          .from('job_applications')
+          .insert([alternativeData])
+          .select()
+          .single();
+      }
+
+      const { data, error } = insertResult;
 
       if (error) {
         console.error('Supabase error details:', error);
+        console.error('Full error object:', JSON.stringify(error, null, 2));
         throw new Error(`Failed to submit application: ${error.message}`);
       }
 
@@ -260,7 +289,8 @@ const ApplicationModal: React.FC<ApplicationModalProps> = ({ isOpen, onClose, jo
             phone: formData.phone,
           },
           {
-            location: job.location,
+            location: job.officeLocation,
+            workLocation: job.workLocation,
           },
           data.tracking_token
         );
@@ -351,9 +381,14 @@ const ApplicationModal: React.FC<ApplicationModalProps> = ({ isOpen, onClose, jo
             Apply for {job.title}
           </DialogTitle>
           <div className="flex items-center space-x-4 text-sm text-gray-600 mt-2">
-            <div className="flex items-center">
-              <MapPin className="w-4 h-4 mr-1" />
-              {job.location}
+            <div className="flex flex-col">
+              <div className="flex items-center">
+                <MapPin className="w-4 h-4 mr-1" />
+                Office: {job.officeLocation}
+              </div>
+              <div className="flex items-center text-xs ml-5">
+                Work: {job.workLocation}
+              </div>
             </div>
             <div className="flex items-center">
               <Calendar className="w-4 h-4 mr-1" />

@@ -49,7 +49,7 @@ const ManageJobs: React.FC = () => {
     const matchesSearch = job.position.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          (job.hrManagerName && job.hrManagerName.toLowerCase().includes(searchTerm.toLowerCase()));
     const matchesPosition = filterPosition === 'all' || job.position === filterPosition;
-    const matchesLocation = filterLocation === 'all' || job.location === filterLocation;
+    const matchesLocation = filterLocation === 'all' || job.officeLocation === filterLocation;
     const matchesStatus = filterStatus === 'all' || 
                          (filterStatus === 'active' && job.isActive) ||
                          (filterStatus === 'inactive' && !job.isActive);
@@ -67,7 +67,7 @@ const ManageJobs: React.FC = () => {
     if (success) {
       toast({
         title: "Job Status Updated",
-        description: `Job "${job.position}" in ${job.location} is now ${job.isActive ? 'inactive' : 'active'}`,
+        description: `Job "${job.position}" in ${job.officeLocation} is now ${job.isActive ? 'inactive' : 'active'}`,
       });
     } else {
       toast({
@@ -80,13 +80,13 @@ const ManageJobs: React.FC = () => {
 
   const handleDeleteJob = async (jobId: string) => {
     const job = jobs.find(j => j.id === jobId);
-    if (job && window.confirm(`Are you sure you want to delete "${job.position}" in ${job.location}?`)) {
+    if (job && window.confirm(`Are you sure you want to delete "${job.position}" in ${job.officeLocation}?`)) {
       const success = await deleteJob(jobId);
       
       if (success) {
         toast({
           title: "Job Deleted",
-          description: `"${job.position}" in ${job.location} has been permanently deleted`,
+          description: `"${job.position}" in ${job.officeLocation} has been permanently deleted`,
         });
       } else {
         toast({
@@ -103,7 +103,8 @@ const ManageJobs: React.FC = () => {
     setJobForm({
       description: job.description,
       position: job.position,
-      location: job.location,
+      officeLocation: job.officeLocation,
+      workLocation: job.workLocation,
       facilities: [...job.facilities],
       isUrgent: job.isUrgent || false,
       applicationDeadline: job.applicationDeadline ? 
@@ -148,10 +149,10 @@ const ManageJobs: React.FC = () => {
   };
 
   const saveJobChanges = async () => {
-    if (!editingJob || !jobForm.description || !jobForm.position || !jobForm.location || !jobForm.hrManagerId) {
+    if (!editingJob || !jobForm.description || !jobForm.position || !jobForm.officeLocation || !jobForm.workLocation || !jobForm.hrManagerId) {
       toast({
         title: "Missing Required Fields",
-        description: "Please fill in all required fields including Manager",
+        description: "Please fill in all required fields including both location fields and Manager",
         variant: "destructive",
       });
       return;
@@ -174,7 +175,8 @@ const ManageJobs: React.FC = () => {
     const updateData: Partial<Job> = {
       description: jobForm.description,
       position: jobForm.position,
-      location: jobForm.location,
+      officeLocation: jobForm.officeLocation,
+      workLocation: jobForm.workLocation,
       facilities: jobForm.facilities,
       isUrgent: jobForm.isUrgent,
       applicationDeadline: jobForm.applicationDeadline || null,
@@ -191,7 +193,7 @@ const ManageJobs: React.FC = () => {
       
       toast({
         title: "Job Updated",
-        description: `"${jobForm.position}" in ${jobForm.location} has been successfully updated${jobForm.isUrgent ? ' and marked as urgent' : ''}${jobForm.applicationDeadline ? ' with deadline set' : ''}`,
+        description: `"${jobForm.position}" in ${jobForm.officeLocation} has been successfully updated${jobForm.isUrgent ? ' and marked as urgent' : ''}${jobForm.applicationDeadline ? ' with deadline set' : ''}`,
       });
     } else {
       toast({
