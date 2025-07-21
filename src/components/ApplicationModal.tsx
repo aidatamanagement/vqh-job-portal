@@ -190,6 +190,9 @@ const ApplicationModal: React.FC<ApplicationModalProps> = ({ isOpen, onClose, jo
         additionalDocsUrls.push(docUrl);
       }
 
+      // Generate tracking token for application tracking
+      const trackingToken = crypto.randomUUID();
+
       // Create application data for Supabase
       const applicationData = {
         id: applicationId,
@@ -204,6 +207,7 @@ const ApplicationModal: React.FC<ApplicationModalProps> = ({ isOpen, onClose, jo
         cover_letter: formData.coverLetter,
         cover_letter_url: coverLetterUrl,
         additional_docs_urls: additionalDocsUrls,
+        tracking_token: trackingToken,
         status: 'application_submitted',
         user_id: null // Anonymous application
       };
