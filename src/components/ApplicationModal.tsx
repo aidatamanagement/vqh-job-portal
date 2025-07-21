@@ -260,7 +260,8 @@ const ApplicationModal: React.FC<ApplicationModalProps> = ({ isOpen, onClose, jo
             phone: formData.phone,
           },
           {
-            location: job.location,
+            location: job.officeLocation,
+            workLocation: job.workLocation,
           },
           data.tracking_token
         );
@@ -351,9 +352,14 @@ const ApplicationModal: React.FC<ApplicationModalProps> = ({ isOpen, onClose, jo
             Apply for {job.title}
           </DialogTitle>
           <div className="flex items-center space-x-4 text-sm text-gray-600 mt-2">
-            <div className="flex items-center">
-              <MapPin className="w-4 h-4 mr-1" />
-              {job.location}
+            <div className="flex flex-col">
+              <div className="flex items-center">
+                <MapPin className="w-4 h-4 mr-1" />
+                Office: {job.officeLocation}
+              </div>
+              <div className="flex items-center text-xs ml-5">
+                Work: {job.workLocation}
+              </div>
             </div>
             <div className="flex items-center">
               <Calendar className="w-4 h-4 mr-1" />

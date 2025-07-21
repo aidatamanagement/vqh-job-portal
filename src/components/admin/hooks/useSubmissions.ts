@@ -28,6 +28,8 @@ export const useSubmissions = () => {
           jobs!inner(
             id,
             position,
+            office_location,
+            work_location,
             location,
             hr_manager:profiles!hr_manager_id (
               admin_name,
@@ -59,7 +61,7 @@ export const useSubmissions = () => {
         email: item.email,
         phone: item.phone || '',
         appliedPosition: item.jobs?.position || item.applied_position || 'Unknown Position',
-        jobLocation: item.jobs?.location || 'Unknown Location',
+        jobLocation: item.jobs?.office_location || item.jobs?.location || 'Unknown Location',
         earliestStartDate: item.earliest_start_date || '',
         cityState: item.city_state || '',
         coverLetter: item.cover_letter || '',
