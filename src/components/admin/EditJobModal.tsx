@@ -10,7 +10,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import RichTextEditor from '@/components/ui/rich-text-editor';
 import { 
   X,
-  AlertTriangle,
+  Pin,
   Clock,
   Users
 } from 'lucide-react';
@@ -44,17 +44,31 @@ const EditJobModal: React.FC<EditJobModalProps> = ({
   onSave,
   onAddCustomFacility,
 }) => {
-  const { fetchHRManagers } = useAppContext();
+  const { fetchHRManagers, jobs } = useAppContext();
   const [filteredManagers, setFilteredManagers] = useState<HRManager[]>(hrManagers);
+
+  // Fetch managers when modal opens or when editingJob changes
+  useEffect(() => {
+    if (editingJob && jobForm.officeLocation) {
+      fetchHRManagers(jobForm.officeLocation).then(setFilteredManagers);
+    }
+  }, [editingJob, jobForm.officeLocation, fetchHRManagers]);
 
   // Fetch managers when office location changes
   useEffect(() => {
     if (jobForm.officeLocation) {
-      fetchHRManagers(jobForm.officeLocation).then(setFilteredManagers);
-      // Clear manager selection when office location changes
-      if (jobForm.hrManagerId) {
-        onInputChange('hrManagerId', '');
-      }
+      fetchHRManagers(jobForm.officeLocation).then(managers => {
+        setFilteredManagers(managers);
+        
+        // Check if the current manager is still valid for the new location
+        if (jobForm.hrManagerId) {
+          const currentManagerExists = managers.some(manager => manager.id === jobForm.hrManagerId);
+          if (!currentManagerExists) {
+            // Only clear if the current manager is not available for the new location
+            onInputChange('hrManagerId', '');
+          }
+        }
+      });
     } else {
       // If no office location selected, clear managers and manager selection
       setFilteredManagers([]);
@@ -64,18 +78,31 @@ const EditJobModal: React.FC<EditJobModalProps> = ({
     }
   }, [jobForm.officeLocation, fetchHRManagers, jobForm.hrManagerId, onInputChange]);
 
+  // Check current number of featured jobs (excluding current job if it's already featured)
+  const getCurrentFeaturedJobsCount = () => {
+    const currentJobIsFeatured = editingJob?.isUrgent || false;
+    const otherFeaturedJobs = jobs.filter(job => job.isUrgent && job.id !== editingJob?.id).length;
+    return otherFeaturedJobs + (currentJobIsFeatured ? 1 : 0);
+  };
+
+  // Check if we can add another featured job
+  const canAddFeaturedJob = () => {
+    const currentFeaturedCount = getCurrentFeaturedJobsCount();
+    return currentFeaturedCount < 4;
+  };
+
   return (
     <Dialog open={!!editingJob} onOpenChange={onClose}>
       <DialogContent className="w-[95vw] max-w-3xl max-h-[90vh] overflow-y-auto mx-auto">
         <DialogHeader>
           <DialogTitle className="text-xl sm:text-2xl font-bold text-gray-900 pr-6">
-            Edit Job: {editingJob?.position} in {editingJob?.location}
+            Edit Job: {editingJob?.position} in {editingJob?.officeLocation}
           </DialogTitle>
         </DialogHeader>
 
         {editingJob && (
           <div className="space-y-4 sm:space-y-6 mt-4 sm:mt-6">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="edit-position" className="text-sm font-medium">Position Category *</Label>
                 <Select 
@@ -129,14 +156,14 @@ const EditJobModal: React.FC<EditJobModalProps> = ({
                 </p>
               </div>
 
-              <div>
+              <div className="md:col-span-2">
                 <Label htmlFor="edit-hrManager" className="text-sm font-medium">Assigned Manager *</Label>
                 <Select 
                   value={jobForm.hrManagerId || ''} 
                   onValueChange={(value) => onInputChange('hrManagerId', value)}
                   disabled={!jobForm.officeLocation}
                 >
-                  <SelectTrigger className="mt-1">
+                  <SelectTrigger className="mt-1 h-auto min-h-[40px] py-2">
                     <SelectValue placeholder={
                       !jobForm.officeLocation 
                         ? "Select office location first" 
@@ -145,10 +172,10 @@ const EditJobModal: React.FC<EditJobModalProps> = ({
                           : "Select Manager"
                     } />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="w-full max-w-md">
                     {filteredManagers.map((manager) => (
                       <SelectItem key={manager.id} value={manager.id}>
-                        <div className="flex items-center space-x-3">
+                        <div className="flex items-center space-x-3 w-full">
                           <div className="flex-shrink-0">
                             {manager.profile_image_url ? (
                               <img
@@ -203,19 +230,28 @@ const EditJobModal: React.FC<EditJobModalProps> = ({
               <Label className="text-sm font-medium">Priority & Timing</Label>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="flex items-center space-x-3 p-3 border rounded-lg">
-                  <Checkbox
-                    id="edit-urgent"
-                    checked={jobForm.isUrgent || false}
-                    onCheckedChange={(checked) => onInputChange('isUrgent', checked as boolean)}
-                  />
-                  <div className="flex items-center space-x-2">
-                    <AlertTriangle className="w-4 h-4 text-red-500" />
-                    <Label htmlFor="edit-urgent" className="text-sm font-medium">
-                      Mark as Urgent
-                    </Label>
+                                  <div className="flex items-center space-x-3 p-3 border rounded-lg">
+                    <Checkbox
+                      id="edit-urgent"
+                      checked={jobForm.isUrgent || false}
+                      onCheckedChange={(checked) => onInputChange('isUrgent', checked as boolean)}
+                      disabled={!canAddFeaturedJob() && !jobForm.isUrgent}
+                    />
+                    <div className="flex items-center space-x-2">
+                      <Pin className="w-4 h-4 text-blue-600" />
+                      <Label htmlFor="edit-urgent" className="text-sm font-medium">
+                        Mark as Featured Job
+                      </Label>
+                    </div>
+                    <div className="ml-auto text-xs text-gray-500">
+                      {getCurrentFeaturedJobsCount()}/4 featured jobs
+                    </div>
                   </div>
-                </div>
+                  {!canAddFeaturedJob() && !jobForm.isUrgent && (
+                    <p className="text-xs text-red-600 mt-1">
+                      Featured job limit reached. Unfeature another job to add this one as featured.
+                    </p>
+                  )}
 
                 <div>
                   <Label htmlFor="edit-deadline" className="flex items-center space-x-2 text-sm font-medium">

@@ -8,11 +8,122 @@
 - **Frontend Logic**: Updated getValidNextStatuses to include waiting_list for all statuses
 - **Function Fix**: Added DROP FUNCTION before CREATE OR REPLACE to handle parameter name conflicts
 - **New Transitions**: All interview steps can now transition to waiting_list (except hired/rejected)
-- **Files Updated**: 
+- **Files Updated**:
   - `FIX_STATUS_CONSTRAINT.sql` (updated SQL script)
   - `supabase/migrations/20250103000007_fix_status_constraint_for_new_flow.sql`
   - `src/components/admin/utils/submissionsUtils.ts`
 - **Impact**: Admins can now move applications to waiting list from any interview stage
+
+### Fixed Edit Job Modal Manager Selection Issue (Current)
+- **User Request**: Fix issue where selected manager's name doesn't show when editing existing jobs
+- **Root Cause**: Manager selection was being cleared when office location changed, even for existing valid managers
+- **Solution**: Modified EditJobModal to preserve existing manager selection when editing jobs
+- **Logic Update**: Only clear manager selection if the current manager is not available for the new office location
+- **Initial Load**: Added useEffect to fetch managers when modal opens to ensure existing manager appears
+- **Dialog Title**: Fixed dialog title to use officeLocation instead of deprecated location field
+- **Layout Improvement**: Changed from 3-column to 2-column grid with manager field spanning 2 columns for better display
+- **Size Optimization**: Added proper height and width classes to SelectTrigger and SelectContent for better manager information display
+- **Files Updated**:
+  - `src/components/admin/EditJobModal.tsx`
+- **Impact**: Existing job managers now display correctly when editing jobs with improved layout and sizing
+
+### Changed "Urgent" to "Featured Job" with Pin Icon (Current)
+- **User Request**: Change "Mark as Urgent" to "Featured Job" and replace red urgent icon with pin icon
+- **Visual Changes**: 
+  - Replaced AlertTriangle icon with Pin icon across all components
+  - Changed badge styling from red (destructive) to blue (featured) theme
+  - Updated all text references from "urgent" to "featured"
+- **Components Updated**:
+  - `src/components/JobCard.tsx` - Public job cards now show blue "Featured" badge with pin icon
+  - `src/components/admin/ManageJobCard.tsx` - Admin job cards show blue "Featured" badge
+  - `src/components/admin/PostJob.tsx` - Form label changed to "Mark as Featured Job"
+  - `src/components/admin/EditJobModal.tsx` - Edit form label changed to "Mark as Featured Job"
+  - `src/pages/JobDetails.tsx` - Job details page shows "Featured Position" badge
+  - `src/components/admin/JobPreviewModal.tsx` - Preview modal shows "Featured Position" badge
+- **Document Parser**: Updated `src/hooks/useDocumentParser.ts` to detect "featured" instead of "urgent" keywords
+- **Toast Messages**: Updated success messages to mention "featured" instead of "urgent"
+- **Icon Imports**: Replaced AlertTriangle with Pin icon in all relevant components
+- **Badge Styling**: Changed from `variant="destructive"` to `variant="default"` with blue background
+- **Bug Fix**: Fixed missing Pin icon import in EditJobModal.tsx and PostJob.tsx that was causing runtime errors
+- **Files Updated**:
+  - `src/components/JobCard.tsx`
+  - `src/components/admin/ManageJobCard.tsx`
+  - `src/components/admin/PostJob.tsx`
+  - `src/components/admin/EditJobModal.tsx`
+  - `src/pages/JobDetails.tsx`
+  - `src/components/admin/JobPreviewModal.tsx`
+  - `src/components/admin/ManageJobs.tsx`
+  - `src/hooks/useDocumentParser.ts`
+- **Impact**: All urgent references now show as "Featured" with pin icons and blue styling, runtime errors fixed
+
+### Implemented Featured Jobs Priority Display (Current)
+- **User Request**: Show featured jobs at the top of the job portal with featured mark
+- **Sorting Logic**: Modified job sorting to prioritize featured jobs first, then sort by date within each group
+- **Visual Enhancements**:
+  - Added "Featured Positions" section header with pin icon and count
+  - Added featured badge next to job titles in the listing
+  - Added visual separator between featured and regular jobs
+  - Added subtle blue background for featured job cards
+- **Features Added**:
+  - Featured jobs automatically appear at the top of the job list
+  - Clear visual distinction between featured and regular positions
+  - Section header shows count of featured jobs
+  - Maintains existing sorting (newest/oldest) within featured and regular groups
+- **User Experience**:
+  - Applicants immediately see priority positions
+  - Clear visual hierarchy with featured jobs prominently displayed
+  - Maintains all existing filtering and search functionality
+- **Files Updated**:
+  - `src/pages/JobsList.tsx`
+- **Impact**: Featured jobs now have prominent placement and visual distinction on the public job portal
+
+### Added Featured Jobs Priority Display to Admin Manage Jobs (Current)
+- **User Request**: Show featured jobs on top in manage jobs page on admin side
+- **Admin Sorting**: Modified ManageJobs component to prioritize featured jobs first, then by creation date
+- **Visual Enhancements**:
+  - Added "Featured Positions" section header with pin icon and count
+  - Added visual separator between featured and regular jobs
+  - Consistent styling with public job portal
+- **Features Added**:
+  - Featured jobs automatically appear at the top of admin job list
+  - Clear visual distinction between featured and regular positions
+  - Section header shows count of featured jobs
+  - Maintains all existing admin filtering and search functionality
+- **Admin Experience**:
+  - Admins immediately see which jobs are marked as featured
+  - Clear visual hierarchy for priority management
+  - Consistent experience between public and admin views
+- **Files Updated**:
+  - `src/components/admin/ManageJobs.tsx`
+- **Impact**: Admin manage jobs page now shows featured jobs prominently at the top with clear visual distinction
+
+### Implemented Featured Jobs Limit (Current)
+- **User Request**: Set limit to featured jobs should not be more than 4
+- **Validation Logic**: Added comprehensive validation to prevent more than 4 featured jobs
+- **Features Added**:
+  - Real-time count display showing current featured jobs (X/4)
+  - Checkbox disabled when limit is reached
+  - Validation error messages when trying to exceed limit
+  - Smart validation that allows editing existing featured jobs
+- **Components Updated**:
+  - `src/components/admin/PostJob.tsx` - New job creation with limit validation
+  - `src/components/admin/EditJobModal.tsx` - Job editing with limit validation
+  - `src/components/admin/ManageJobs.tsx` - Save changes with limit validation
+- **Validation Features**:
+  - Prevents creating new featured jobs when limit is reached
+  - Allows editing existing featured jobs without counting them twice
+  - Shows helpful error messages with clear instructions
+  - Real-time feedback with current count display
+- **User Experience**:
+  - Clear visual indication of current featured job count
+  - Disabled state when limit is reached
+  - Helpful error messages guide users to unfeature other jobs
+  - Maintains existing functionality for non-featured jobs
+- **Files Updated**:
+  - `src/components/admin/PostJob.tsx`
+  - `src/components/admin/EditJobModal.tsx`
+  - `src/components/admin/ManageJobs.tsx`
+- **Impact**: Maximum of 4 featured jobs enforced across all admin operations with clear user feedback
 
 ### Fixed Status Update Constraint Error (Previous)
 - **Issue**: Status updates failing with "violates check constraint 'valid_status_check'" error

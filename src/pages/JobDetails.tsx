@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, MapPin, Calendar, Clock, Users, AlertTriangle, Briefcase, Info } from 'lucide-react';
+import { ArrowLeft, MapPin, Calendar, Clock, Users, Pin, Briefcase, Info } from 'lucide-react';
 import { useAppContext } from '@/contexts/AppContext';
 import ApplicationModal from '@/components/ApplicationModal';
 import CursorGlow from '@/components/CursorGlow';
@@ -82,11 +82,11 @@ const JobDetails: React.FC = () => {
             {/* Job Header */}
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8 mb-8 animate-fade-in-up">
               <div className="space-y-4">
-                {/* Urgent and deadline badges */}
+                {/* Featured and deadline badges */}
                 {(job.isUrgent || job.applicationDeadline) && <div className="flex flex-wrap gap-2">
-                    {job.isUrgent && <Badge variant="destructive" className="flex items-center gap-1 text-sm">
-                        <AlertTriangle className="w-4 h-4" />
-                        Urgent Position
+                    {job.isUrgent && <Badge variant="default" className="flex items-center gap-1 text-sm bg-blue-600 hover:bg-blue-700 text-white">
+                        <Pin className="w-4 h-4" />
+                        Featured Position
                       </Badge>}
                     {job.applicationDeadline && <Badge variant={isDeadlinePassed(job.applicationDeadline) ? "destructive" : isDeadlineApproaching(job.applicationDeadline) ? "outline" : "secondary"} className={`flex items-center gap-1 text-sm ${isDeadlineApproaching(job.applicationDeadline) ? 'border-orange-400 text-orange-700' : ''}`}>
                         <Clock className="w-4 h-4" />

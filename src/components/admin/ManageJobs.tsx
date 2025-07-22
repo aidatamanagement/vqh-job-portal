@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Briefcase } from 'lucide-react';
+import { Briefcase, Pin } from 'lucide-react';
 import { useAppContext } from '@/contexts/AppContext';
 import { Job, HRManager } from '@/types';
 import { toast } from '@/hooks/use-toast';
@@ -56,6 +56,15 @@ const ManageJobs: React.FC = () => {
     const matchesHRManager = filterHRManager === 'all' || job.hrManagerId === filterHRManager;
     
     return matchesSearch && matchesPosition && matchesLocation && matchesStatus && matchesHRManager;
+  }).sort((a, b) => {
+    // First priority: Featured jobs come first
+    if (a.isUrgent && !b.isUrgent) return -1;
+    if (!a.isUrgent && b.isUrgent) return 1;
+    
+    // Second priority: Sort by creation date (newest first)
+    const dateA = new Date(a.createdAt).getTime();
+    const dateB = new Date(b.createdAt).getTime();
+    return dateB - dateA;
   });
 
   const toggleJobStatus = async (jobId: string) => {
@@ -158,6 +167,20 @@ const ManageJobs: React.FC = () => {
       return;
     }
 
+    // Validate featured job limit
+    const currentJobIsFeatured = editingJob.isUrgent || false;
+    const otherFeaturedJobs = jobs.filter(job => job.isUrgent && job.id !== editingJob.id).length;
+    const newFeaturedCount = otherFeaturedJobs + (jobForm.isUrgent ? 1 : 0);
+    
+    if (jobForm.isUrgent && newFeaturedCount > 4) {
+      toast({
+        title: "Featured Job Limit Reached",
+        description: "You can only have a maximum of 4 featured jobs. Please unfeature another job first.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     // Validate deadline if provided
     if (jobForm.applicationDeadline) {
       const deadlineDate = new Date(jobForm.applicationDeadline);
@@ -193,7 +216,7 @@ const ManageJobs: React.FC = () => {
       
       toast({
         title: "Job Updated",
-        description: `"${jobForm.position}" in ${jobForm.officeLocation} has been successfully updated${jobForm.isUrgent ? ' and marked as urgent' : ''}${jobForm.applicationDeadline ? ' with deadline set' : ''}`,
+        description: `"${jobForm.position}" in ${jobForm.officeLocation} has been successfully updated${jobForm.isUrgent ? ' and marked as featured' : ''}${jobForm.applicationDeadline ? ' with deadline set' : ''}`,
       });
     } else {
       toast({
@@ -278,18 +301,34 @@ const ManageJobs: React.FC = () => {
             </p>
           </Card>
         ) : (
-          filteredJobs.map((job, index) => (
-            <ManageJobCard
-              key={job.id}
-              job={job}
-              applicationCount={getApplicationCount(job.id)}
-              index={index}
-              onToggleStatus={toggleJobStatus}
-              onEdit={openEditModal}
-              onDelete={handleDeleteJob}
-              onPreview={openPreviewModal}
-            />
-          ))
+          filteredJobs.map((job, index) => {
+            const isFeatured = job.isUrgent;
+            const previousJob = index > 0 ? filteredJobs[index - 1] : null;
+            const showSeparator = isFeatured && previousJob && !previousJob.isUrgent;
+            
+            return (
+              <React.Fragment key={job.id}>
+                {/* Separator between featured and regular jobs */}
+                {showSeparator && (
+                  <div className="my-4 border-t border-gray-300">
+                    <div className="text-center -mt-3">
+                      <span className="bg-white px-4 text-sm text-gray-500">Other Positions</span>
+                    </div>
+                  </div>
+                )}
+                
+                <ManageJobCard
+                  job={job}
+                  applicationCount={getApplicationCount(job.id)}
+                  index={index}
+                  onToggleStatus={toggleJobStatus}
+                  onEdit={openEditModal}
+                  onDelete={handleDeleteJob}
+                  onPreview={openPreviewModal}
+                />
+              </React.Fragment>
+            );
+          })
         )}
       </div>
 

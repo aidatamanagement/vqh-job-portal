@@ -3,7 +3,7 @@ import React from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
-import { MapPin, Calendar, Clock, AlertTriangle, Briefcase, Users, User } from 'lucide-react';
+import { MapPin, Calendar, Clock, Pin, Briefcase, Users, User } from 'lucide-react';
 import { Job } from '@/types';
 
 interface JobPreviewModalProps {
@@ -61,13 +61,13 @@ const JobPreviewModal: React.FC<JobPreviewModalProps> = ({ job, isOpen, onClose 
               {/* Job Header */}
               <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8 mb-8 animate-fade-in-up">
                 <div className="space-y-4">
-                  {/* Urgent and deadline badges */}
+                  {/* Featured and deadline badges */}
                   {(job.isUrgent || job.applicationDeadline) && (
                     <div className="flex flex-wrap gap-2">
                       {job.isUrgent && (
-                        <Badge variant="destructive" className="flex items-center gap-1 text-sm">
-                          <AlertTriangle className="w-4 h-4" />
-                          Urgent Position
+                        <Badge variant="default" className="flex items-center gap-1 text-sm bg-blue-600 hover:bg-blue-700 text-white">
+                          <Pin className="w-4 h-4" />
+                          Featured Position
                         </Badge>
                       )}
                       {job.applicationDeadline && (

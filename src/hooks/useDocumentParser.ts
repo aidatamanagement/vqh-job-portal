@@ -63,7 +63,7 @@ export function useDocumentParser() {
       "position": "Job category/position type (e.g., 'Nurse', 'Administrator', 'Social Worker')",
       "location": "Job location (e.g., 'Remote', 'New York, NY', 'On-site')",
       "facilities": ["Array of employment benefits, requirements, or job types like 'Full-time', 'Part-time', 'Health Insurance', 'Remote Work', etc."],
-      "isUrgent": boolean (true if job is marked as urgent/immediate need),
+      "isUrgent": boolean (true if job is marked as featured/priority need),
       "applicationDeadline": "ISO date string if deadline is mentioned, null otherwise"
     }
     
@@ -126,8 +126,8 @@ export function useDocumentParser() {
     if (fullText.includes('flexible') || fullText.includes('flex')) facilities.push('Flexible Schedule');
     extracted.facilities = facilities;
 
-    // Check if urgent
-    extracted.isUrgent = fullText.includes('urgent') || 
+    // Check if featured/priority
+    extracted.isUrgent = fullText.includes('featured') || 
                         fullText.includes('immediate') || 
                         fullText.includes('asap') ||
                         fullText.includes('emergency');
@@ -159,7 +159,7 @@ export function useDocumentParser() {
     // Extract clean job description (exclude metadata lines)
     const metadataKeywords = [
       'job title:', 'title:', 'position:', 'location:', 'employment type:', 
-      'benefits package:', 'application deadline:', 'apply by', 'urgent'
+      'benefits package:', 'application deadline:', 'apply by', 'featured'
     ];
     
     // Find where the actual job description starts
@@ -186,7 +186,7 @@ export function useDocumentParser() {
       if (line.includes('benefits package:') || 
           line.includes('application deadline:') || 
           line.includes('apply by') ||
-          line.includes('this is an urgent')) {
+          line.includes('this is a featured')) {
         descriptionEnd = i;
         break;
       }

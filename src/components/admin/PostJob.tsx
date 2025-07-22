@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Plus, X, Briefcase, MapPin, Settings as SettingsIcon, Award, AlertTriangle, Calendar, Loader2, Users, Upload, FileText, CheckCircle, AlertCircle } from 'lucide-react';
+import { Plus, X, Briefcase, MapPin, Settings as SettingsIcon, Award, Pin, Calendar, Loader2, Users, Upload, FileText, CheckCircle, AlertCircle } from 'lucide-react';
 import { useAppContext } from '@/contexts/AppContext';
 import { toast } from '@/hooks/use-toast';
 import RichTextEditor from '@/components/ui/rich-text-editor';
@@ -19,6 +19,7 @@ const PostJob: React.FC = () => {
     positions, 
     locations, 
     facilities, 
+    jobs,
     createJob, 
     createPosition, 
     deletePosition, 
@@ -119,6 +120,17 @@ const PostJob: React.FC = () => {
     }));
   };
 
+  // Check current number of featured jobs
+  const getCurrentFeaturedJobsCount = () => {
+    return jobs.filter(job => job.isUrgent).length;
+  };
+
+  // Check if we can add another featured job
+  const canAddFeaturedJob = () => {
+    const currentFeaturedCount = getCurrentFeaturedJobsCount();
+    return currentFeaturedCount < 4;
+  };
+
   const handleJobSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
@@ -127,6 +139,17 @@ const PostJob: React.FC = () => {
       toast({
         title: "Missing Required Fields",
         description: "Please fill in all required fields including both location fields and Manager",
+        variant: "destructive",
+      });
+      setIsSubmitting(false);
+      return;
+    }
+
+    // Validate featured job limit
+    if (jobForm.isUrgent && !canAddFeaturedJob()) {
+      toast({
+        title: "Featured Job Limit Reached",
+        description: "You can only have a maximum of 4 featured jobs. Please unfeature another job first.",
         variant: "destructive",
       });
       setIsSubmitting(false);
@@ -180,7 +203,7 @@ const PostJob: React.FC = () => {
 
       toast({
         title: "Job Posted Successfully",
-        description: `Your job posting for ${jobData.position} in ${jobData.location} is now live${jobData.isUrgent ? ' and marked as urgent' : ''}${jobData.applicationDeadline ? ' with application deadline set' : ''}`,
+                          description: `Your job posting for ${jobData.position} in ${jobData.officeLocation} is now live${jobData.isUrgent ? ' and marked as featured' : ''}${jobData.applicationDeadline ? ' with application deadline set' : ''}`,
       });
     } else {
       toast({
@@ -588,8 +611,8 @@ const PostJob: React.FC = () => {
                     )}
                     {parsedData.isUrgent && (
                       <div className="flex items-center gap-2">
-                        <AlertTriangle className="w-4 h-4 text-red-500" />
-                        <span className="text-sm text-red-600 font-medium">Marked as Urgent</span>
+                        <Pin className="w-4 h-4 text-blue-600" />
+                        <span className="text-sm text-blue-600 font-medium">Marked as Featured</span>
                       </div>
                     )}
                   </div>
@@ -762,15 +785,23 @@ const PostJob: React.FC = () => {
                       id="urgent"
                       checked={jobForm.isUrgent}
                       onCheckedChange={(checked) => handleJobInputChange('isUrgent', checked as boolean)}
-                      disabled={isSubmitting}
+                      disabled={isSubmitting || (!canAddFeaturedJob() && !jobForm.isUrgent)}
                     />
                     <div className="flex items-center space-x-2">
-                      <AlertTriangle className="w-4 h-4 text-red-500" />
+                      <Pin className="w-4 h-4 text-blue-600" />
                       <Label htmlFor="urgent" className="text-sm font-medium">
-                        Mark as Urgent
+                        Mark as Featured Job
                       </Label>
                     </div>
+                    <div className="ml-auto text-xs text-gray-500">
+                      {getCurrentFeaturedJobsCount()}/4 featured jobs
+                    </div>
                   </div>
+                  {!canAddFeaturedJob() && !jobForm.isUrgent && (
+                    <p className="text-xs text-red-600 mt-1">
+                      Featured job limit reached. Unfeature another job to add this one as featured.
+                    </p>
+                  )}
 
                   <div>
                     <Label htmlFor="deadline" className="flex items-center space-x-2">
