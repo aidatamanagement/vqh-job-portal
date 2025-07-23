@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
 import { JobApplication } from '@/types';
 import { getStatusText, getValidNextStatuses, validateStatusTransition } from '../../utils/submissionsUtils';
 import StatusTransitionValidator from '../../StatusTransitionValidator';
@@ -20,6 +22,7 @@ const StatusUpdateSection: React.FC<StatusUpdateSectionProps> = ({
   onUpdateStatus
 }) => {
   const [selectedStatus, setSelectedStatus] = useState<string>('');
+  const [notes, setNotes] = useState<string>('');
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const { updateApplicationStatus, isUpdating } = useStatusUpdate();
 
@@ -40,23 +43,27 @@ const StatusUpdateSection: React.FC<StatusUpdateSectionProps> = ({
   );
 
   const isTransitionValid = selectedStatus ? validateStatusTransition(application.status, selectedStatus) : false;
+  const isNotesValid = notes.trim().length > 0;
 
   const handleStatusUpdateClick = () => {
-    if (!selectedStatus || selectedStatus === application.status || !isTransitionValid) return;
+    if (!selectedStatus || selectedStatus === application.status || !isTransitionValid || !isNotesValid) return;
     setShowConfirmDialog(true);
   };
 
   const handleConfirmStatusUpdate = async () => {
-    if (!selectedStatus || selectedStatus === application.status || !isTransitionValid) return;
+    if (!selectedStatus || selectedStatus === application.status || !isTransitionValid || !isNotesValid) return;
     
     try {
       console.log('Updating status from modal:', { 
         applicationId: application.id, 
         currentStatus: application.status, 
-        newStatus: selectedStatus 
+        newStatus: selectedStatus,
+        notes: notes.trim(),
+        notes_length: notes.trim().length,
+        notes_is_empty: notes.trim().length === 0
       });
       
-      const result = await updateApplicationStatus(application.id, selectedStatus as ApplicationStatus);
+      const result = await updateApplicationStatus(application.id, selectedStatus as ApplicationStatus, notes.trim());
       
       if (result.success) {
         onUpdateStatus(application.id, selectedStatus as ApplicationStatus);
@@ -70,6 +77,7 @@ const StatusUpdateSection: React.FC<StatusUpdateSectionProps> = ({
         });
         
         setSelectedStatus('');
+        setNotes('');
         setShowConfirmDialog(false);
       }
     } catch (error) {
@@ -122,6 +130,7 @@ const StatusUpdateSection: React.FC<StatusUpdateSectionProps> = ({
             No status transitions available from current status.
           </div>
         ) : (
+          <div className="space-y-4">
           <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-end">
             <div className="flex-1 max-w-xs">
               <Select value={selectedStatus} onValueChange={setSelectedStatus}>
@@ -136,13 +145,32 @@ const StatusUpdateSection: React.FC<StatusUpdateSectionProps> = ({
                   ))}
                 </SelectContent>
               </Select>
+              </div>
+            </div>
+
+            {/* Mandatory Notes Section */}
+            <div className="space-y-2">
+              <Label htmlFor="status-notes" className="text-sm font-medium text-gray-700">
+                Notes <span className="text-red-500">*</span>
+              </Label>
+              <Textarea
+                id="status-notes"
+                placeholder="Enter notes explaining this status change (required)..."
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                className="min-h-[100px] resize-none bg-white border-gray-300 focus:border-primary focus:ring-primary"
+                required
+              />
+              {!isNotesValid && notes.length > 0 && (
+                <p className="text-sm text-red-600">Notes cannot be empty. Please provide details about this status change.</p>
+              )}
             </div>
             
             <AlertDialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
               <AlertDialogTrigger asChild>
                 <Button
                   onClick={handleStatusUpdateClick}
-                  disabled={!selectedStatus || !isTransitionValid || isUpdating}
+                  disabled={!selectedStatus || !isTransitionValid || !isNotesValid || isUpdating}
                   className="bg-primary hover:bg-primary/90 min-w-[100px] whitespace-nowrap"
                 >
                   {isUpdating ? 'Updating...' : 'Update Status'}
@@ -155,6 +183,9 @@ const StatusUpdateSection: React.FC<StatusUpdateSectionProps> = ({
                     Are you sure you want to update the application status from{' '}
                     <strong>{getStatusText(application.status)}</strong> to{' '}
                     <strong>{selectedStatus ? getStatusText(selectedStatus) : ''}</strong>?
+                  <br />
+                  <br />
+                  <strong>Notes:</strong> {notes.trim()}
                     <br />
                     <br />
                     This will send an email notification to the candidate and cannot be undone.

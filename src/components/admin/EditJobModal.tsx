@@ -61,12 +61,12 @@ const EditJobModal: React.FC<EditJobModalProps> = ({
         setFilteredManagers(managers);
         
         // Check if the current manager is still valid for the new location
-        if (jobForm.hrManagerId) {
+      if (jobForm.hrManagerId) {
           const currentManagerExists = managers.some(manager => manager.id === jobForm.hrManagerId);
           if (!currentManagerExists) {
             // Only clear if the current manager is not available for the new location
-            onInputChange('hrManagerId', '');
-          }
+        onInputChange('hrManagerId', '');
+      }
         }
       });
     } else {
@@ -230,18 +230,18 @@ const EditJobModal: React.FC<EditJobModalProps> = ({
               <Label className="text-sm font-medium">Priority & Timing</Label>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                  <div className="flex items-center space-x-3 p-3 border rounded-lg">
-                    <Checkbox
-                      id="edit-urgent"
-                      checked={jobForm.isUrgent || false}
-                      onCheckedChange={(checked) => onInputChange('isUrgent', checked as boolean)}
+                <div className="flex items-center space-x-3 p-3 border rounded-lg">
+                  <Checkbox
+                    id="edit-urgent"
+                    checked={jobForm.isUrgent || false}
+                    onCheckedChange={(checked) => onInputChange('isUrgent', checked as boolean)}
                       disabled={!canAddFeaturedJob() && !jobForm.isUrgent}
-                    />
-                    <div className="flex items-center space-x-2">
+                  />
+                  <div className="flex items-center space-x-2">
                       <Pin className="w-4 h-4 text-blue-600" />
-                      <Label htmlFor="edit-urgent" className="text-sm font-medium">
+                    <Label htmlFor="edit-urgent" className="text-sm font-medium">
                         Mark as Featured Job
-                      </Label>
+                    </Label>
                     </div>
                     <div className="ml-auto text-xs text-gray-500">
                       {getCurrentFeaturedJobsCount()}/4 featured jobs

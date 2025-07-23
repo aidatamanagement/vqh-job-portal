@@ -619,6 +619,14 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: string
       }
+      update_application_status_with_notes: {
+        Args: {
+          application_id: string
+          new_status: string
+          notes_text: string
+        }
+        Returns: Json
+      }
       validate_status_transition: {
         Args: { current_status: string; new_status: string }
         Returns: boolean

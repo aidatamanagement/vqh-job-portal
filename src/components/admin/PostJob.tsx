@@ -795,7 +795,7 @@ const PostJob: React.FC = () => {
                     </div>
                     <div className="ml-auto text-xs text-gray-500">
                       {getCurrentFeaturedJobsCount()}/4 featured jobs
-                    </div>
+                  </div>
                   </div>
                   {!canAddFeaturedJob() && !jobForm.isUrgent && (
                     <p className="text-xs text-red-600 mt-1">

@@ -8,6 +8,7 @@ import CoverLetterSection from './modal/CoverLetterSection';
 import AttachmentsSection from './modal/AttachmentsSection';
 import StatusUpdateSection from './modal/StatusUpdateSection';
 import DeleteApplicationSection from './modal/DeleteApplicationSection';
+import StatusHistoryTimeline from './StatusHistoryTimeline';
 
 type ApplicationStatus = 'application_submitted' | 'under_review' | 'shortlisted' | 'interviewed' | 'hired' | 'rejected' | 'waiting_list';
 
@@ -57,6 +58,9 @@ const ApplicationDetailsModal: React.FC<ApplicationDetailsModalProps> = ({
             additionalDocsUrls={selectedApplication.additionalDocsUrls}
             onOpenFileViewer={onOpenFileViewer}
           />
+
+          {/* Status History Timeline */}
+          <StatusHistoryTimeline applicationId={selectedApplication.id} />
 
           {/* Status Update and Delete Section */}
           <div className="border-t pt-4">

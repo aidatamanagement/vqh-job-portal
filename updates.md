@@ -125,6 +125,56 @@
   - `src/components/admin/ManageJobs.tsx`
 - **Impact**: Maximum of 4 featured jobs enforced across all admin operations with clear user feedback
 
+### Implemented Status Update with Mandatory Notes (Current)
+- **User Request**: Add mandatory notes requirement for every status update with chronological display
+- **Database Changes**:
+  - Made `notes` field MANDATORY in `status_history` table (NOT NULL)
+  - Added CHECK constraint to prevent empty strings
+  - Updated trigger function to enforce notes requirement
+  - Created `update_application_status_with_notes` function for secure status updates
+- **Frontend Changes**:
+  - Added mandatory notes textarea to status update modal
+  - Created `StatusHistoryTimeline` component to display chronological status history
+  - Updated `useStatusUpdate` hook to require and validate notes
+  - Enhanced status update validation and user feedback
+- **Features Added**:
+  - **Mandatory Notes**: Every status change requires detailed notes
+  - **Status History Timeline**: Chronological display of all status changes with notes
+  - **Database Enforcement**: Notes cannot be bypassed at database level
+  - **User-Friendly Interface**: Clear validation messages and expandable timeline
+- **Components Updated**:
+  - `src/components/admin/components/modal/StatusUpdateSection.tsx` - Added mandatory notes field
+  - `src/components/admin/components/StatusHistoryTimeline.tsx` - New component for status history
+  - `src/components/admin/components/ApplicationDetailsModal.tsx` - Integrated status history timeline
+  - `src/hooks/useStatusUpdate.ts` - Updated to require notes parameter
+- **Database Files Created**:
+  - `supabase/migrations/20250103000008_make_status_notes_required.sql`
+  - `supabase/migrations/20250103000009_create_status_update_function.sql`
+  - `MAKE_STATUS_NOTES_REQUIRED.sql` - Standalone script for immediate application
+  - `CREATE_STATUS_UPDATE_FUNCTION.sql` - Standalone script for function creation
+- **TypeScript Updates**:
+  - `src/integrations/supabase/types.ts` - Added new function type definition
+- **User Experience**:
+  - Clear indication that notes are required (red asterisk)
+  - Real-time validation with helpful error messages
+  - Expandable timeline showing all status changes with notes
+  - Professional timeline design with status badges and timestamps
+- **Security & Validation**:
+  - Database-level enforcement prevents bypassing notes requirement
+  - Input validation ensures notes are not empty or whitespace-only
+  - Proper error handling and user feedback
+- **Files Updated**:
+  - `src/components/admin/components/modal/StatusUpdateSection.tsx`
+  - `src/components/admin/components/StatusHistoryTimeline.tsx` (new)
+  - `src/components/admin/components/ApplicationDetailsModal.tsx`
+  - `src/hooks/useStatusUpdate.ts`
+  - `src/integrations/supabase/types.ts`
+  - `supabase/migrations/20250103000008_make_status_notes_required.sql` (new)
+  - `supabase/migrations/20250103000009_create_status_update_function.sql` (new)
+  - `MAKE_STATUS_NOTES_REQUIRED.sql` (new)
+  - `CREATE_STATUS_UPDATE_FUNCTION.sql` (new)
+- **Impact**: Complete audit trail system with mandatory notes for every status change, ensuring transparency and accountability in the hiring process
+
 ### Fixed Status Update Constraint Error (Previous)
 - **Issue**: Status updates failing with "violates check constraint 'valid_status_check'" error
 - **Root Cause**: Database constraint only allowed old statuses, not new interview flow statuses

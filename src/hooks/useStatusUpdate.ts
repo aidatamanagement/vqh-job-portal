@@ -12,11 +12,16 @@ export const useStatusUpdate = () => {
   const updateApplicationStatus = async (
     applicationId: string,
     newStatus: ApplicationStatus,
-    notes?: string
+    notes: string
   ) => {
     setIsUpdating(true);
     try {
-      console.log(`Updating application ${applicationId} to status: ${newStatus}`);
+      console.log(`Updating application ${applicationId} to status: ${newStatus} with notes: ${notes}`);
+      
+      // Validate notes are provided
+      if (!notes || notes.trim().length === 0) {
+        throw new Error('Notes are mandatory for status updates');
+      }
       
       // First get the current application data
       const { data: currentApplication, error: fetchError } = await supabase
@@ -50,9 +55,49 @@ export const useStatusUpdate = () => {
         updateData.applied_position = currentApplication.jobs.position || 'Unknown Position';
       }
 
-      const { data: updatedApplication, error } = await supabase
+      // Update the application status using the custom function with notes
+      console.log('Calling database function with:', {
+        application_id: applicationId,
+        new_status: newStatus,
+        notes_text: notes.trim()
+      });
+      
+      // First, manually insert into status_history
+      console.log('About to insert into status_history with:', {
+        application_id: applicationId,
+        previous_status: currentApplication.status,
+        new_status: newStatus,
+        notes: notes.trim(),
+        notes_length: notes.trim().length,
+        changed_by: (await supabase.auth.getUser()).data.user?.id || null
+      });
+
+      const { data: historyData, error: historyError } = await supabase
+        .from('status_history')
+        .insert({
+          application_id: applicationId,
+          previous_status: currentApplication.status,
+          new_status: newStatus,
+          notes: notes.trim(),
+          changed_by: (await supabase.auth.getUser()).data.user?.id || null,
+          transition_valid: true
+        })
+        .select();
+
+      console.log('Status history insert result:', { historyData, historyError });
+
+      if (historyError) {
+        console.error('Error inserting status history:', historyError);
+        throw new Error(`Failed to log status change: ${historyError.message}`);
+      }
+
+      // Then update the application status
+      const { data: updatedApplicationData, error } = await supabase
         .from('job_applications')
-        .update(updateData)
+        .update({ 
+          status: newStatus,
+          updated_at: new Date().toISOString()
+        })
         .eq('id', applicationId)
         .select(`
           *,
@@ -62,15 +107,17 @@ export const useStatusUpdate = () => {
 
       if (error) {
         console.error('Error updating application status:', error);
-        console.error('Update data was:', updateData);
         throw new Error(`Failed to update status: ${error.message}`);
       }
 
-      if (!updatedApplication) {
+      if (!updatedApplicationData) {
         throw new Error('Failed to retrieve updated application data');
       }
 
-      console.log('Application status updated successfully:', updatedApplication);
+      console.log('Application status updated successfully:', updatedApplicationData);
+
+      // Parse the returned JSON data
+      const updatedApplication = updatedApplicationData as any;
 
       // If status changed to 'hired', deactivate the job posting
       if (newStatus === 'hired' && currentApplication.status !== 'hired') {
