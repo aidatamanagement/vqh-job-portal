@@ -235,18 +235,6 @@ export const updateApplicationStatusInDatabase = async (
   id: string, 
   newStatus: 'application_submitted' | 'shortlisted_for_hr' | 'hr_interviewed' | 'shortlisted_for_manager' | 'manager_interviewed' | 'hired' | 'rejected' | 'waiting_list'
 ) => {
-  console.log('Updating application status:', { id, newStatus });
-
-  const { error } = await supabase
-    .from('job_applications')
-    .update({ 
-      status: newStatus,
-      updated_at: new Date().toISOString()
-    })
-    .eq('id', id);
-
-  if (error) {
-    console.error('Error updating status:', error);
-    throw new Error('Failed to update application status. Please try again.');
-  }
+  console.log('WARNING: updateApplicationStatusInDatabase is deprecated. Use useStatusUpdate hook with notes instead.');
+  throw new Error('Status updates must include notes. Please use the status update modal with notes field.');
 };

@@ -17,7 +17,7 @@ interface EmailVariables {
   calendlyUrl?: string;
 }
 
-// Define which statuses should trigger email notifications - updated for new status flow
+// Define which statuses should trigger email notifications - updated for HR/Manager status flow
 const EMAIL_ENABLED_STATUSES = {
   'application_submitted': true,
   'shortlisted_for_hr': true,
@@ -29,7 +29,7 @@ const EMAIL_ENABLED_STATUSES = {
   'waiting_list': true,
 } as const;
 
-// Map application statuses to email template slugs - updated for new status flow
+// Map application statuses to email template slugs - updated for HR/Manager status flow
 const STATUS_TO_TEMPLATE_MAP = {
   'application_submitted': 'application_submitted',
   'shortlisted_for_hr': 'shortlisted_for_hr',
@@ -260,7 +260,7 @@ export const useEmailAutomation = () => {
       firstName: string;
       lastName: string;
       appliedPosition: string;
-      status: 'application_submitted' | 'under_review' | 'shortlisted' | 'interviewed' | 'hired' | 'rejected' | 'waiting_list';
+      status: 'application_submitted' | 'shortlisted_for_hr' | 'hr_interviewed' | 'shortlisted_for_manager' | 'manager_interviewed' | 'hired' | 'rejected' | 'waiting_list';
     },
     job?: {
       location?: string;

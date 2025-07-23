@@ -65,36 +65,13 @@ const Submissions: React.FC = () => {
   };
 
   const handleUpdateApplicationStatus = async (id: string, newStatus: 'application_submitted' | 'shortlisted_for_hr' | 'hr_interviewed' | 'shortlisted_for_manager' | 'manager_interviewed' | 'hired' | 'rejected' | 'waiting_list') => {
-    try {
-      console.log('Updating application status from Submissions:', { id, newStatus });
-      const result = await updateApplicationStatus(id, newStatus);
-      
-      if (result.success) {
-        // Refresh the submissions list to get updated data
-        await refreshSubmissions();
-        
-        // Update the selected application if it's currently being viewed
-        // This prevents the modal from closing and reopening
-        if (selectedApplication && selectedApplication.id === id) {
-          setSelectedApplication(prev => prev ? { ...prev, status: newStatus } : null);
-        }
-        
-        // Check if job was deactivated due to hire
-        const jobDeactivatedMessage = newStatus === 'hired' ? ' The job posting has been automatically deactivated.' : '';
-        
-        toast({
-          title: "Status Updated",
-          description: `Application status updated to ${getStatusText(newStatus)}. Email notification sent to candidate.${jobDeactivatedMessage}`,
-        });
-      }
-    } catch (error) {
-      console.error('Failed to update status:', error);
-      toast({
-        title: "Error",
-        description: "Failed to update application status. Please try again.",
-        variant: "destructive",
-      });
-    }
+    // Status updates must now include notes - redirect to modal
+    toast({
+      title: "Status Update Method Changed",
+      description: "Please use the application details modal to update status with mandatory notes.",
+      variant: "destructive",
+    });
+    console.log('Direct status updates are deprecated. Use the application details modal.');
   };
 
   if (loading) {
