@@ -165,34 +165,15 @@ export const useSubmissions = () => {
     }
   };
 
-  // Update application status in Supabase (simplified - no email automation)
+  // Update application status in Supabase (deprecated - redirects to proper notes-based update)
   const updateApplicationStatus = async (id: string, newStatus: 'application_submitted' | 'shortlisted_for_hr' | 'hr_interviewed' | 'shortlisted_for_manager' | 'manager_interviewed' | 'hired' | 'rejected' | 'waiting_list') => {
-    try {
-      console.log('Updating application status:', { id, newStatus });
-
-      // Update status in database
-      await updateApplicationStatusInDatabase(id, newStatus);
-
-      // Update local state
-      setSubmissions(prev => prev.map(app => 
-        app.id === id 
-          ? { ...app, status: newStatus, updatedAt: new Date().toISOString() }
-          : app
-      ));
-
-      toast({
-        title: "Status Updated",
-        description: `Application status has been updated to ${newStatus.replace('_', ' ')}`,
-      });
-
-    } catch (error) {
-      console.error('Error in updateApplicationStatus:', error);
-      toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "Failed to update application status. Please try again.",
-        variant: "destructive",
-      });
-    }
+    console.log('WARNING: Direct status updates are deprecated. Use the status update modal with notes.');
+    toast({
+      title: "Status Update Required",
+      description: "Please use the application details modal to update status with mandatory notes.",
+      variant: "destructive",
+    });
+    throw new Error('Status updates must include notes. Please use the application details modal.');
   };
 
   useEffect(() => {
