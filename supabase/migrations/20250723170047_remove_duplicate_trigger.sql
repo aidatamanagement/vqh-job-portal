@@ -1,7 +1,12 @@
--- Fix trigger conflict with function-based status updates
--- The trigger is interfering with our RPC function approach
+-- Remove duplicate trigger that's causing conflicts
+-- There are 2 triggers calling the same function, causing it to run twice
 
--- Update the trigger function to not interfere when using the RPC function
+-- Drop the duplicate trigger (keep only one)
+DROP TRIGGER IF EXISTS validate_and_log_status_change ON public.job_applications;
+
+-- Keep only status_change_log_trigger (the original one)
+-- Update the remaining trigger function to work properly with RPC calls
+
 CREATE OR REPLACE FUNCTION public.log_status_change()
 RETURNS trigger
 LANGUAGE plpgsql
@@ -9,15 +14,11 @@ AS $function$
 BEGIN
   -- Only log if status actually changed
   IF OLD.status IS DISTINCT FROM NEW.status THEN
-    -- When using the RPC function approach, it handles history logging itself
-    -- So we only log here if NOT called from the RPC function
-    -- The RPC function sets a session variable to indicate it's handling logging
-    
     -- Check if we're being called from the RPC function
+    -- The RPC function sets a session variable to indicate it handles logging
     IF current_setting('app.using_rpc_function', true) IS NULL OR current_setting('app.using_rpc_function', true) != 'true' THEN
       -- This is a direct table update, not via RPC function
-      -- In this case, we require notes but since we don't have them, we'll allow it
-      -- and log with a default note (this maintains backward compatibility)
+      -- Log with a default note for backward compatibility
       INSERT INTO public.status_history (
         application_id,
         previous_status,
@@ -41,7 +42,7 @@ BEGIN
 END;
 $function$;
 
--- Update the RPC function to set a session variable so trigger knows not to interfere
+-- Update the RPC function to set session variable so trigger knows not to interfere
 CREATE OR REPLACE FUNCTION public.update_application_status_with_notes(
   application_id UUID,
   new_status TEXT,
@@ -141,9 +142,9 @@ BEGIN
 END;
 $function$;
 
--- Add comment
-COMMENT ON FUNCTION public.log_status_change() IS 
-'Status change trigger that cooperates with RPC function to avoid conflicts';
+-- Add comments to document the fix
+COMMENT ON TRIGGER status_change_log_trigger ON public.job_applications IS 
+'Single trigger for status changes - duplicate trigger removed to prevent conflicts';
 
 COMMENT ON FUNCTION public.update_application_status_with_notes(UUID, TEXT, TEXT) IS 
-'Updates application status with mandatory notes and logs the change. Uses session variable to coordinate with trigger.';
+'Updates application status with mandatory notes. Uses session variable to coordinate with trigger to prevent conflicts.';
