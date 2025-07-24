@@ -1,5 +1,92 @@
 # Vqh Job Portal Updates
 
+## 2025-07-23 - Enhanced HR Manager Permissions
+
+### ✅ Updated HR Manager Role Permissions
+
+**Summary**: Enhanced HR manager (role 'hr') permissions to give them access to all job portal features, training management, and email settings, making them almost as powerful as admins but without user management capabilities.
+
+**Changes Made**:
+
+#### Frontend Role Permissions
+- **File**: `src/utils/rolePermissions.ts`
+  - Updated `hr` role permissions to include:
+    - ✅ `canManageJobs: true` - Full job portal access (post, edit, delete jobs)
+    - ✅ `canManageTrainingVideos: true` - Training content management
+    - ✅ `canManageEmailSettings: true` - Email automation configuration
+    - ✅ `canViewEmailLogs: true` - Email sending history access
+    - ✅ `canManageContent: true` - Content management access
+    - ❌ `canManageUsers: false` - User management remains admin-only for security
+
+#### Database Policies
+- **File**: `supabase/migrations/20250723170046_update_hr_manager_permissions.sql`
+  - Created helper functions:
+    - `is_admin_or_hr_manager()` - Checks for admin or HR manager role
+    - `is_admin_only()` - Checks for admin role only (user management)
+  - Updated job management policies to allow HR managers:
+    - Job creation, editing, and deletion
+    - Application status updates
+    - Master data management (positions, locations, facilities)
+  - Updated training policies to allow HR managers:
+    - Training video management
+    - Content management
+  - Updated email policies to allow HR managers:
+    - Email settings configuration
+    - Email template management
+    - Email logs viewing
+  - Maintained user management restrictions (admin-only)
+
+**Features Now Available to HR Managers**:
+- ✅ **Complete Job Portal Access**:
+  - Post new job openings
+  - Edit existing job postings
+  - Delete job postings
+  - Manage job categories, locations, and benefits
+  - View and manage all job applications
+  - Update application statuses with notes
+
+- ✅ **Training Management**:
+  - Upload and manage training videos
+  - Organize training content by category
+  - Set mandatory vs optional training requirements
+  - Track training completion
+
+- ✅ **Email Automation**:
+  - Configure email notification settings
+  - Create and edit email templates
+  - View email sending history and logs
+  - Manage automated email workflows
+
+- ❌ **CRM Features** (removed access):
+  - Cannot manage salespeople
+  - Cannot track visit logs
+  - Cannot generate CRM reports
+
+- ❌ **Content Management** (removed access):
+  - Cannot manage training content
+  - Cannot organize educational materials
+  - Cannot control content visibility and access
+
+**Security Considerations**:
+- User management remains restricted to admins only
+- HR managers cannot create, edit, or delete user accounts
+- Role escalation is prevented through existing triggers
+- All actions are logged and auditable
+
+**User Experience**:
+- HR managers now have comprehensive access to all operational features
+- Reduced dependency on admins for day-to-day operations
+- Streamlined workflow for job posting and application management
+- Full control over training and communication systems
+
+**Technical Benefits**:
+- Improved operational efficiency
+- Better role-based access control
+- Reduced admin workload
+- Enhanced system scalability
+
+**Next Steps**: Database migration needs to be applied to enable the enhanced HR manager permissions in production.
+
 ## January 3, 2025
 
 ### Added Waiting List to All Interview Steps (Current)

@@ -49,8 +49,7 @@ export const getRolePermissions = (role: UserRole): RolePermissions => {
         canViewVisitLogs: false,
         canManageTrainingVideos: true,
         canViewTrainingVideos: true,
-        canManageEmailSettings: false
-        ,
+        canManageEmailSettings: false,
         canViewEmailLogs: false,
         canManageUsers: false,
         canViewDashboard: true,
@@ -59,20 +58,20 @@ export const getRolePermissions = (role: UserRole): RolePermissions => {
     
     case 'hr':
       return {
-        canManageJobs: false,
+        canManageJobs: true, // ✅ Give managers access to all job portal features
         canViewApplications: true,
         canManageApplications: true,
-        canManageSalespeople: true,
-        canViewSalespeople: true,
-        canManageVisitLogs: true,
-        canViewVisitLogs: true,
-        canManageTrainingVideos: false,
+        canManageSalespeople: false, // ❌ Remove CRM access
+        canViewSalespeople: false, // ❌ Remove CRM access
+        canManageVisitLogs: false, // ❌ Remove CRM access
+        canViewVisitLogs: false, // ❌ Remove CRM access
+        canManageTrainingVideos: true, // ✅ Give managers training access
         canViewTrainingVideos: true,
-        canManageEmailSettings: false,
-        canViewEmailLogs: false,
-        canManageUsers: false,
+        canManageEmailSettings: true, // ✅ Give managers email settings access
+        canViewEmailLogs: true, // ✅ Give managers email logs access
+        canManageUsers: false, // Keep user management restricted to admins only
         canViewDashboard: true,
-        canManageContent: false,
+        canManageContent: false, // ❌ Remove content manager access
       };
     
     case 'trainer':
