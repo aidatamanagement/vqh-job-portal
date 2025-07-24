@@ -56,7 +56,7 @@ const ManageJobCard: React.FC<ManageJobCardProps> = ({
               <div className="flex items-center gap-2 mb-1">
                 <h3 className="text-lg sm:text-xl font-semibold text-gray-900 break-words">{job.position}</h3>
                 {job.isUrgent && (
-                  <Badge variant="default" className="flex items-center gap-1 text-xs bg-blue-600 hover:bg-blue-700 text-white">
+                  <Badge variant="default" className="flex items-center gap-1 text-xs bg-primary hover:bg-primary/90 text-white">
                     <Pin className="w-3 h-3" />
                     Featured
                   </Badge>

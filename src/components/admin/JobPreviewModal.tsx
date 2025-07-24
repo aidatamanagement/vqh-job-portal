@@ -65,7 +65,7 @@ const JobPreviewModal: React.FC<JobPreviewModalProps> = ({ job, isOpen, onClose 
                   {(job.isUrgent || job.applicationDeadline) && (
                     <div className="flex flex-wrap gap-2">
                       {job.isUrgent && (
-                        <Badge variant="default" className="flex items-center gap-1 text-sm bg-blue-600 hover:bg-blue-700 text-white">
+                        <Badge variant="default" className="flex items-center gap-1 text-sm bg-primary hover:bg-primary/90 text-white">
                           <Pin className="w-4 h-4" />
                           Featured Position
                         </Badge>

@@ -2,6 +2,24 @@
 
 ## 2025-07-23 - Enhanced HR Manager Permissions
 
+### ✅ UI Color Consistency Update
+- **Date**: January 23, 2025
+- **Changes**:
+  - Updated `StatusHistoryTimeline.tsx` component to use consistent brand colors
+  - **Timeline dots**: Changed from `bg-blue-500` to `bg-primary` (#005288)
+  - **Timeline borders**: Updated from `border-gray-200` to `border-primary/20`
+  - **Notes background**: Enhanced with `bg-primary/5` and `border-primary/10`
+  - **Featured badges**: Updated all featured job badges from `bg-blue-600` to `bg-primary` (#005288)
+  - **Job portal text colors**: Changed job titles and location text to pure black for better contrast
+  - **Brand consistency**: All UI elements now use the same blue color scheme as buttons
+  - **Visual improvement**: Better visual hierarchy and brand alignment
+  - **Files updated**:
+    - `src/pages/JobsList.tsx` - Featured badges and text colors in job listings
+    - `src/components/JobCard.tsx` - Featured badges and text colors in job cards
+    - `src/pages/JobDetails.tsx` - Featured badges in job details
+    - `src/components/admin/ManageJobCard.tsx` - Featured badges in admin job cards
+    - `src/components/admin/JobPreviewModal.tsx` - Featured badges in preview modal
+
 ### ✅ Updated HR Manager Role Permissions
 
 **Summary**: Enhanced HR manager (role 'hr') permissions to give them access to all job portal features, training management, and email settings, making them almost as powerful as admins but without user management capabilities.

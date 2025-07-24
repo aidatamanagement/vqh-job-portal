@@ -41,10 +41,10 @@ const JobCard: React.FC<JobCardProps> = ({ job }) => {
       <div className="space-y-3 flex-1 flex flex-col">
         {/* Position and Location */}
         <div className="flex justify-between items-center">
-          <p className="text-base font-semibold text-gray-900">
+          <p className="text-base font-semibold text-black">
             {job.position}
           </p>
-          <div className="flex flex-col items-end text-gray-600 text-sm">
+          <div className="flex flex-col items-end text-black text-sm">
             <div className="flex items-center">
               <MapPin className="w-4 h-4 mr-1 flex-shrink-0" />
               <span className="whitespace-nowrap">Office: {job.officeLocation}</span>
@@ -55,7 +55,7 @@ const JobCard: React.FC<JobCardProps> = ({ job }) => {
 
         {/* Job Title */}
         <div>
-          <h3 className="font-semibold text-gray-900 text-lg leading-tight">
+          <h3 className="font-semibold text-black text-lg leading-tight">
             {job.title}
           </h3>
         </div>
@@ -68,7 +68,7 @@ const JobCard: React.FC<JobCardProps> = ({ job }) => {
         {/* Featured badge and Facilities/Tags */}
         <div className="flex flex-wrap gap-2">
           {job.isUrgent && (
-            <Badge variant="default" className="flex items-center gap-1 bg-blue-600 hover:bg-blue-700 text-white">
+            <Badge variant="default" className="flex items-center gap-1 bg-primary hover:bg-primary/90 text-white">
               <Pin className="w-3 h-3" />
               Featured
             </Badge>

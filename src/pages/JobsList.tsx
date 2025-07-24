@@ -287,17 +287,17 @@ const JobsList: React.FC = () => {
                         {/* Job Title & Employment Info */}
                         <div className="flex-1">
                           <div className="flex items-center gap-2 mb-1">
-                            <h3 className="text-xl font-medium text-gray-900 hover:text-gray-700 transition-colors cursor-pointer">
+                            <h3 className="text-xl font-medium text-black hover:text-gray-800 transition-colors cursor-pointer">
                               {job.title}
                             </h3>
                             {job.isUrgent && (
-                              <Badge variant="default" className="flex items-center gap-1 bg-blue-600 hover:bg-blue-700 text-white text-xs">
+                              <Badge variant="default" className="flex items-center gap-1 bg-primary hover:bg-primary/90 text-white text-xs">
                                 <Pin className="w-3 h-3" />
                                 Featured
                               </Badge>
                             )}
                           </div>
-                          <p className="text-base font-medium text-gray-900 mt-1">
+                          <p className="text-base font-medium text-black mt-1">
                             {job.position}
                           </p>
                           {/* Employment Type & Benefits */}
@@ -321,13 +321,13 @@ const JobsList: React.FC = () => {
                           <div className="flex flex-col gap-1">
                             <Badge 
                               variant="outline" 
-                              className="bg-transparent border-gray-300 text-gray-700 hover:bg-gray-100 text-xs"
+                              className="bg-transparent border-gray-300 text-black hover:bg-gray-100 text-xs"
                             >
                               🏢 Office: {job.officeLocation}
                             </Badge>
                             <Badge 
                               variant="outline" 
-                              className="bg-transparent border-gray-300 text-gray-700 hover:bg-gray-100 text-xs"
+                              className="bg-transparent border-gray-300 text-black hover:bg-gray-100 text-xs"
                             >
                               💼 Work: {job.workLocation}
                             </Badge>

@@ -139,9 +139,9 @@ const StatusHistoryTimeline: React.FC<StatusHistoryTimelineProps> = ({ applicati
       <CardContent>
         <div className="space-y-4">
           {displayedHistory.map((entry, index) => (
-            <div key={entry.id} className="border-l-2 border-gray-200 pl-4 pb-4 relative">
+            <div key={entry.id} className="border-l-2 border-primary/20 pl-4 pb-4 relative">
               {/* Timeline dot */}
-              <div className="absolute -left-2 top-2 w-3 h-3 bg-blue-500 rounded-full border-2 border-white shadow-sm"></div>
+              <div className="absolute -left-2 top-2 w-3 h-3 bg-primary rounded-full border-2 border-white shadow-sm"></div>
               
               <div className="space-y-2">
                 {/* Status change */}
@@ -156,7 +156,7 @@ const StatusHistoryTimeline: React.FC<StatusHistoryTimelineProps> = ({ applicati
                 </div>
 
                 {/* Notes */}
-                <div className="bg-gray-50 rounded-lg p-3">
+                <div className="bg-primary/5 rounded-lg p-3 border border-primary/10">
                   <p className="text-sm text-gray-700 whitespace-pre-wrap">{entry.notes}</p>
                 </div>
 
