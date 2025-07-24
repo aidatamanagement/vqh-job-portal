@@ -14,6 +14,8 @@ interface StatusHistoryEntry {
   changed_by: string | null;
   changed_at: string;
   transition_valid: boolean;
+  // User information from profiles table
+  user_name: string | null;
 }
 
 interface StatusHistoryTimelineProps {
@@ -33,7 +35,15 @@ const StatusHistoryTimeline: React.FC<StatusHistoryTimelineProps> = ({ applicati
     try {
       const { data, error } = await supabase
         .from('status_history')
-        .select('*')
+        .select(`
+          *,
+          profiles:changed_by (
+            admin_name,
+            display_name,
+            first_name,
+            last_name
+          )
+        `)
         .eq('application_id', applicationId)
         .order('changed_at', { ascending: false });
 
@@ -42,7 +52,30 @@ const StatusHistoryTimeline: React.FC<StatusHistoryTimelineProps> = ({ applicati
         return;
       }
 
-      setHistory(data || []);
+      // Transform the data to include user names
+      const historyWithUserNames = (data || []).map(entry => {
+        const profile = entry.profiles;
+        let userName = null;
+        
+        if (profile) {
+          // Prefer admin_name, then display_name, then first_name + last_name
+          if (profile.admin_name) {
+            userName = profile.admin_name;
+          } else if (profile.display_name) {
+            userName = profile.display_name;
+          } else if (profile.first_name || profile.last_name) {
+            userName = [profile.first_name, profile.last_name].filter(Boolean).join(' ').trim();
+          }
+        }
+
+        return {
+          ...entry,
+          user_name: userName,
+          profiles: undefined // Remove the profiles object to clean up the data
+        };
+      });
+
+      setHistory(historyWithUserNames);
     } catch (error) {
       console.error('Error fetching status history:', error);
     } finally {
@@ -169,7 +202,7 @@ const StatusHistoryTimeline: React.FC<StatusHistoryTimelineProps> = ({ applicati
                   {entry.changed_by && (
                     <div className="flex items-center gap-1">
                       <User className="h-3 w-3" />
-                      <span>Updated by: {entry.changed_by}</span>
+                      <span>Updated by: {entry.user_name || entry.changed_by}</span>
                     </div>
                   )}
                 </div>
