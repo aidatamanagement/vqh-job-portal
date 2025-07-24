@@ -12,7 +12,7 @@ import { useAppContext } from '@/contexts/AppContext';
 import { toast } from '@/hooks/use-toast';
 import RichTextEditor from '@/components/ui/rich-text-editor';
 import { HRManager } from '@/types';
-import { useDocumentParser } from '@/hooks/useDocumentParser';
+// import { useDocumentParser } from '@/hooks/useDocumentParser'; // DISABLED: Document parsing feature temporarily disabled
 
 const PostJob: React.FC = () => {
   const { 
@@ -32,17 +32,19 @@ const PostJob: React.FC = () => {
     isLoading
   } = useAppContext();
   
-  const { parseDocument, isParsingDocument } = useDocumentParser();
+  // const { parseDocument, isParsingDocument } = useDocumentParser(); // DISABLED: Document parsing feature temporarily disabled
   
   const [activeTab, setActiveTab] = useState('create-job');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [hrManagers, setHRManagers] = useState<HRManager[]>([]);
   
-  // Document parsing state
+  // Document parsing state - DISABLED
+  /*
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [parsedData, setParsedData] = useState<any>(null);
   const [showParsePreview, setShowParsePreview] = useState(false);
   const [isDragOver, setIsDragOver] = useState(false);
+  */
   
   // Job form state
   const [jobForm, setJobForm] = useState({
@@ -357,7 +359,8 @@ const PostJob: React.FC = () => {
     }
   };
 
-  // File handling functions for document parsing
+  // File handling functions for document parsing - DISABLED
+  /*
   const handleFileUpload = async (file: File) => {
     if (!file) return;
     
@@ -499,6 +502,7 @@ const PostJob: React.FC = () => {
     setParsedData(null);
     setUploadedFile(null);
   };
+  */
 
   return (
     <div className="space-y-6">
@@ -524,117 +528,24 @@ const PostJob: React.FC = () => {
         </TabsList>
 
         <TabsContent value="create-job" className="space-y-6">
-          {/* Document Upload Section */}
-          <Card className="p-4">
+          {/* Document Upload Section - DISABLED */}
+          <Card className="p-4 opacity-50 cursor-not-allowed" title="Document parsing feature is temporarily disabled for updates">
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-2">
-                <Upload className="w-4 h-4 text-gray-500" />
-                <span className="text-sm font-medium text-gray-700">Auto-Fill from Document</span>
+                <Upload className="w-4 h-4 text-gray-400" />
+                <span className="text-sm font-medium text-gray-400">Auto-Fill from Document</span>
+                <Badge variant="secondary" className="text-xs">Feature Update</Badge>
               </div>
               
-              {!uploadedFile && !showParsePreview && (
-                <label className="flex items-center space-x-2 text-primary hover:text-primary/90 cursor-pointer text-sm">
-                  <FileText className="w-4 h-4" />
-                  <span>Upload</span>
-                  <input
-                    type="file"
-                    accept=".txt,.pdf,.doc,.docx"
-                    onChange={(e) => e.target.files && handleFileUpload(e.target.files[0])}
-                    className="hidden"
-                    disabled={isParsingDocument}
-                  />
-                </label>
-              )}
+              <div className="flex items-center space-x-2 text-gray-400 text-sm">
+                <FileText className="w-4 h-4" />
+                <span>Upload</span>
+              </div>
             </div>
             
-            {uploadedFile && !showParsePreview && (
-              <div className="mt-2 text-xs text-gray-500">
-                {uploadedFile.name} • {Math.round(uploadedFile.size / 1024)}KB
-              </div>
-            )}
-
-              {isParsingDocument && (
-                <div className="flex items-center justify-center space-x-3 p-8">
-                  <Loader2 className="w-6 h-6 animate-spin text-primary" />
-                  <div className="text-left">
-                    <p className="text-sm font-medium text-gray-900">
-                      Analyzing document...
-                    </p>
-                    <p className="text-xs text-gray-500">
-                      Extracting job data with AI
-                    </p>
-                  </div>
-                </div>
-              )}
-
-              {showParsePreview && parsedData && (
-                <div className="text-left space-y-4">
-                  <div className="flex items-center justify-between">
-                    <h4 className="text-md font-semibold text-gray-900 flex items-center gap-2">
-                      <CheckCircle className="w-5 h-5 text-green-500" />
-                      Extracted Data Preview
-                    </h4>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      onClick={clearParsedData}
-                    >
-                      <X className="w-4 h-4" />
-                    </Button>
-                  </div>
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-gray-50 rounded-lg">
-                    {parsedData.position && (
-                      <div>
-                        <Label className="text-xs font-medium text-gray-600">Position</Label>
-                        <p className="text-sm text-gray-900">{parsedData.position}</p>
-                      </div>
-                    )}
-                    {parsedData.location && (
-                      <div>
-                        <Label className="text-xs font-medium text-gray-600">Location</Label>
-                        <p className="text-sm text-gray-900">{parsedData.location}</p>
-                      </div>
-                    )}
-                    {parsedData.facilities && parsedData.facilities.length > 0 && (
-                      <div>
-                        <Label className="text-xs font-medium text-gray-600">Benefits/Type</Label>
-                        <div className="flex flex-wrap gap-1 mt-1">
-                          {parsedData.facilities.map((facility, index) => (
-                            <Badge key={index} variant="secondary" className="text-xs">
-                              {facility}
-                            </Badge>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                    {parsedData.isUrgent && (
-                      <div className="flex items-center gap-2">
-                        <Pin className="w-4 h-4 text-blue-600" />
-                        <span className="text-sm text-blue-600 font-medium">Marked as Featured</span>
-                      </div>
-                    )}
-                  </div>
-                  
-                  <div className="flex space-x-3">
-                    <Button 
-                      type="button"
-                      onClick={applyParsedData}
-                      className="bg-primary hover:bg-primary/90"
-                    >
-                      Apply to Form
-                    </Button>
-                    <Button 
-                      type="button"
-                      variant="outline"
-                      onClick={clearParsedData}
-                    >
-                      Discard
-                    </Button>
-                  </div>
-                </div>
-              )}
+            <div className="mt-2 text-xs text-gray-400">
+              This feature is temporarily disabled for updates. Please fill the form manually.
+            </div>
           </Card>
 
           <Card className="p-6">
