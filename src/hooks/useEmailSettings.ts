@@ -4,15 +4,19 @@ import { supabase } from '@/integrations/supabase/client';
 
 interface EmailSettings {
   adminEmails: string[];
+  staffEmails: string[];
   enableNotifications: boolean;
   enableAutoResponses: boolean;
+  enableStaffNotifications: boolean;
 }
 
 export const useEmailSettings = () => {
   const [settings, setSettings] = useState<EmailSettings>({
     adminEmails: ['careers@viaquesthospice.com'],
+    staffEmails: [],
     enableNotifications: true,
     enableAutoResponses: true,
+    enableStaffNotifications: true,
   });
   const [isLoading, setIsLoading] = useState(true);
 
@@ -35,8 +39,10 @@ export const useEmailSettings = () => {
         console.log('Loaded email settings:', data);
         setSettings({
           adminEmails: data.admin_emails || ['careers@viaquesthospice.com'],
+          staffEmails: data.staff_emails || [],
           enableNotifications: data.enable_notifications ?? true,
           enableAutoResponses: data.enable_auto_responses ?? true,
+          enableStaffNotifications: data.enable_staff_notifications ?? true,
         });
       }
     } catch (error) {
@@ -64,8 +70,10 @@ export const useEmailSettings = () => {
           .from('email_settings')
           .update({
             admin_emails: newSettings.adminEmails,
+            staff_emails: newSettings.staffEmails,
             enable_notifications: newSettings.enableNotifications,
             enable_auto_responses: newSettings.enableAutoResponses,
+            enable_staff_notifications: newSettings.enableStaffNotifications,
             updated_at: new Date().toISOString(),
           })
           .eq('id', existing.id);
@@ -75,8 +83,10 @@ export const useEmailSettings = () => {
           .from('email_settings')
           .insert({
             admin_emails: newSettings.adminEmails,
+            staff_emails: newSettings.staffEmails,
             enable_notifications: newSettings.enableNotifications,
             enable_auto_responses: newSettings.enableAutoResponses,
+            enable_staff_notifications: newSettings.enableStaffNotifications,
           });
       }
 
@@ -95,6 +105,7 @@ export const useEmailSettings = () => {
   };
 
   const getAdminEmails = () => settings.adminEmails;
+  const getStaffEmails = () => settings.staffEmails;
 
   useEffect(() => {
     loadSettings();
@@ -103,7 +114,9 @@ export const useEmailSettings = () => {
   return {
     settings,
     isLoading,
+    loadSettings,
     saveSettings,
     getAdminEmails,
+    getStaffEmails,
   };
 };

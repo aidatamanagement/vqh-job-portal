@@ -1,8 +1,35 @@
 # Vqh Job Portal Updates
 
-## 2025-07-23 - Enhanced HR Manager Permissions
+  ## 2025-07-23 - Enhanced HR Manager Permissions
+  
+  ### ✅ Staff Notification System Implementation
+  - **Date**: January 23, 2025
+  - **Changes**:
+    - Added staff notification support to email system
+    - **Database Changes**: Added `staff_emails` array and `enable_staff_notifications` boolean to `email_settings` table
+    - **Email Template**: Uses existing `admin_notification` template for both admin and staff notifications
+    - **UI Updates**: Added staff email management section in Email Settings
+    - **Email Automation**: Staff notifications sent alongside admin notifications for new applications
+    - **Shared Email Template**: Both admin and staff receive the same notification email with candidate details and admin panel link
+    - **Configuration**: Separate toggle for enabling/disabling staff notifications
+    - **Visual Distinction**: Staff emails displayed with green background vs admin emails with gray background
+    - **Two-Way Sync**: Enhanced synchronization between site and database with visual indicators
+    - **Sync Features**: 
+      - Real-time sync status indicators (green checkmark = synced, yellow alert = unsaved changes)
+      - Manual refresh button to reload settings from database
+      - Individual email sync indicators
+      - Console logging for debugging sync issues
+  
+  ### ✅ Job Portal Filter Enhancement
+  - **Date**: January 23, 2025
+  - **Changes**:
+    - **Fixed Employment Type Filter**: Updated JobsList component to show all employment types from database instead of only those used in active jobs
+    - **Database Integration**: Now uses `facilities` master data from `job_facilities` table for complete type list
+    - **Fallback Logic**: Maintains existing fallback to job-based extraction if master data is unavailable
+    - **User Experience**: Users can now filter by all available employment types, even if no active jobs currently use them
+    - **Consistency**: Aligns with how positions and locations are handled (using master data when available)
 
-### ✅ UI Color Consistency Update
+  ### ✅ UI Color Consistency Update
 - **Date**: January 23, 2025
 - **Changes**:
   - Updated `StatusHistoryTimeline.tsx` component to use consistent brand colors

@@ -19,7 +19,7 @@ interface FilterState {
 }
 
 const JobsList: React.FC = () => {
-  const { jobs, positions, locations, isDataLoading } = useAppContext();
+  const { jobs, positions, locations, facilities, isDataLoading } = useAppContext();
   const navigate = useNavigate();
 
   // Filter state
@@ -44,21 +44,24 @@ const JobsList: React.FC = () => {
       ? positions.map(pos => pos.name).sort()
       : [...new Set(activeJobs.map(job => job.position))].sort();
     
-    const employmentTypes = [...new Set(
-      activeJobs.flatMap(job => job.facilities)
-    )].filter(facility => 
-      facility.toLowerCase().includes('time') || 
-      facility.toLowerCase().includes('remote') ||
-      facility.toLowerCase().includes('contract') ||
-      facility.toLowerCase().includes('temporary')
-    ).sort();
+    // Use all facilities from database, not just those in active jobs
+    const employmentTypes = facilities.length > 0 
+      ? facilities.map(facility => facility.name).sort()
+      : [...new Set(
+          activeJobs.flatMap(job => job.facilities)
+        )].filter(facility => 
+          facility.toLowerCase().includes('time') || 
+          facility.toLowerCase().includes('remote') ||
+          facility.toLowerCase().includes('contract') ||
+          facility.toLowerCase().includes('temporary')
+        ).sort();
 
     return { 
       locations: availableLocations, 
       positions: availablePositions, 
       employmentTypes 
     };
-  }, [jobs, positions, locations]);
+  }, [jobs, positions, locations, facilities]);
 
   // Filter jobs
   const filteredJobs = useMemo(() => {

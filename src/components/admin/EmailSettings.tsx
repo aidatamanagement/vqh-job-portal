@@ -8,19 +8,22 @@ import { Switch } from '@/components/ui/switch';
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useEmailSettings } from '@/hooks/useEmailSettings';
-import { Mail, Send, Settings, CheckCircle, AlertCircle, Plus, X, Save } from 'lucide-react';
+import { Mail, Send, Settings, CheckCircle, AlertCircle, Plus, X, Save, RefreshCw } from 'lucide-react';
 
 const EmailSettings: React.FC = () => {
-  const { settings, saveSettings } = useEmailSettings();
+  const { settings, saveSettings, loadSettings } = useEmailSettings();
   const [localSettings, setLocalSettings] = useState(settings);
   const [newAdminEmail, setNewAdminEmail] = useState('');
+  const [newStaffEmail, setNewStaffEmail] = useState('');
   const [isSaving, setIsSaving] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [isTesting, setIsTesting] = useState(false);
   const [testEmail, setTestEmail] = useState('');
   const [lastTestResult, setLastTestResult] = useState<{ success: boolean; message: string } | null>(null);
 
   // Update local settings when database settings change
   useEffect(() => {
+    console.log('Database settings updated, syncing to local state:', settings);
     setLocalSettings(settings);
   }, [settings]);
 
@@ -50,6 +53,32 @@ const EmailSettings: React.FC = () => {
     setNewAdminEmail('');
   };
 
+  const addStaffEmail = () => {
+    if (!newStaffEmail || !newStaffEmail.includes('@')) {
+      toast({
+        title: "Invalid Email",
+        description: "Please enter a valid email address",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (localSettings.staffEmails.includes(newStaffEmail)) {
+      toast({
+        title: "Email Already Added",
+        description: "This email is already in the staff list",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setLocalSettings(prev => ({
+      ...prev,
+      staffEmails: [...prev.staffEmails, newStaffEmail]
+    }));
+    setNewStaffEmail('');
+  };
+
   const removeAdminEmail = (emailToRemove: string) => {
     if (localSettings.adminEmails.length === 1) {
       toast({
@@ -66,19 +95,29 @@ const EmailSettings: React.FC = () => {
     }));
   };
 
+  const removeStaffEmail = (emailToRemove: string) => {
+    setLocalSettings(prev => ({
+      ...prev,
+      staffEmails: prev.staffEmails.filter(email => email !== emailToRemove)
+    }));
+  };
+
   const handleSaveSettings = async () => {
     setIsSaving(true);
     try {
+      console.log('Saving settings to database:', localSettings);
       const success = await saveSettings(localSettings);
       if (success) {
         toast({
           title: "Settings Saved",
           description: "Email settings have been saved successfully",
         });
+        console.log('Settings saved successfully, database should be updated');
       } else {
         throw new Error('Failed to save settings');
       }
     } catch (error) {
+      console.error('Error saving settings:', error);
       toast({
         title: "Error",
         description: "Failed to save settings",
@@ -86,6 +125,27 @@ const EmailSettings: React.FC = () => {
       });
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const handleRefreshSettings = async () => {
+    setIsRefreshing(true);
+    try {
+      console.log('Refreshing settings from database...');
+      await loadSettings();
+      toast({
+        title: "Settings Refreshed",
+        description: "Email settings have been reloaded from database",
+      });
+    } catch (error) {
+      console.error('Error refreshing settings:', error);
+      toast({
+        title: "Error",
+        description: "Failed to refresh settings",
+        variant: "destructive",
+      });
+    } finally {
+      setIsRefreshing(false);
     }
   };
 
@@ -155,13 +215,35 @@ const EmailSettings: React.FC = () => {
             <h3 className="text-lg font-semibold text-gray-900">Email Notification Settings</h3>
             <p className="text-sm text-gray-600">Configure email notification preferences</p>
           </div>
-          <Button onClick={handleSaveSettings} disabled={isSaving}>
-            <Save className="w-4 h-4 mr-2" />
-            {isSaving ? 'Saving...' : 'Save Settings'}
-          </Button>
+          <div className="flex gap-2">
+            <Button onClick={handleRefreshSettings} disabled={isRefreshing} variant="outline">
+              <RefreshCw className={`w-4 h-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
+              {isRefreshing ? 'Refreshing...' : 'Refresh'}
+            </Button>
+            <Button onClick={handleSaveSettings} disabled={isSaving}>
+              <Save className="w-4 h-4 mr-2" />
+              {isSaving ? 'Saving...' : 'Save Settings'}
+            </Button>
+          </div>
         </div>
 
         <div className="space-y-6">
+          {/* Sync Status Indicator */}
+          <div className="flex items-center gap-2 p-3 bg-gray-50 rounded-lg">
+            <div className="flex items-center gap-2">
+              {JSON.stringify(localSettings) === JSON.stringify(settings) ? (
+                <CheckCircle className="w-4 h-4 text-green-500" />
+              ) : (
+                <AlertCircle className="w-4 h-4 text-yellow-500" />
+              )}
+              <span className="text-sm font-medium">
+                {JSON.stringify(localSettings) === JSON.stringify(settings) 
+                  ? "Settings are in sync with database" 
+                  : "Settings have unsaved changes"}
+              </span>
+            </div>
+          </div>
+
           <Card className="p-4 bg-blue-50 border-blue-200">
             <div className="space-y-4">
               <div className="flex items-center justify-between">
@@ -182,6 +264,16 @@ const EmailSettings: React.FC = () => {
                 <Switch
                   checked={localSettings.enableAutoResponses}
                   onCheckedChange={(checked) => setLocalSettings(prev => ({ ...prev, enableAutoResponses: checked }))}
+                />
+              </div>
+              <div className="flex items-center justify-between">
+                <div>
+                  <h4 className="font-medium text-blue-900">Enable Staff Notifications</h4>
+                  <p className="text-sm text-blue-700">Send notifications to staff members</p>
+                </div>
+                <Switch
+                  checked={localSettings.enableStaffNotifications}
+                  onCheckedChange={(checked) => setLocalSettings(prev => ({ ...prev, enableStaffNotifications: checked }))}
                 />
               </div>
             </div>
@@ -207,7 +299,14 @@ const EmailSettings: React.FC = () => {
             <div className="space-y-2 mb-3">
               {localSettings.adminEmails.map((email, index) => (
                 <div key={index} className="flex items-center justify-between p-2 bg-gray-50 rounded-md">
-                  <span className="text-sm">{email}</span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm">{email}</span>
+                    {settings.adminEmails.includes(email) ? (
+                      <CheckCircle className="w-3 h-3 text-green-500" title="Synced with database" />
+                    ) : (
+                      <AlertCircle className="w-3 h-3 text-yellow-500" title="Not synced with database" />
+                    )}
+                  </div>
                   <Button
                     variant="ghost"
                     size="sm"
@@ -231,6 +330,52 @@ const EmailSettings: React.FC = () => {
                 onKeyPress={(e) => e.key === 'Enter' && addAdminEmail()}
               />
               <Button onClick={addAdminEmail} variant="outline">
+                <Plus className="w-4 h-4" />
+              </Button>
+            </div>
+          </div>
+
+          {/* Staff Email Configuration */}
+          <div>
+            <Label>Staff Email Addresses</Label>
+            <p className="text-sm text-gray-500 mb-3">
+              These emails will receive staff-level notifications about new applications
+            </p>
+            
+            {/* Current Staff Emails */}
+            <div className="space-y-2 mb-3">
+              {localSettings.staffEmails.map((email, index) => (
+                <div key={index} className="flex items-center justify-between p-2 bg-green-50 rounded-md">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm">{email}</span>
+                    {settings.staffEmails.includes(email) ? (
+                      <CheckCircle className="w-3 h-3 text-green-500" title="Synced with database" />
+                    ) : (
+                      <AlertCircle className="w-3 h-3 text-yellow-500" title="Not synced with database" />
+                    )}
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => removeStaffEmail(email)}
+                    className="text-red-600 hover:text-red-700"
+                  >
+                    <X className="w-4 h-4" />
+                  </Button>
+                </div>
+              ))}
+            </div>
+
+            {/* Add New Staff Email */}
+            <div className="flex space-x-2">
+              <Input
+                type="email"
+                value={newStaffEmail}
+                onChange={(e) => setNewStaffEmail(e.target.value)}
+                placeholder="staff@viaquesthospice.com"
+                onKeyPress={(e) => e.key === 'Enter' && addStaffEmail()}
+              />
+              <Button onClick={addStaffEmail} variant="outline">
                 <Plus className="w-4 h-4" />
               </Button>
             </div>

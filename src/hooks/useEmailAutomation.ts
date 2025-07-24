@@ -42,7 +42,7 @@ const STATUS_TO_TEMPLATE_MAP = {
 } as const;
 
 export const useEmailAutomation = () => {
-  const { getAdminEmails } = useEmailSettings();
+  const { getAdminEmails, getStaffEmails } = useEmailSettings();
 
   const getCalendlyUrl = async (): Promise<string | null> => {
     try {
@@ -182,6 +182,16 @@ export const useEmailAutomation = () => {
       for (const adminEmail of adminEmails) {
         console.log('Sending admin notification to:', adminEmail);
         await sendEmail('admin_notification', adminEmail, variables);
+      }
+
+      // Send staff notifications if enabled (using same admin_notification template)
+      const staffEmails = getStaffEmails();
+      if (staffEmails.length > 0) {
+        console.log('Sending staff notifications...');
+        for (const staffEmail of staffEmails) {
+          console.log('Sending staff notification to:', staffEmail);
+          await sendEmail('admin_notification', staffEmail, variables);
+        }
       }
 
       console.log('All emails sent successfully');
