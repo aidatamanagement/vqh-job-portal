@@ -1,5 +1,10 @@
 # Vqh Job Portal Updates
 
+  ## 2025-01-04 - ViaQuest Hospice Integration
+  - **Added iframe permission**: Updated `vercel.json` Content Security Policy to allow iframe embedding from `https://viaquesthospice.com` alongside existing `https://white-walrus-512047.hostingersite.com` permission
+  - **Purpose**: Enables ViaQuest Hospice website to embed the job portal in iframes if needed
+  - **Security**: Maintains existing security policies while adding the new domain
+
   ## 2025-07-23 - Enhanced HR Manager Permissions
   
   ### ✅ Staff Notification System Implementation

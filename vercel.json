@@ -15,7 +15,7 @@
         },
         {
           "key": "Content-Security-Policy",
-          "value": "frame-ancestors 'self' https://white-walrus-512047.hostingersite.com"
+          "value": "frame-ancestors 'self' https://white-walrus-512047.hostingersite.com https://viaquesthospice.com"
         },
         {
           "key": "X-XSS-Protection",
