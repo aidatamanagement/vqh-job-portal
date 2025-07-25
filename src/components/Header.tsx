@@ -33,11 +33,11 @@ const Header: React.FC = () => {
       <div className="container mx-auto flex items-center justify-between">
         {/* Logo and Title */}
         <div className="flex items-center cursor-pointer group" onClick={handleLogoClick}>
-                     <div className="w-12 h-12 md:w-16 md:h-16 rounded-lg flex items-center justify-center group-hover:scale-105 transition-transform duration-200">
+          <div className="h-12 w-20 md:h-16 md:w-28 flex items-center justify-center group-hover:scale-105 transition-transform duration-200 flex-shrink-0">
              <img 
                src="/images/LOGO.svg" 
                alt="ViaQuest Hospice Logo" 
-               className="w-full h-full object-contain"
+               className="h-full w-full object-contain"
              />
            </div>
         </div>
