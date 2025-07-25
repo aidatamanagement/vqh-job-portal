@@ -129,6 +129,7 @@ const Submissions: React.FC = () => {
         onDeleteApplication={handleDeleteApplication}
         onOpenFileViewer={openFileViewer}
         deletingApplication={deletingApplication}
+        refreshSubmissions={refreshSubmissions}
       />
 
       {/* File Viewer Modal */}

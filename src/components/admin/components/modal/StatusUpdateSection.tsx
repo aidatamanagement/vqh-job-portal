@@ -15,11 +15,13 @@ type ApplicationStatus = 'application_submitted' | 'shortlisted_for_hr' | 'hr_in
 interface StatusUpdateSectionProps {
   application: JobApplication;
   onUpdateStatus: (id: string, status: ApplicationStatus) => void;
+  refreshSubmissions?: () => void;
 }
 
 const StatusUpdateSection: React.FC<StatusUpdateSectionProps> = ({
   application,
-  onUpdateStatus
+  onUpdateStatus,
+  refreshSubmissions
 }) => {
   const [selectedStatus, setSelectedStatus] = useState<string>('');
   const [notes, setNotes] = useState<string>('');
@@ -67,6 +69,11 @@ const StatusUpdateSection: React.FC<StatusUpdateSectionProps> = ({
       
       if (result.success) {
         onUpdateStatus(application.id, selectedStatus as ApplicationStatus);
+        
+        // Refresh submissions data to update the frontend
+        if (refreshSubmissions) {
+          refreshSubmissions();
+        }
         
         // Check if job was deactivated due to hire
         const jobDeactivatedMessage = selectedStatus === 'hired' ? ' The job posting has been automatically deactivated.' : '';

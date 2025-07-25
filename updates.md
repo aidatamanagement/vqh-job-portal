@@ -1,5 +1,53 @@
 # Vqh Job Portal Updates
 
+## 2025-01-05 - Status Update Refresh Functionality & Dialog Background Update
+
+### ✅ Changed Apply Modal Background from Transparent Black to White
+- **User Request**: Change the background of the apply popup from transparent black to white
+- **Implementation**: Updated DialogOverlay component in the UI library to use white background
+- **Changes Made**:
+  - **Dialog Component**: Changed `bg-black/80` to `bg-white` in DialogOverlay styling
+  - **Background Effect**: Apply modal now has a clean white background instead of transparent black overlay
+  - **Visual Improvement**: Better contrast and cleaner appearance for the application form
+- **Files Updated**:
+  - `src/components/ui/dialog.tsx`
+- **Impact**: All dialogs in the application now use white background overlay, providing better visual clarity
+
+### ✅ Changed Job Details Page Background to White
+- **User Request**: Change the background of the job details page (where job description and overview are shown) to white
+- **Implementation**: Updated JobDetails component to use white background instead of gray
+- **Changes Made**:
+  - **Page Background**: Changed `bg-gray-50` to `bg-white` in the main content area
+  - **Visual Effect**: Job description and overview page now has a clean white background
+  - **Consistency**: Matches the overall white theme of the job portal
+- **Files Updated**:
+  - `src/pages/JobDetails.tsx`
+- **Impact**: Job details page now has a clean white background, improving readability and visual consistency
+
+### ✅ Added Frontend Refresh After Status Updates with Notes
+- **User Request**: After updating notes into status history, automatically refresh and update the frontend data
+- **Implementation**: Enhanced status update workflow to refresh submissions data after successful status changes
+- **Changes Made**:
+  - **StatusUpdateSection Component**: Added optional `refreshSubmissions` prop to trigger data refresh
+  - **ApplicationDetailsModal**: Updated to accept and pass `refreshSubmissions` function to status update section
+  - **Submissions Component**: Connected `refreshSubmissions` function from useSubmissions hook to modal
+  - **Type Consistency**: Fixed ApplicationStatus type mismatch between components for proper TypeScript compatibility
+- **Features Added**:
+  - **Automatic Refresh**: Frontend data updates immediately after successful status changes
+  - **Real-time Updates**: Status history timeline and submission list reflect changes without manual refresh
+  - **Seamless UX**: Users see updated information immediately after status updates
+  - **Data Consistency**: Ensures frontend state matches database state after status changes
+- **Technical Benefits**:
+  - Eliminates need for manual page refresh after status updates
+  - Maintains data consistency across all components
+  - Improves user experience with immediate feedback
+  - Preserves all existing validation and error handling
+- **Files Updated**:
+  - `src/components/admin/components/modal/StatusUpdateSection.tsx`
+  - `src/components/admin/components/ApplicationDetailsModal.tsx`
+  - `src/components/admin/Submissions.tsx`
+- **Impact**: Status updates now provide immediate frontend refresh, ensuring users see the latest data without manual intervention
+
   ## 2025-01-04 - ViaQuest Hospice Integration & Anonymous Filter Access
   - **Added iframe permission**: Updated `vercel.json` Content Security Policy to allow iframe embedding from `https://viaquesthospice.com` alongside existing `https://white-walrus-512047.hostingersite.com` permission
   - **Purpose**: Enables ViaQuest Hospice website to embed the job portal in iframes if needed

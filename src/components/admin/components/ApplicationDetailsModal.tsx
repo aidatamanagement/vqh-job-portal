@@ -10,7 +10,7 @@ import StatusUpdateSection from './modal/StatusUpdateSection';
 import DeleteApplicationSection from './modal/DeleteApplicationSection';
 import StatusHistoryTimeline from './StatusHistoryTimeline';
 
-type ApplicationStatus = 'application_submitted' | 'under_review' | 'shortlisted' | 'interviewed' | 'hired' | 'rejected' | 'waiting_list';
+type ApplicationStatus = 'application_submitted' | 'shortlisted_for_hr' | 'hr_interviewed' | 'shortlisted_for_manager' | 'manager_interviewed' | 'hired' | 'rejected' | 'waiting_list';
 
 interface ApplicationDetailsModalProps {
   selectedApplication: JobApplication | null;
@@ -19,6 +19,7 @@ interface ApplicationDetailsModalProps {
   onDeleteApplication: (applicationId: string) => void;
   onOpenFileViewer: (url: string, name: string) => void;
   deletingApplication: string | null;
+  refreshSubmissions?: () => void;
 }
 
 const ApplicationDetailsModal: React.FC<ApplicationDetailsModalProps> = ({
@@ -27,7 +28,8 @@ const ApplicationDetailsModal: React.FC<ApplicationDetailsModalProps> = ({
   onUpdateStatus,
   onDeleteApplication,
   onOpenFileViewer,
-  deletingApplication
+  deletingApplication,
+  refreshSubmissions
 }) => {
   if (!selectedApplication) return null;
 
@@ -68,6 +70,7 @@ const ApplicationDetailsModal: React.FC<ApplicationDetailsModalProps> = ({
               <StatusUpdateSection
                 application={selectedApplication}
                 onUpdateStatus={onUpdateStatus}
+                refreshSubmissions={refreshSubmissions}
               />
               <DeleteApplicationSection
                 application={selectedApplication}

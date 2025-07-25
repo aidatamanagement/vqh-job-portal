@@ -70,7 +70,7 @@ const JobDetails: React.FC = () => {
   return (
     <div className="min-h-screen bg-white relative">
       <CursorGlow />
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-white">
         <div className="container mx-auto px-4 py-8">
           <div className="max-w-7xl mx-auto">
             {/* Back Button */}
