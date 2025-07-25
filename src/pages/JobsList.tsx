@@ -44,9 +44,20 @@ const JobsList: React.FC = () => {
       ? positions.map(pos => pos.name).sort()
       : [...new Set(activeJobs.map(job => job.position))].sort();
     
-    // Use all facilities from database, not just those in active jobs
+    // Use facilities from database, but filter for actual employment types only
     const employmentTypes = facilities.length > 0 
-      ? facilities.map(facility => facility.name).sort()
+      ? facilities
+          .map(facility => facility.name)
+          .filter(facility => 
+            facility.toLowerCase().includes('time') || 
+            facility.toLowerCase().includes('remote') ||
+            facility.toLowerCase().includes('contract') ||
+            facility.toLowerCase().includes('temporary') ||
+            facility.toLowerCase().includes('volunteer') ||
+            facility.toLowerCase().includes('permanent') ||
+            facility.toLowerCase().includes('seasonal')
+          )
+          .sort()
       : [...new Set(
           activeJobs.flatMap(job => job.facilities)
         )].filter(facility => 
@@ -71,12 +82,12 @@ const JobsList: React.FC = () => {
     if (filters.search) {
       const searchLower = filters.search.toLowerCase();
       filteredJobs = filteredJobs.filter(job =>
-        job.title.toLowerCase().includes(searchLower) ||
-        job.description.toLowerCase().includes(searchLower) ||
-        job.position.toLowerCase().includes(searchLower) ||
-        job.officeLocation.toLowerCase().includes(searchLower) ||
-        job.workLocation.toLowerCase().includes(searchLower) ||
-        job.facilities.some(facility => facility.toLowerCase().includes(searchLower))
+        (job.title?.toLowerCase() || '').includes(searchLower) ||
+        (job.description?.toLowerCase() || '').includes(searchLower) ||
+        (job.position?.toLowerCase() || '').includes(searchLower) ||
+        (job.officeLocation?.toLowerCase() || '').includes(searchLower) ||
+        (job.workLocation?.toLowerCase() || '').includes(searchLower) ||
+        job.facilities.some(facility => (facility?.toLowerCase() || '').includes(searchLower))
       );
     }
 
@@ -357,9 +368,9 @@ const JobsList: React.FC = () => {
                           </Button>
                         </div>
                       </div>
-                    </React.Fragment>
-                  );
-                })}
+                  </React.Fragment>
+                );
+              })}
             </div>
           ) : (
             <div className="text-center py-8">
