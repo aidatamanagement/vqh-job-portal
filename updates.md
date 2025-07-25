@@ -1,9 +1,34 @@
 # Vqh Job Portal Updates
 
-  ## 2025-01-04 - ViaQuest Hospice Integration
+  ## 2025-01-04 - ViaQuest Hospice Integration & Anonymous Filter Access
   - **Added iframe permission**: Updated `vercel.json` Content Security Policy to allow iframe embedding from `https://viaquesthospice.com` alongside existing `https://white-walrus-512047.hostingersite.com` permission
   - **Purpose**: Enables ViaQuest Hospice website to embed the job portal in iframes if needed
   - **Security**: Maintains existing security policies while adding the new domain
+  
+  ### Anonymous Filter Access for Job Portal
+  - **Database Migration**: `20250104000003_allow_anonymous_filter_access.sql`
+  - **Purpose**: Allow anonymous users to view all available types, jobs, and locations for filtering in the job portal
+  - **Policies Added**:
+    - Anonymous read access to `job_positions` table (all positions)
+    - Anonymous read access to `job_locations` table (all locations) 
+    - Anonymous read access to `job_facilities` table (all employment types)
+    - Anonymous read access to `jobs` table (only active jobs)
+  - **Impact**: Job portal filters now work properly for anonymous users, showing all available options from database
+  - **Security**: Only SELECT operations allowed, no write access for anonymous users
+
+  ### Mobile Responsive Design Improvements
+  - **Files Modified**: `src/pages/JobsList.tsx`, `src/components/JobCard.tsx`
+  - **Purpose**: Enhance mobile user experience for job portal
+  - **Changes Made**:
+    - **Filter Grid**: Changed from `grid-cols-2` to `grid-cols-1 sm:grid-cols-2` for better mobile layout
+    - **Job Cards**: Converted horizontal layout to vertical stack on mobile (`flex-col sm:flex-row`)
+    - **Text Sizing**: Reduced text sizes on mobile (`text-lg sm:text-xl`, `text-sm sm:text-base`)
+    - **Button Layout**: Made apply buttons full-width on mobile (`w-full sm:w-auto`)
+    - **Spacing**: Improved padding and margins for mobile (`py-4 sm:py-3`, `gap-4 sm:gap-0`)
+    - **Results Count**: Stacked layout on mobile with smaller text for filtered count
+    - **Featured Badges**: Better positioning and sizing on mobile
+  - **Impact**: Job portal now provides optimal experience across all device sizes
+  - **Mobile-First**: Responsive design ensures usability on smartphones and tablets
 
   ## 2025-07-23 - Enhanced HR Manager Permissions
   

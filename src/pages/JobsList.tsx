@@ -196,7 +196,7 @@ const JobsList: React.FC = () => {
 
             {/* Filter Row */}
             <div className="flex flex-col md:flex-row gap-4">
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 flex-1">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 flex-1">
                 {/* Location Filter */}
                 <Select value={filters.location || 'all'} onValueChange={(value) => handleFilterChange('location', value === 'all' ? '' : value)}>
                   <SelectTrigger>
@@ -262,13 +262,13 @@ const JobsList: React.FC = () => {
             </div>
 
             {/* Results Count */}
-            <div className="flex items-center justify-between text-sm text-gray-600">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between text-sm text-gray-600 gap-2">
               <div className="flex items-center gap-2">
                 <Filter className="w-4 h-4" />
                 <span>{totalJobs} job{totalJobs !== 1 ? 's' : ''} found</span>
               </div>
               {hasActiveFilters && (
-                <span>Filtered from {jobs.filter(job => job.isActive).length} total jobs</span>
+                <span className="text-xs sm:text-sm">Filtered from {jobs.filter(job => job.isActive).length} total jobs</span>
               )}
             </div>
           </div>
@@ -294,24 +294,24 @@ const JobsList: React.FC = () => {
                     )}
                     
                                           <div 
-                        className={`flex items-center justify-between py-3 border-b border-gray-200 last:border-b-0 hover:bg-gray-50 transition-colors duration-200 rounded-lg px-4 ${
+                        className={`flex flex-col sm:flex-row sm:items-center sm:justify-between py-4 sm:py-3 border-b border-gray-200 last:border-b-0 hover:bg-gray-50 transition-colors duration-200 rounded-lg px-4 gap-4 sm:gap-0 ${
                           isFeatured ? 'bg-blue-50/50 border-blue-200' : ''
                         }`}
                       >
                         {/* Job Title & Employment Info */}
                         <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-1">
-                            <h3 className="text-xl font-medium text-black hover:text-gray-800 transition-colors cursor-pointer">
+                          <div className="flex flex-col sm:flex-row sm:items-center gap-2 mb-2 sm:mb-1">
+                            <h3 className="text-lg sm:text-xl font-medium text-black hover:text-gray-800 transition-colors cursor-pointer">
                               {job.title}
                             </h3>
                             {job.isUrgent && (
-                              <Badge variant="default" className="flex items-center gap-1 bg-primary hover:bg-primary/90 text-white text-xs">
+                              <Badge variant="default" className="flex items-center gap-1 bg-primary hover:bg-primary/90 text-white text-xs w-fit">
                                 <Pin className="w-3 h-3" />
                                 Featured
                               </Badge>
                             )}
                           </div>
-                          <p className="text-base font-medium text-black mt-1">
+                          <p className="text-sm sm:text-base font-medium text-black mt-1">
                             {job.position}
                           </p>
                           {/* Employment Type & Benefits */}
@@ -331,7 +331,7 @@ const JobsList: React.FC = () => {
                         </div>
 
                         {/* Location Badge */}
-                        <div className="flex-shrink-0 mx-8">
+                        <div className="flex-shrink-0 sm:mx-8">
                           <div className="flex flex-col gap-1">
                             <Badge 
                               variant="outline" 
@@ -352,17 +352,7 @@ const JobsList: React.FC = () => {
                         <div className="flex-shrink-0">
                           <Button
                             onClick={() => handleApplyClick(job.id)}
-                            variant="outline"
-                            className="bg-transparent border-gray-300 text-gray-900 hover:text-white transition-all duration-200 px-6"
-                            style={{ 
-                              '--tw-hover-bg': '#005586'
-                            } as React.CSSProperties}
-                            onMouseEnter={(e) => {
-                              e.currentTarget.style.backgroundColor = '#005586';
-                            }}
-                            onMouseLeave={(e) => {
-                              e.currentTarget.style.backgroundColor = 'transparent';
-                            }}
+                            className="w-full sm:w-auto bg-primary hover:bg-primary/90 text-white transition-all duration-200 px-4 sm:px-6 text-sm sm:text-base"
                           >
                             Apply for position
                           </Button>

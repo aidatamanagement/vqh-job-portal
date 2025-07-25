@@ -40,13 +40,13 @@ const JobCard: React.FC<JobCardProps> = ({ job }) => {
     <Card className="job-card p-4 bg-white border border-gray-200 hover:border-primary/30 animate-fade-in-up flex flex-col h-full">
       <div className="space-y-3 flex-1 flex flex-col">
         {/* Position and Location */}
-        <div className="flex justify-between items-center">
-          <p className="text-base font-semibold text-black">
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
+          <p className="text-sm sm:text-base font-semibold text-black">
             {job.position}
           </p>
-          <div className="flex flex-col items-end text-black text-sm">
+          <div className="flex flex-col sm:items-end text-black text-xs sm:text-sm">
             <div className="flex items-center">
-              <MapPin className="w-4 h-4 mr-1 flex-shrink-0" />
+              <MapPin className="w-3 h-3 sm:w-4 sm:h-4 mr-1 flex-shrink-0" />
               <span className="whitespace-nowrap">Office: {job.officeLocation}</span>
             </div>
             <span className="text-xs whitespace-nowrap">Work: {job.workLocation}</span>
@@ -55,13 +55,13 @@ const JobCard: React.FC<JobCardProps> = ({ job }) => {
 
         {/* Job Title */}
         <div>
-          <h3 className="font-semibold text-black text-lg leading-tight">
+          <h3 className="font-semibold text-black text-base sm:text-lg leading-tight">
             {job.title}
           </h3>
         </div>
 
         {/* Description */}
-        <p className="text-gray-600 text-sm leading-relaxed flex-1">
+        <p className="text-gray-600 text-xs sm:text-sm leading-relaxed flex-1">
           {stripHtmlAndTruncate(job.description)}
         </p>
 
