@@ -958,6 +958,7 @@ const Interviews: React.FC = () => {
             job_position: interview.job_position,
             meeting_url: interview.meeting_url,
             phone: interview.phone,
+            interviewer_email: interview.interviewer_email,
           }))}
           isLoading={isLoading}
           onUpdateStatus={updateInterviewStatus}

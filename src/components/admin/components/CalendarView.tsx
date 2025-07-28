@@ -15,7 +15,14 @@ import {
   ArrowUpDown,
   X,
   ChevronsLeft,
-  ChevronsRight
+  ChevronsRight,
+  Mail,
+  Phone,
+  Video,
+  ExternalLink,
+  UserCheck,
+  Calendar,
+  MapPinIcon
 } from 'lucide-react';
 import { format, 
   startOfWeek, 
@@ -54,6 +61,7 @@ export interface CalendarInterview {
   job_position?: string;
   meeting_url?: string;
   phone?: string;
+  interviewer_email?: string;
 }
 
 type CalendarView = 'day' | 'week' | 'month' | 'year';
@@ -659,82 +667,133 @@ const InterviewSidebar: React.FC<InterviewSidebarProps> = ({
           </div>
         </div>
 
-        {/* Interview Info */}
-        <div className="space-y-4">
-          <div className="flex items-center space-x-3">
-            <User className="w-5 h-5 text-gray-400" />
-            <div>
-              <div className="font-medium text-gray-900">{candidateName}</div>
-              <div className="text-sm text-gray-500">{interview.candidate_email}</div>
+        {/* Interview Details */}
+        <div className="space-y-6">
+          {/* Candidate Information */}
+          <div className="space-y-3">
+            <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">Candidate</h3>
+            <div className="bg-gray-50 rounded-lg p-3 space-y-3">
+              <div className="flex items-center space-x-3">
+                <User className="w-5 h-5 text-blue-500" />
+                <div className="flex-1">
+                  <div className="font-semibold text-gray-900">{candidateName}</div>
+                  <div className="text-sm text-gray-600">{interview.applied_position || 'Position not specified'}</div>
+                </div>
+              </div>
+              
+              <div className="flex items-center space-x-3">
+                <Mail className="w-4 h-4 text-gray-400" />
+                <div className="text-sm text-gray-600 break-all">{interview.candidate_email}</div>
+              </div>
+              
               {interview.phone && (
-                <div className="text-sm text-gray-500">{interview.phone}</div>
+                <div className="flex items-center space-x-3">
+                  <Phone className="w-4 h-4 text-gray-400" />
+                  <div className="text-sm text-gray-600">{interview.phone}</div>
+                </div>
+              )}
+              
+              {interview.city_state && (
+                <div className="flex items-center space-x-3">
+                  <MapPinIcon className="w-4 h-4 text-gray-400" />
+                  <div className="text-sm text-gray-600">{interview.city_state}</div>
+                </div>
               )}
             </div>
           </div>
 
-          <div className="flex items-center space-x-3">
-            <Clock className="w-5 h-5 text-gray-400" />
-            <div>
-              <div className="font-medium text-gray-900">
-                {format(interviewDate, 'EEEE, MMMM d, yyyy')}
+          {/* Interview Schedule */}
+          <div className="space-y-3">
+            <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">Schedule</h3>
+            <div className="bg-gray-50 rounded-lg p-3 space-y-3">
+              <div className="flex items-center space-x-3">
+                <Calendar className="w-5 h-5 text-green-500" />
+                <div>
+                  <div className="font-medium text-gray-900">
+                    {format(interviewDate, 'EEEE, MMMM d, yyyy')}
+                  </div>
+                  <div className="text-sm text-gray-500">Interview Date</div>
+                </div>
               </div>
-              <div className="text-sm text-gray-500">
-                {format(interviewDate, 'h:mm a')}
+
+              <div className="flex items-center space-x-3">
+                <Clock className="w-5 h-5 text-orange-500" />
+                <div>
+                  <div className="font-medium text-gray-900">
+                    {format(interviewDate, 'h:mm a')}
+                  </div>
+                  <div className="text-sm text-gray-500">
+                    {format(interviewDate, 'zzz')}
+                  </div>
+                </div>
               </div>
+
+              {interview.job_location && (
+                <div className="flex items-center space-x-3">
+                  <MapPin className="w-5 h-5 text-purple-500" />
+                  <div>
+                    <div className="font-medium text-gray-900">{interview.job_location}</div>
+                    <div className="text-sm text-gray-500">Office Location</div>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 
-          {interview.job_location && (
-            <div className="flex items-center space-x-3">
-              <MapPin className="w-5 h-5 text-gray-400" />
-              <div>
-                <div className="font-medium text-gray-900">{interview.job_location}</div>
-                <div className="text-sm text-gray-500">Job Location</div>
-              </div>
-            </div>
-          )}
-
-          {interview.applied_position && (
-            <div className="flex items-center space-x-3">
-              <Briefcase className="w-5 h-5 text-gray-400" />
-              <div>
-                <div className="font-medium text-gray-900">{interview.applied_position}</div>
-                <div className="text-sm text-gray-500">Applied Position</div>
-              </div>
-            </div>
-          )}
-
-          <div className="flex items-center space-x-3">
-            <div className="w-5 h-5 flex items-center justify-center">
-              <div className={`w-3 h-3 rounded-full ${getStatusColor(interview.status)}`}></div>
-            </div>
-            <div>
-              <Badge variant={getStatusBadgeVariant(interview.status)}>
+          {/* Interview Status */}
+          <div className="space-y-3">
+            <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">Status</h3>
+            <div className="flex items-center justify-between">
+              <Badge variant={getStatusBadgeVariant(interview.status)} className="text-sm">
                 {interview.status.replace('_', ' ').toUpperCase()}
               </Badge>
+              <div className={`w-3 h-3 rounded-full ${getStatusColor(interview.status)}`}></div>
             </div>
           </div>
 
+          {/* Additional Details */}
+          {(interview.interviewer_email) && (
+            <div className="space-y-3">
+              <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">Interview Details</h3>
+              <div className="bg-gray-50 rounded-lg p-3 space-y-3">
+                {interview.interviewer_email && (
+                  <div className="flex items-center space-x-3">
+                    <UserCheck className="w-4 h-4 text-gray-400" />
+                    <div>
+                      <div className="text-sm font-medium text-gray-700">Interviewer</div>
+                      <div className="text-sm text-gray-600">{interview.interviewer_email}</div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Meeting Actions */}
           {interview.meeting_url && (
-            <div className="mt-6">
+            <div className="pt-2">
               <Button 
                 asChild 
-                className="w-full"
+                className="w-full bg-blue-600 hover:bg-blue-700"
               >
-                <a href={interview.meeting_url} target="_blank" rel="noopener noreferrer">
+                <a href={interview.meeting_url} target="_blank" rel="noopener noreferrer" className="flex items-center justify-center gap-2">
+                  <Video className="w-4 h-4" />
                   Join Meeting
+                  <ExternalLink className="w-3 h-3" />
                 </a>
               </Button>
             </div>
           )}
 
+          {/* Status Action */}
           {onUpdateStatus && interview.status === 'scheduled' && (
-            <div className="mt-4">
+            <div className="pt-2">
               <Button 
                 variant="outline" 
-                className="w-full"
+                className="w-full border-green-200 text-green-700 hover:bg-green-50"
                 onClick={() => onUpdateStatus(interview.id, true)}
               >
+                <UserCheck className="w-4 h-4 mr-2" />
                 Mark as Completed
               </Button>
             </div>
