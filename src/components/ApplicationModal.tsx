@@ -528,7 +528,7 @@ const ApplicationModal: React.FC<ApplicationModalProps> = ({ isOpen, onClose, jo
             </div>
             
             <p className="text-sm text-gray-600 mb-4">
-              Please provide a cover letter by typing below OR uploading a file (at least one is required).
+              Please provide a cover letter by typing below OR uploading a file (PDF supported)
             </p>
             
             <RichTextEditor
@@ -549,7 +549,7 @@ const ApplicationModal: React.FC<ApplicationModalProps> = ({ isOpen, onClose, jo
             {/* Resume Upload */}
             <div className="mb-6">
               <Label className="block text-sm font-medium text-gray-900 mb-2">
-                Resume * (PDF, DOC, DOCX - Max 10MB)
+                Resume * (PDF)
               </Label>
               {!files.resume ? (
                 <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-primary transition-colors">
