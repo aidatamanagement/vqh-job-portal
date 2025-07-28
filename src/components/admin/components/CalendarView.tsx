@@ -70,7 +70,7 @@ const CalendarView: React.FC<CalendarViewProps> = ({
   onUpdateStatus 
 }) => {
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [view, setView] = useState<CalendarView>('week');
+  const [view, setView] = useState<CalendarView>('month');
   const [selectedInterview, setSelectedInterview] = useState<CalendarInterview | null>(null);
   const [locationFilter, setLocationFilter] = useState('all');
   const [sortBy, setSortBy] = useState('time');

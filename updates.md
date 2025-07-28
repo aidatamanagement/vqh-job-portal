@@ -29,6 +29,7 @@
 - **Date Validation Fix**: Fixed earliest start date validation to properly allow today's date selection with improved date parsing and comparison logic
 - **UI Enhancement**: Added supported file types information (PDF, DOC, DOCX) to cover letter upload section for better user guidance
 - **Label Update**: Changed referral field label from "Full Name of Referring Employee" to "Full Name of Referrer" for clarity
+- **Calendar View Update**: Changed default calendar view in Interviews from week to month for better overview
 
 ## 2025-01-05 - Status Update Refresh Functionality & Dialog Background Update
 
