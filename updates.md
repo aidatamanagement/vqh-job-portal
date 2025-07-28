@@ -28,6 +28,7 @@
 - **UI Enhancement**: Changed referral question from checkbox to Yes/No radio buttons for clearer user choice
 - **Date Validation Fix**: Fixed earliest start date validation to properly allow today's date selection with improved date parsing and comparison logic
 - **UI Enhancement**: Added supported file types information (PDF, DOC, DOCX) to cover letter upload section for better user guidance
+- **Label Update**: Changed referral field label from "Full Name of Referring Employee" to "Full Name of Referrer" for clarity
 
 ## 2025-01-05 - Status Update Refresh Functionality & Dialog Background Update
 

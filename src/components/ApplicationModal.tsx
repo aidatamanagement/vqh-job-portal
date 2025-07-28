@@ -682,7 +682,7 @@ const ApplicationModal: React.FC<ApplicationModalProps> = ({ isOpen, onClose, jo
               
               {formData.isReferredByEmployee && (
                 <div className="ml-6">
-                  <Label htmlFor="referredByEmployeeName">Full Name of Referring Employee *</Label>
+                  <Label htmlFor="referredByEmployeeName">Full Name of employee who referred you  *</Label>
                   <Input
                     id="referredByEmployeeName"
                     value={formData.referredByEmployeeName}
