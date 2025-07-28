@@ -34,6 +34,8 @@ const ApplicationModal: React.FC<ApplicationModalProps> = ({ isOpen, onClose, jo
     earliestStartDate: '',
     cityState: '',
     coverLetter: '',
+    isReferredByEmployee: false,
+    referredByEmployeeName: '',
     confirmTerms: false,
   });
 
@@ -111,11 +113,28 @@ const ApplicationModal: React.FC<ApplicationModalProps> = ({ isOpen, onClose, jo
       }
     }
 
+    // Validate referral information
+    if (formData.isReferredByEmployee && !formData.referredByEmployeeName.trim()) {
+      toast({
+        title: "Missing Referral Information",
+        description: "Please provide the full name of the referring employee",
+        variant: "destructive",
+      });
+      return false;
+    }
+
     // Validate earliest start date is not in the past
     if (formData.earliestStartDate) {
-      const startDate = new Date(formData.earliestStartDate);
+      const startDate = new Date(formData.earliestStartDate + 'T00:00:00');
       const today = new Date();
-      today.setHours(0, 0, 0, 0); // Set to start of day for accurate comparison
+      today.setHours(0, 0, 0, 0);
+      
+      console.log('Date validation:', {
+        inputDate: formData.earliestStartDate,
+        startDate: startDate.toISOString(),
+        today: today.toISOString(),
+        isStartDateBeforeToday: startDate < today
+      });
       
       if (startDate < today) {
         toast({
@@ -207,6 +226,8 @@ const ApplicationModal: React.FC<ApplicationModalProps> = ({ isOpen, onClose, jo
         cover_letter: formData.coverLetter,
         cover_letter_url: coverLetterUrl,
         additional_docs_urls: additionalDocsUrls,
+        is_referred_by_employee: formData.isReferredByEmployee,
+        referred_by_employee_name: formData.isReferredByEmployee ? formData.referredByEmployeeName : null,
         tracking_token: trackingToken,
         status: 'application_submitted',
         user_id: null // Anonymous application
@@ -241,6 +262,8 @@ const ApplicationModal: React.FC<ApplicationModalProps> = ({ isOpen, onClose, jo
         cityState: formData.cityState,
         coverLetter: formData.coverLetter,
         coverLetterUrl: coverLetterUrl,
+        isReferredByEmployee: formData.isReferredByEmployee,
+        referredByEmployeeName: formData.referredByEmployeeName,
         status: 'application_submitted' as const,
         resumeUrl: resumeUrl,
         additionalDocsUrls: additionalDocsUrls,
@@ -303,6 +326,8 @@ const ApplicationModal: React.FC<ApplicationModalProps> = ({ isOpen, onClose, jo
       earliestStartDate: '',
       cityState: '',
       coverLetter: '',
+      isReferredByEmployee: false,
+      referredByEmployeeName: '',
       confirmTerms: false,
     });
     setFiles({
@@ -442,7 +467,7 @@ const ApplicationModal: React.FC<ApplicationModalProps> = ({ isOpen, onClose, jo
                   type="date"
                   value={formData.earliestStartDate}
                   onChange={(e) => handleInputChange('earliestStartDate', e.target.value)}
-                  min={new Date().toISOString().split('T')[0]}
+                  min={new Date().toISOString().slice(0, 10)}
                   className="mt-1"
                 />
               </div>
@@ -612,6 +637,62 @@ const ApplicationModal: React.FC<ApplicationModalProps> = ({ isOpen, onClose, jo
                       </Button>
                     </div>
                   ))}
+                </div>
+              )}
+            </div>
+          </Card>
+
+          {/* Employee Referral */}
+          <Card className="p-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Employee Referral</h3>
+            <div className="space-y-4">
+              <div>
+                <Label className="text-sm font-medium text-gray-700 mb-3 block">
+                  Are you referred by any current working employee of ViaQuest Hospice?
+                </Label>
+                <div className="flex items-center space-x-6">
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="radio"
+                      id="referral-yes"
+                      name="isReferredByEmployee"
+                      checked={formData.isReferredByEmployee === true}
+                      onChange={() => handleInputChange('isReferredByEmployee', true)}
+                      className="w-4 h-4 text-primary border-gray-300 focus:ring-primary"
+                    />
+                    <Label htmlFor="referral-yes" className="text-sm text-gray-700">
+                      Yes
+                    </Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="radio"
+                      id="referral-no"
+                      name="isReferredByEmployee"
+                      checked={formData.isReferredByEmployee === false}
+                      onChange={() => handleInputChange('isReferredByEmployee', false)}
+                      className="w-4 h-4 text-primary border-gray-300 focus:ring-primary"
+                    />
+                    <Label htmlFor="referral-no" className="text-sm text-gray-700">
+                      No
+                    </Label>
+                  </div>
+                </div>
+              </div>
+              
+              {formData.isReferredByEmployee && (
+                <div className="ml-6">
+                  <Label htmlFor="referredByEmployeeName">Full Name of Referring Employee *</Label>
+                  <Input
+                    id="referredByEmployeeName"
+                    value={formData.referredByEmployeeName}
+                    onChange={(e) => handleInputChange('referredByEmployeeName', e.target.value)}
+                    className="mt-1"
+                    placeholder="Enter the full name of the current employee"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Please provide the full name of the current ViaQuest Hospice employee who referred you.
+                  </p>
                 </div>
               )}
             </div>

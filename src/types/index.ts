@@ -52,6 +52,8 @@ export interface JobApplication {
   additionalDocsUrls: string[];
   hrManagerName?: string;
   hrManagerEmail?: string;
+  isReferredByEmployee?: boolean;
+  referredByEmployeeName?: string;
   status: 'application_submitted' | 'shortlisted_for_hr' | 'hr_interviewed' | 'shortlisted_for_manager' | 'manager_interviewed' | 'hired' | 'rejected' | 'waiting_list';
   notes?: string;
   trackingToken: string;

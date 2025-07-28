@@ -209,9 +209,11 @@ export type Database = {
           email: string
           first_name: string
           id: string
+          is_referred_by_employee: boolean | null
           job_id: string
           last_name: string
           phone: string | null
+          referred_by_employee_name: string | null
           status: string | null
           tracking_token: string
           updated_at: string | null
@@ -228,9 +230,11 @@ export type Database = {
           email: string
           first_name: string
           id?: string
+          is_referred_by_employee?: boolean | null
           job_id: string
           last_name: string
           phone?: string | null
+          referred_by_employee_name?: string | null
           status?: string | null
           tracking_token?: string
           updated_at?: string | null
@@ -247,9 +251,11 @@ export type Database = {
           email?: string
           first_name?: string
           id?: string
+          is_referred_by_employee?: boolean | null
           job_id?: string
           last_name?: string
           phone?: string | null
+          referred_by_employee_name?: string | null
           status?: string | null
           tracking_token?: string
           updated_at?: string | null

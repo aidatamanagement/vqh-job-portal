@@ -94,6 +94,8 @@ export const useSubmissions = () => {
         additionalDocsUrls: item.additional_docs_urls || [],
         hrManagerName: item.jobs?.hr_manager ? (item.jobs.hr_manager.admin_name || item.jobs.hr_manager.display_name || 'Unknown') : 'Unassigned',
         hrManagerEmail: item.jobs?.hr_manager?.email || undefined,
+        isReferredByEmployee: item.is_referred_by_employee || false,
+        referredByEmployeeName: item.referred_by_employee_name || undefined,
         status: item.status as 'application_submitted' | 'under_review' | 'shortlisted' | 'interviewed' | 'hired' | 'rejected' | 'waiting_list',
         notes: '',
         trackingToken: item.tracking_token,

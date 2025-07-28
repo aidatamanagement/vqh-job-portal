@@ -1,5 +1,33 @@
 # Vqh Job Portal Updates
 
+## 2025-01-05 - Employee Referral System Implementation
+
+### ✅ Added Employee Referral Fields to Application Form
+- **User Request**: Add 2 extra columns to application form for employee referrals
+  - "Are you referred by any current working employee of ViaQuest Hospice?" (Yes/No)
+  - If yes: "Can you enter their full name?" (text field)
+- **Implementation**: Complete referral system with database schema, form fields, and admin display
+- **Changes Made**:
+  - **Database Migration**: Added `is_referred_by_employee` (boolean) and `referred_by_employee_name` (varchar) columns to job_applications table
+  - **Application Form**: Added referral section with checkbox and conditional name input field
+  - **Form Validation**: Added validation to require employee name when referral is selected
+  - **Admin Interface**: Added referral information display in application details modal
+  - **Submissions Table**: Added referral status column with badges showing "Referred" or "No Referral"
+  - **Type Safety**: Updated TypeScript types for JobApplication interface and Supabase types
+- **Files Updated**:
+  - `supabase/migrations/20250105000001_add_referral_fields_to_applications.sql`
+  - `src/integrations/supabase/types.ts`
+  - `src/types/index.ts`
+  - `src/components/ApplicationModal.tsx`
+  - `src/components/admin/components/modal/ReferralInformation.tsx`
+  - `src/components/admin/components/ApplicationDetailsModal.tsx`
+  - `src/components/admin/components/SubmissionsTable.tsx`
+  - `src/components/admin/hooks/useSubmissions.ts`
+- **Impact**: Complete referral tracking system for employee referrals with proper validation and admin visibility
+- **Form Layout Update**: Moved referral section to appear just before the "I confirm" terms section for better user flow
+- **UI Enhancement**: Changed referral question from checkbox to Yes/No radio buttons for clearer user choice
+- **Date Validation Fix**: Fixed earliest start date validation to properly allow today's date selection with improved date parsing and comparison logic
+
 ## 2025-01-05 - Status Update Refresh Functionality & Dialog Background Update
 
 ### ✅ Changed Apply Modal Background from Transparent Black to White
