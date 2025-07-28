@@ -461,8 +461,8 @@ const Interviews: React.FC = () => {
   };
 
   const syncWithCalendlyInternal = async (isAutoSync: boolean = false) => {
-    // NOTE: This function only UPDATES existing interviews with latest Calendly data.
-    // New interviews should only be created through the Calendly webhook when candidates book appointments.
+    // NOTE: This function can create interviews from Calendly events, but only for legitimate interview events.
+    // New interviews are primarily created through the Calendly webhook, but this serves as a backup sync.
     if (!isCalendlyConfigured) {
       if (!isAutoSync) {
         toast({
@@ -482,7 +482,7 @@ const Interviews: React.FC = () => {
       // Get organization URI from settings
       const { data: settings } = await supabase
         .from('calendly_settings')
-        .select('organization_uri')
+        .select('organization_uri, default_event_type_uri')
         .single();
 
       if (!settings?.organization_uri) {
@@ -516,10 +516,20 @@ const Interviews: React.FC = () => {
         new Date(event.start_time) >= currentTime
       );
 
-      console.log(`Found ${eventsResult.events.length} total Calendly events, ${futureEvents.length} future events for ${isAutoSync ? 'auto-' : ''}sync`);
+      // For auto-sync, be more restrictive - only sync events that match the default interview event type
+      let eventsToProcess = futureEvents;
+      if (isAutoSync && settings.default_event_type_uri) {
+        eventsToProcess = futureEvents.filter(event => 
+          event.event_type.uri === settings.default_event_type_uri
+        );
+        console.log(`Auto-sync: Filtered to ${eventsToProcess.length} events matching default event type`);
+      }
+
+      console.log(`Found ${eventsResult.events.length} total Calendly events, ${eventsToProcess.length} events to process for ${isAutoSync ? 'auto-' : ''}sync`);
+      let syncedCount = 0;
       let updatedCount = 0;
 
-      for (const event of futureEvents) {
+      for (const event of eventsToProcess) {
         try {
           // Extract event ID from URI
           const eventId = event.uri.split('/').pop();
@@ -574,10 +584,31 @@ const Interviews: React.FC = () => {
               updatedCount++;
               console.log(`Updated existing interview for event ${eventId}`);
             }
+          } else if (!isAutoSync) {
+            // Only create new interviews during manual sync (not auto-sync)
+            // This allows admins to manually sync legitimate interviews without auto-creating unwanted ones
+            const { data: interview, error: interviewError } = await supabase
+              .from('interviews')
+              .insert({
+                application_id: application.id,
+                calendly_event_id: eventId,
+                calendly_event_uri: event.uri,
+                candidate_email: invitee.email,
+                interviewer_email: null,
+                scheduled_time: event.start_time,
+                meeting_url: event.location?.join_url || null,
+                status: event.status === 'active' ? 'scheduled' : event.status,
+              })
+              .select()
+              .single();
+
+            if (!interviewError) {
+              syncedCount++;
+              console.log(`Created new interview for event ${eventId} during manual sync`);
+            }
           } else {
-            // REMOVED: Don't automatically create interviews during sync
-            // Interviews should only be created when candidates book appointments through the webhook
-            console.log(`No existing interview found for event ${eventId}, skipping auto-creation`);
+            // For auto-sync, just log that we found a potential interview but didn't create it
+            console.log(`Auto-sync: Found potential interview for event ${eventId} but skipping auto-creation`);
           }
 
         } catch (eventError) {
@@ -585,8 +616,12 @@ const Interviews: React.FC = () => {
         }
       }
 
-      if (updatedCount > 0) {
-        const message = `${isAutoSync ? 'Auto-synced' : 'Updated'} ${updatedCount} existing interviews from Calendly`;
+      const totalProcessed = syncedCount + updatedCount;
+      
+      if (totalProcessed > 0 || syncedCount > 0) {
+        const message = isAutoSync 
+          ? `Auto-updated ${updatedCount} existing interviews from Calendly`
+          : `Synced ${totalProcessed} interviews from Calendly (${syncedCount} new, ${updatedCount} updated)`;
         
         if (!isAutoSync) {
           toast({
@@ -602,7 +637,7 @@ const Interviews: React.FC = () => {
       } else if (!isAutoSync) {
         toast({
           title: "Sync Complete",
-          description: `Found ${futureEvents.length} future Calendly events, but no existing interviews needed updates`,
+          description: `Found ${eventsToProcess.length} future Calendly events, but no interviews needed updates or creation`,
           variant: "default",
         });
       }
@@ -858,37 +893,54 @@ const Interviews: React.FC = () => {
           <Button
             onClick={syncWithCalendly}
             disabled={isSyncing || isAutoSyncing}
-            className="flex items-center gap-2"
+            className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700"
           >
             {isSyncing ? (
               <RefreshCw className="w-4 h-4 animate-spin" />
             ) : (
               <RefreshCw className="w-4 h-4" />
             )}
-            Manual Scan
+            Sync from Calendly
           </Button>
         </div>
       </div>
 
-      {/* Auto-sync Status Alert */}
-      <Alert className="border-green-200 bg-green-50">
-        <CheckCircle className="h-4 w-4 text-green-600" />
+      {/* Sync Status Alert */}
+      <Alert className="border-blue-200 bg-blue-50">
+        <CheckCircle className="h-4 w-4 text-blue-600" />
         <AlertDescription>
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-green-800 text-sm">
-                <strong>Auto-sync Active:</strong> New interviews appear automatically. Manual scan fetches only future events.
+              <p className="text-blue-800 text-sm">
+                <strong>Interview Sync:</strong> New appointments create interviews automatically via webhook. 
+                Use <strong>"Sync from Calendly"</strong> to import existing interviews that aren't showing here.
               </p>
             </div>
             {isAutoSyncing && (
-              <div className="flex items-center gap-2 text-green-700">
+              <div className="flex items-center gap-2 text-blue-700">
                 <RefreshCw className="w-4 h-4 animate-spin" />
-                <span className="text-sm">Syncing...</span>
+                <span className="text-sm">Auto-updating...</span>
               </div>
             )}
           </div>
         </AlertDescription>
       </Alert>
+
+      {/* Empty State Message */}
+      {interviews.length === 0 && !isLoading && (
+        <Alert className="border-yellow-200 bg-yellow-50">
+          <CalendarDays className="h-4 w-4 text-yellow-600" />
+          <AlertDescription>
+            <div className="text-yellow-800">
+              <p className="font-medium">No interviews found</p>
+              <p className="text-sm mt-1">
+                If you have interviews scheduled in Calendly that aren't showing here, 
+                click <strong>"Sync from Calendly"</strong> above to import them.
+              </p>
+            </div>
+          </AlertDescription>
+        </Alert>
+      )}
 
       {/* Conditional View Based on viewType */}
       {viewType === 'calendar' ? (
