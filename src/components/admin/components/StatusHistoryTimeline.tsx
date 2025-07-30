@@ -14,6 +14,9 @@ interface StatusHistoryEntry {
   changed_by: string | null;
   changed_at: string;
   transition_valid: boolean;
+  // Add profile fields for the user who made the change
+  changed_by_name?: string | null;
+  changed_by_email?: string | null;
 }
 
 interface StatusHistoryTimelineProps {
@@ -29,11 +32,27 @@ const StatusHistoryTimeline: React.FC<StatusHistoryTimelineProps> = ({ applicati
     fetchStatusHistory();
   }, [applicationId]);
 
+  const handleExpandToggle = () => {
+    console.log('Expand toggle clicked, current expanded state:', expanded);
+    setExpanded(!expanded);
+    console.log('New expanded state will be:', !expanded);
+  };
+
   const fetchStatusHistory = async () => {
     try {
+      // Join with profiles table to get user names
       const { data, error } = await supabase
         .from('status_history')
-        .select('*')
+        .select(`
+          *,
+          profiles!status_history_changed_by_fkey(
+            admin_name,
+            display_name,
+            first_name,
+            last_name,
+            email
+          )
+        `)
         .eq('application_id', applicationId)
         .order('changed_at', { ascending: false });
 
@@ -42,7 +61,28 @@ const StatusHistoryTimeline: React.FC<StatusHistoryTimelineProps> = ({ applicati
         return;
       }
 
-      setHistory(data || []);
+      // Transform the data to include user names
+      const transformedData = (data || []).map((entry: any) => {
+        const profile = entry.profiles;
+        let changedByName = null;
+        
+        if (profile) {
+          // Use admin_name first, then display_name, then first_name + last_name, then email
+          changedByName = profile.admin_name || 
+                         profile.display_name || 
+                         (profile.first_name && profile.last_name ? `${profile.first_name} ${profile.last_name}` : null) ||
+                         profile.email;
+        }
+
+        return {
+          ...entry,
+          changed_by_name: changedByName,
+          changed_by_email: profile?.email || null
+        };
+      });
+
+      setHistory(transformedData);
+      console.log('Status history loaded:', transformedData.length, 'entries');
     } catch (error) {
       console.error('Error fetching status history:', error);
     } finally {
@@ -119,21 +159,21 @@ const StatusHistoryTimeline: React.FC<StatusHistoryTimelineProps> = ({ applicati
     );
   }
 
-  const displayedHistory = expanded ? history : history.slice(0, 3);
+  const displayedHistory = expanded ? history : history.slice(0, 1); // Show only 1 item when collapsed
+  
+  console.log('Current state - expanded:', expanded, 'history length:', history.length, 'displayed:', displayedHistory.length);
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-lg flex items-center justify-between">
-          Status History ({history.length})
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setExpanded(!expanded)}
-            className="h-8 w-8 p-0"
-          >
+        <CardTitle 
+          className="text-lg flex items-center justify-between cursor-pointer hover:bg-gray-50 p-2 -m-2 rounded transition-colors select-none"
+          onClick={handleExpandToggle}
+        >
+          <span>Status History [{history.length}]</span>
+          <div className="flex items-center gap-2">
             {expanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-          </Button>
+          </div>
         </CardTitle>
       </CardHeader>
       <CardContent>
@@ -169,23 +209,41 @@ const StatusHistoryTimeline: React.FC<StatusHistoryTimelineProps> = ({ applicati
                   {entry.changed_by && (
                     <div className="flex items-center gap-1">
                       <User className="h-3 w-3" />
-                      <span>Updated by: {entry.changed_by}</span>
+                      <span>Updated by: {entry.changed_by_name || entry.changed_by_email || entry.changed_by}</span>
                     </div>
                   )}
                 </div>
               </div>
             </div>
           ))}
+          
+          {/* Show a message when collapsed and there are more items */}
+          {!expanded && history.length > 1 && (
+            <div className="text-center py-2 text-gray-500 text-sm">
+              ... and {history.length - 1} more entries
+            </div>
+          )}
         </div>
 
-        {history.length > 3 && (
+        {history.length > 1 && (
           <div className="mt-4 text-center">
             <Button
               variant="outline"
               size="sm"
-              onClick={() => setExpanded(!expanded)}
+              onClick={handleExpandToggle}
+              className="flex items-center gap-2"
             >
-              {expanded ? 'Show Less' : `Show ${history.length - 3} More`}
+              {expanded ? (
+                <>
+                  <ChevronUp className="h-4 w-4" />
+                  Show Less
+                </>
+              ) : (
+                <>
+                  <ChevronDown className="h-4 w-4" />
+                  Show {history.length - 1} More
+                </>
+              )}
             </Button>
           </div>
         )}

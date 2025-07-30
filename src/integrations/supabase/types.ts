@@ -507,6 +507,13 @@ export type Database = {
             referencedRelation: "job_applications"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "status_history_changed_by_fkey"
+            columns: ["changed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
         ]
       }
       training_videos: {

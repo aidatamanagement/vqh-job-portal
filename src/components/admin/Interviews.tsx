@@ -461,6 +461,8 @@ const Interviews: React.FC = () => {
   };
 
   const syncWithCalendlyInternal = async (isAutoSync: boolean = false) => {
+    // NOTE: This function only UPDATES existing interviews with latest Calendly data.
+    // New interviews should only be created through the Calendly webhook when candidates book appointments.
     if (!isCalendlyConfigured) {
       if (!isAutoSync) {
         toast({
@@ -515,7 +517,6 @@ const Interviews: React.FC = () => {
       );
 
       console.log(`Found ${eventsResult.events.length} total Calendly events, ${futureEvents.length} future events for ${isAutoSync ? 'auto-' : ''}sync`);
-      let syncedCount = 0;
       let updatedCount = 0;
 
       for (const event of futureEvents) {
@@ -574,26 +575,9 @@ const Interviews: React.FC = () => {
               console.log(`Updated existing interview for event ${eventId}`);
             }
           } else {
-            // Create new interview record
-            const { data: interview, error: interviewError } = await supabase
-              .from('interviews')
-              .insert({
-                application_id: application.id,
-                calendly_event_id: eventId,
-                calendly_event_uri: event.uri,
-                candidate_email: invitee.email,
-                interviewer_email: null,
-                scheduled_time: event.start_time,
-                meeting_url: event.location?.join_url || null,
-                status: event.status === 'active' ? 'scheduled' : event.status,
-              })
-              .select()
-              .single();
-
-            if (!interviewError) {
-              syncedCount++;
-              console.log(`Successfully synced new interview for event ${eventId}`);
-            }
+            // REMOVED: Don't automatically create interviews during sync
+            // Interviews should only be created when candidates book appointments through the webhook
+            console.log(`No existing interview found for event ${eventId}, skipping auto-creation`);
           }
 
         } catch (eventError) {
@@ -601,10 +585,8 @@ const Interviews: React.FC = () => {
         }
       }
 
-      const totalProcessed = syncedCount + updatedCount;
-      
-      if (totalProcessed > 0) {
-        const message = `${isAutoSync ? 'Auto-synced' : 'Synced'} ${totalProcessed} interviews from Calendly (${syncedCount} new, ${updatedCount} updated)`;
+      if (updatedCount > 0) {
+        const message = `${isAutoSync ? 'Auto-synced' : 'Updated'} ${updatedCount} existing interviews from Calendly`;
         
         if (!isAutoSync) {
           toast({
@@ -620,7 +602,7 @@ const Interviews: React.FC = () => {
       } else if (!isAutoSync) {
         toast({
           title: "Sync Complete",
-          description: `Found ${futureEvents.length} future Calendly events, but none could be processed (missing job applications)`,
+          description: `Found ${futureEvents.length} future Calendly events, but no existing interviews needed updates`,
           variant: "default",
         });
       }

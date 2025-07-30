@@ -4,15 +4,16 @@ import { Button } from '@/components/ui/button';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { useAppContext } from '@/contexts/AppContext';
-import { LogOut, User, Menu } from 'lucide-react';
+import { LogOut, User, Menu, BarChart3, Plus, Briefcase, FileText, Calendar, Mail, BookOpen, Users, MapPin, ClipboardList, Video, Settings, Building } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 interface AdminHeaderProps {
   onMenuClick?: () => void;
   onNavigate?: (view: string) => void;
+  currentView?: string;
 }
 
-const AdminHeader: React.FC<AdminHeaderProps> = ({ onMenuClick, onNavigate }) => {
+const AdminHeader: React.FC<AdminHeaderProps> = ({ onMenuClick, onNavigate, currentView }) => {
   const { logout, userProfile } = useAppContext();
   const navigate = useNavigate();
 
@@ -30,10 +31,10 @@ const AdminHeader: React.FC<AdminHeaderProps> = ({ onMenuClick, onNavigate }) =>
   };
 
   return (
-    <header className="bg-white border-b border-gray-200 px-4 lg:px-6 h-16 flex items-center">
+    <header className="border-b border-gray-200 px-6 lg:px-8 h-16 flex items-center" style={{ backgroundColor: '#FDF9F6' }}>
       <div className="flex items-center justify-between w-full">
-        {/* Mobile Menu Button and Logo */}
-        <div className="flex items-center space-x-2">
+        {/* Mobile Menu Button and Dashboard Title */}
+        <div className="flex items-center space-x-4">
           {/* Mobile Menu Button */}
           <Button
             variant="ghost"
@@ -44,23 +45,56 @@ const AdminHeader: React.FC<AdminHeaderProps> = ({ onMenuClick, onNavigate }) =>
             <Menu className="w-5 h-5" />
           </Button>
           
-          {/* Logo and Title */}
-          <div 
-            className="flex items-center cursor-pointer group"
-            onClick={handleLogoClick}
-          >
-            <div className="w-8 h-8 lg:w-10 lg:h-10 rounded-lg flex items-center justify-center group-hover:scale-105 transition-transform duration-200">
-              <img 
-                src="/images/LOGO.svg" 
-                alt="ViaQuest Hospice Logo" 
-                className="w-full h-full object-contain"
-              />
+          {/* Page Title and Icon - Show for all pages */}
+          <div className="hidden md:block">
+            <div className="flex items-center space-x-3">
+              <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
+                {currentView === 'dashboard' ? <BarChart3 className="w-4 h-4 text-white" /> :
+                 currentView === 'post-job' ? <Plus className="w-4 h-4 text-white" /> :
+                 currentView === 'manage-jobs' ? <Briefcase className="w-4 h-4 text-white" /> :
+                 currentView === 'submissions' ? <FileText className="w-4 h-4 text-white" /> :
+                 currentView === 'interviews' ? <Calendar className="w-4 h-4 text-white" /> :
+                 currentView === 'email-management' ? <Mail className="w-4 h-4 text-white" /> :
+                 currentView === 'guide-training' ? <BookOpen className="w-4 h-4 text-white" /> :
+                 currentView === 'salespeople' ? <Users className="w-4 h-4 text-white" /> :
+                 currentView === 'visit-logs' ? <MapPin className="w-4 h-4 text-white" /> :
+                 currentView === 'crm-reports' ? <ClipboardList className="w-4 h-4 text-white" /> :
+                 currentView === 'training-videos' ? <Video className="w-4 h-4 text-white" /> :
+                 currentView === 'content-manager' ? <Building className="w-4 h-4 text-white" /> :
+                 currentView === 'settings' ? <Settings className="w-4 h-4 text-white" /> :
+                 currentView === 'profile-settings' ? <User className="w-4 h-4 text-white" /> :
+                 <BarChart3 className="w-4 h-4 text-white" />}
+              </div>
+              <h1 className="text-xl font-bold text-gray-900">
+                {currentView === 'dashboard' ? 'Admin Dashboard' : 
+                 currentView === 'post-job' ? 'Post Job' :
+                 currentView === 'manage-jobs' ? 'Manage Jobs' :
+                 currentView === 'submissions' ? 'Submissions' :
+                 currentView === 'interviews' ? 'Interviews' :
+                 currentView === 'email-management' ? 'Email Management' :
+                 currentView === 'guide-training' ? 'Guide Training' :
+                 currentView === 'salespeople' ? 'Salespeople' :
+                 currentView === 'visit-logs' ? 'Visit Logs' :
+                 currentView === 'crm-reports' ? 'CRM Reports' :
+                 currentView === 'training-videos' ? 'Training Videos' :
+                 currentView === 'content-manager' ? 'Content Manager' :
+                 currentView === 'settings' ? 'Settings' :
+                 currentView === 'profile-settings' ? 'Profile Settings' :
+                 'Admin Dashboard'}
+              </h1>
             </div>
           </div>
         </div>
 
         {/* Admin Info and Actions */}
         <div className="flex items-center space-x-2 lg:space-x-4">
+          {/* Welcome Message - Desktop */}
+          <div className="hidden md:block">
+            <p className="text-sm font-medium text-gray-800">
+              Welcome, {userProfile?.display_name || 'User'}
+            </p>
+          </div>
+          
           {/* Desktop Profile Dropdown */}
           <div className="hidden md:block">
             <DropdownMenu>
@@ -119,6 +153,13 @@ const AdminHeader: React.FC<AdminHeaderProps> = ({ onMenuClick, onNavigate }) =>
             </DropdownMenu>
           </div>
 
+          {/* Welcome Message - Mobile */}
+          <div className="md:hidden">
+            <p className="text-sm font-medium text-gray-800">
+              Welcome, {userProfile?.display_name || 'User'}
+            </p>
+          </div>
+          
           {/* Mobile Profile Dropdown */}
           <div className="md:hidden">
             <DropdownMenu>

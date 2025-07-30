@@ -219,6 +219,19 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({ currentView, onViewChange, 
     return (
       <div className="w-64 bg-white border-r border-gray-200 h-full">
         <div className="p-4 h-full overflow-y-auto">
+          {/* Logo */}
+          <div className="mb-6 pb-6 border-b border-gray-200">
+            <div className="flex items-center justify-center cursor-pointer group">
+              <div className="w-16 h-16 rounded-lg flex items-center justify-center group-hover:scale-105 transition-transform duration-200">
+                <img 
+                  src="/images/LOGO.svg" 
+                  alt="ViaQuest Hospice Logo" 
+                  className="w-full h-full object-contain"
+                />
+              </div>
+            </div>
+          </div>
+          
           {/* Navigation Menu - Mobile (Always Expanded) */}
           <nav className="space-y-2">
             {menuItems.map((item) => {
@@ -328,13 +341,27 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({ currentView, onViewChange, 
   // Desktop version with hover-to-expand functionality
   return (
     <div 
-      className={`fixed left-0 top-16 h-[calc(100vh-4rem)] bg-white border-r border-gray-200 z-40 transition-all duration-300 ease-in-out ${
+      className={`fixed left-0 top-0 h-full border-r border-gray-200 z-40 transition-all duration-300 ease-in-out ${
         isHovered ? 'w-64' : 'w-16'
       } shadow-sm`}
+      style={{ backgroundColor: '#FDF9F6' }}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
       <div className="p-3 h-full overflow-y-auto">
+        {/* Logo - Show collapsed version when collapsed, full version when expanded */}
+        <div className="mb-6 pb-6 border-b border-gray-200">
+          <div className={`flex items-center cursor-pointer group ${isHovered ? 'justify-center' : ''}`}>
+            <div className={`${isHovered ? 'w-36 h-26' : 'w-8 h-6'} rounded-lg flex items-center justify-center group-hover:scale-105 transition-all duration-200`}>
+              <img 
+                src={isHovered ? "/images/LOGO.svg" : "/images/collapsed.svg"} 
+                alt="ViaQuest Hospice Logo" 
+                className="w-full h-full object-contain"
+              />
+            </div>
+          </div>
+        </div>
+        
         {/* Navigation Menu */}
         <nav className="space-y-2">
           {menuItems.map((item) => {

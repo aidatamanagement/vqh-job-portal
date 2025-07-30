@@ -200,54 +200,102 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
 
   const quickActions = allQuickActions.filter(action => permissions[action.permission]);
 
-  return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center space-x-3 mb-8">
-        <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
-          <BarChart3 className="w-5 h-5 text-white" />
-        </div>
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900"> {userRole.charAt(0).toUpperCase() + userRole.slice(1).replace('_', ' ')} Dashboard</h1>
-          <p className="text-sm text-gray-600">
-            Welcome, {userProfile?.display_name || 'User'}
-          </p>
-        </div>
-      </div>
+  // Module cards configuration
+  const moduleCards = [
+    {
+      title: 'Job Portal',
+      icon: Briefcase,
+      color: 'bg-[#D8E5E3]',
+      borderColor: 'outline-[#A1C6C0]',
+      textColor: 'text-[#000000]',
+      items: [
+        { label: 'Post Job', onClick: () => onNavigate('post-job'), permission: 'canManageJobs' },
+        { label: 'Manage Jobs', onClick: () => onNavigate('manage-jobs'), permission: 'canManageJobs' },
+        { label: 'Submissions', onClick: () => onNavigate('submissions'), permission: 'canViewApplications' },
+        { label: 'Interviews', onClick: () => onNavigate('interviews'), permission: 'canViewApplications' }
+      ]
+    },
+    {
+      title: 'CRM',
+      icon: Users,
+      color: 'bg-[#E8E3ED]',
+      borderColor: 'outline-[#9F9FF8]',
+      textColor: 'text-[#000000]',
+      items: [
+        { label: 'Salespeople', onClick: () => onNavigate('salespeople'), permission: 'canViewSalespeople' },
+        { label: 'Reports', onClick: () => onNavigate('crm-reports'), permission: 'canViewVisitLogs' },
+        { label: 'Visit Logs', onClick: () => onNavigate('visit-logs'), permission: 'canViewVisitLogs' }
+      ]
+    },
+    {
+      title: 'Training',
+      icon: BookOpen,
+      color: 'bg-[#EED5D6]',
+      borderColor: 'outline-[#DFA0A0]',
+      textColor: 'text-[#000000]',
+      items: [
+        { label: 'Videos', onClick: () => onNavigate('training-videos'), permission: 'canViewTrainingVideos' },
+        { label: 'Coming Soon', onClick: () => {}, permission: 'canViewTrainingVideos' },
+        { label: 'Coming Soon', onClick: () => {}, permission: 'canViewTrainingVideos' }
+      ]
+    },
+    {
+      title: 'Content Manager',
+      icon: Building,
+      color: 'bg-[#D9E7F0]',
+      borderColor: 'outline-[#92BFFF]',
+      textColor: 'text-[#000000]',
+      items: [
+        { label: 'Coming Soon', onClick: () => {}, permission: 'canManageContent' },
+        { label: 'Coming Soon', onClick: () => {}, permission: 'canManageContent' },
+        { label: 'Coming Soon', onClick: () => {}, permission: 'canManageContent' }
+      ]
+    }
+  ];
 
-      {/* Quick Actions - Moved after page title with full width */}
-      {quickActions.length > 0 && (
-        <Card className="w-full">
-          <CardHeader>
-            <CardTitle className="flex items-center text-lg">
-              <Target className="w-5 h-5 mr-2" />
-              Quick Actions
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-              {quickActions.map((action, index) => {
-                const Icon = action.icon;
-                return (
-                  <Button
-                    key={index}
-                    onClick={action.onClick}
-                    className={`justify-start h-auto p-4 ${action.color} text-white`}
-                    variant="default"
-                  >
-                    <div className="flex items-center space-x-3">
-                      <Icon className="w-5 h-5" />
-                      <div className="text-left">
-                        <div className="font-medium">{action.label}</div>
+  return (
+    <div className="space-y-6" style={{ backgroundColor: '#FDF9F6', minHeight: '100vh', padding: '24px' }}>
+      {/* Module Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {moduleCards.map((module, index) => {
+          const Icon = module.icon;
+          const filteredItems = module.items.filter(item => permissions[item.permission]);
+          
+          return (
+            <div key={index} className={`w-64 h-32 relative ${module.color || 'bg-zinc-200'} rounded-2xl outline outline-1 outline-offset-[-1px] ${module.borderColor || 'outline-slate-400'} hover:shadow-lg transition-all duration-200`}>
+              {/* Title */}
+              <div className="w-52 left-[48px] top-[18px] absolute rounded-lg inline-flex flex-col justify-center items-start">
+                <div className={`self-stretch h-5 justify-start ${module.textColor || 'text-black'} text-sm font-semibold font-['Open_Sans'] leading-tight`}>
+                  {module.title}
+                </div>
+              </div>
+              
+              {/* Icon */}
+              <div className="left-[24px] top-[20px] absolute rounded-lg inline-flex justify-center items-center">
+                <div className="w-4 h-4 rounded-lg flex items-center justify-center">
+                  <Icon className={`w-4 h-4 ${module.textColor || 'text-gray-600'}`} />
+                </div>
+              </div>
+              
+              {/* Menu Items */}
+              <div className="absolute left-0 right-0 top-[52px] px-6">
+                <div className="grid grid-cols-2 gap-x-8 gap-y-2">
+                  {filteredItems.map((item, idx) => (
+                    <div key={idx} className="flex items-center gap-2">
+                      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" className="flex-shrink-0">
+                        <path fillRule="evenodd" clipRule="evenodd" d="M5.65967 12.3536C5.44678 12.1583 5.44678 11.8417 5.65967 11.6464L9.25 8.35355C9.4629 8.15829 9.4629 7.84171 9.25 7.64645L5.65968 4.35355C5.44678 4.15829 5.44678 3.84171 5.65968 3.64645C5.87257 3.45118 6.21775 3.45118 6.43065 3.64645L10.021 6.93934C10.6597 7.52513 10.6597 8.47487 10.021 9.06066L6.43065 12.3536C6.21775 12.5488 5.87257 12.5488 5.65967 12.3536Z" fill="#333333"/>
+                      </svg>
+                      <div className={`text-xs font-normal font-['Open_Sans'] leading-none cursor-pointer hover:text-gray-900 ${module.textColor || 'text-zinc-800'}`} onClick={item.onClick}>
+                        {item.label}
                       </div>
                     </div>
-                  </Button>
-                );
-              })}
+                  ))}
+                </div>
+              </div>
             </div>
-          </CardContent>
-        </Card>
-      )}
+          );
+        })}
+      </div>
 
       {/* Summary Cards */}
       {summaryCards.length > 0 && (

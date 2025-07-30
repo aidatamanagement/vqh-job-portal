@@ -506,14 +506,6 @@ const PostJob: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center space-x-3 animate-fade-in-up">
-        <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
-          <Plus className="w-6 h-6 text-white" />
-        </div>
-        <div>
-          <h1 className="font-bold text-gray-900" style={{ fontSize: '1.3rem' }}>Post New Job</h1>
-        </div>
-      </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="animate-fade-in">
         <TabsList className="grid w-full grid-cols-2">

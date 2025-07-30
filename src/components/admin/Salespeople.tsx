@@ -114,7 +114,6 @@ const Salespeople: React.FC = () => {
           <Users className="w-5 h-5 text-white" />
         </div>
         <div className="flex-1">
-          <h1 className="text-2xl font-bold text-gray-900">Salespeople</h1>
         </div>
         <Button onClick={handleAddSalesperson} className="bg-primary hover:bg-primary/90">
           <Plus className="w-4 h-4 mr-2" />

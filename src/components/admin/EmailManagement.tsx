@@ -16,7 +16,7 @@ const EmailManagement: React.FC = () => {
           <Mail className="w-5 h-5 text-white" />
         </div>
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Email Management</h1>
+  
           <p className="text-sm text-gray-600">Manage email templates and configuration settings</p>
         </div>
       </div>

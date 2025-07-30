@@ -1,5 +1,55 @@
 # Vqh Job Portal Updates
 
+## 2025-01-03 15:30 - Linked Status History to Profiles Table
+
+### User Request
+- **Request**: Link status history table and profiles table to show updated by: name instead of UUID in status history place
+- **Goal**: Display actual user names instead of UUIDs in the status history timeline
+
+### Database Changes
+- **Migration**: Created `supabase/migrations/20250103000010_add_status_history_profiles_fk.sql`
+- **Foreign Key**: Added `status_history_changed_by_fkey` constraint linking `status_history.changed_by` to `profiles.id`
+- **Index**: Created `idx_status_history_changed_by` for better query performance
+- **Cascade**: Set `ON DELETE SET NULL` to handle profile deletions gracefully
+
+### Frontend Changes
+- **Component**: Updated `src/components/admin/components/StatusHistoryTimeline.tsx`
+- **Query Enhancement**: Modified `fetchStatusHistory` to join with profiles table
+- **Name Resolution**: Implemented fallback logic for user names:
+  1. `admin_name` (preferred)
+  2. `display_name` 
+  3. `first_name + last_name` (combined)
+  4. `email` (fallback)
+  5. Original UUID (final fallback)
+- **TypeScript**: Updated `src/integrations/supabase/types.ts` to include new foreign key relationship
+
+### Features Added
+- **Smart Name Display**: Shows the most appropriate name for each status change
+- **Graceful Fallbacks**: Multiple fallback options ensure names are always displayed
+- **Performance Optimized**: Index on `changed_by` field for efficient queries
+- **Type Safety**: Updated TypeScript definitions for the new relationship
+
+### User Experience
+- **Before**: "Updated by: 123e4567-e89b-12d3-a456-426614174000"
+- **After**: "Updated by: John Smith" or "Updated by: john.smith@company.com"
+- **Professional Display**: Clean, readable names instead of technical UUIDs
+- **Consistent Format**: Standardized name display across all status history entries
+
+### Technical Benefits
+- **Database Integrity**: Foreign key ensures data consistency
+- **Query Performance**: Indexed relationship for fast joins
+- **Maintainable Code**: Type-safe queries with proper error handling
+- **Scalable Design**: Handles missing profiles gracefully
+
+### Files Updated
+- `src/components/admin/components/StatusHistoryTimeline.tsx` - Enhanced query and display logic
+- `src/integrations/supabase/types.ts` - Added foreign key relationship
+- `supabase/migrations/20250103000010_add_status_history_profiles_fk.sql` - New migration
+- `updates.md` - Documentation update
+
+### Impact
+Complete transformation of status history display from technical UUIDs to user-friendly names, improving readability and professionalism of the application tracking system.
+
 ## 2025-01-05 - Employee Referral System Implementation
 
 ### ✅ Added Employee Referral Fields to Application Form

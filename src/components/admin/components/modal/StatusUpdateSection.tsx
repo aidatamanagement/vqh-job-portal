@@ -68,11 +68,16 @@ const StatusUpdateSection: React.FC<StatusUpdateSectionProps> = ({
       const result = await updateApplicationStatus(application.id, selectedStatus as ApplicationStatus, notes.trim());
       
       if (result.success) {
+        console.log('Status update successful, calling onUpdateStatus and refreshSubmissions');
         onUpdateStatus(application.id, selectedStatus as ApplicationStatus);
         
         // Refresh submissions data to update the frontend
         if (refreshSubmissions) {
+          console.log('Calling refreshSubmissions function...');
           refreshSubmissions();
+          console.log('refreshSubmissions function called');
+        } else {
+          console.log('refreshSubmissions function not provided');
         }
         
         // Check if job was deactivated due to hire

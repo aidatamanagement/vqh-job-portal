@@ -41,40 +41,16 @@ export const useSubmissions = () => {
 
       if (error) {
         console.error('Error fetching submissions:', error);
-        console.error('Error details:', {
-          message: error.message,
-          details: error.details,
-          hint: error.hint,
-          code: error.code
-        });
-        
-        // More specific error messages
-        let errorDescription = "Failed to load submissions. Please try again.";
-        if (error.message?.includes('permission denied')) {
-          errorDescription = "Permission denied. Please check your admin access.";
-        } else if (error.message?.includes('column') && error.message?.includes('does not exist')) {
-          errorDescription = "Database schema issue. Please run the database migration.";
-        } else if (error.message?.includes('function') && error.message?.includes('does not exist')) {
-          errorDescription = "Database function missing. Please run the database migration.";
-        }
-        
         toast({
           title: "Error",
-          description: errorDescription,
+          description: "Failed to load submissions. Please try again.",
           variant: "destructive",
         });
-        // Retry once if it's the first attempt
-        if (retryCount === 0) {
-          console.log('Retrying with simplified query...');
-          return fetchSubmissions(1);
-        }
         return;
       }
 
-      console.log('Fetched submissions successfully:', {
-        count: data?.length || 0,
-        sample: data?.slice(0, 2)
-      });
+      console.log('Raw submissions data from database:', data?.length, 'entries');
+      console.log('Sample submission statuses:', data?.slice(0, 3).map(item => ({ id: item.id, status: item.status })));
 
       // Transform data to match the expected format
       const transformedSubmissions: JobApplication[] = data.map(item => ({
@@ -96,12 +72,14 @@ export const useSubmissions = () => {
         hrManagerEmail: item.jobs?.hr_manager?.email || undefined,
         isReferredByEmployee: item.is_referred_by_employee || false,
         referredByEmployeeName: item.referred_by_employee_name || undefined,
-        status: item.status as 'application_submitted' | 'under_review' | 'shortlisted' | 'interviewed' | 'hired' | 'rejected' | 'waiting_list',
+        status: item.status as 'application_submitted' | 'shortlisted_for_hr' | 'hr_interviewed' | 'shortlisted_for_manager' | 'manager_interviewed' | 'hired' | 'rejected' | 'waiting_list',
         notes: '',
         trackingToken: item.tracking_token,
         createdAt: item.created_at,
         updatedAt: item.updated_at,
       }));
+
+      console.log('Transformed submissions with statuses:', transformedSubmissions.slice(0, 3).map(item => ({ id: item.id, status: item.status })));
 
       setSubmissions(transformedSubmissions);
     } catch (error) {
