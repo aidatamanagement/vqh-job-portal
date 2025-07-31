@@ -74,7 +74,7 @@ type MenuConfig = MenuItem | MenuGroup;
 
 const AdminSidebar: React.FC<AdminSidebarProps> = ({ currentView, onViewChange, isMobile = false }) => {
   const { jobs, applications, userProfile } = useAppContext();
-  const [expandedMenu, setExpandedMenu] = useState<string | null>('job-portal');
+  const [expandedMenu, setExpandedMenu] = useState<string | null>('hr');
   const [isHovered, setIsHovered] = useState(false);
 
   const activeJobs = jobs.filter(job => job.isActive).length;
@@ -99,8 +99,8 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({ currentView, onViewChange, 
       visible: permissions.canViewDashboard,
     },
     {
-      id: 'job-portal',
-      label: 'Job Portal',
+      id: 'hr',
+      label: 'HR',
       icon: Briefcase,
       type: 'group' as const,
       visible: permissions.canManageJobs || permissions.canViewApplications,
@@ -166,8 +166,8 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({ currentView, onViewChange, 
       ].filter(child => child.visible),
     },
     {
-      id: 'training',
-      label: 'Training',
+      id: 'employee-training',
+      label: 'Employee Training',
       icon: BookOpen,
       type: 'group' as const,
       visible: permissions.canViewTrainingVideos,
@@ -182,8 +182,8 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({ currentView, onViewChange, 
       ].filter(child => child.visible),
     },
     {
-      id: 'content-manager',
-      label: 'Content Manager',
+      id: 'marketing',
+      label: 'Marketing',
       icon: Layout,
       type: 'single' as const,
       view: 'content-manager' as AdminView,

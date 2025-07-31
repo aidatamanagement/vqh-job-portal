@@ -66,7 +66,13 @@ const AdminHeader: React.FC<AdminHeaderProps> = ({ onMenuClick, onNavigate, curr
                  <BarChart3 className="w-4 h-4 text-white" />}
               </div>
               <h1 className="text-xl font-bold text-gray-900">
-                {currentView === 'dashboard' ? 'Admin Dashboard' : 
+                {currentView === 'dashboard' ? 
+                  (userProfile?.role === 'admin' ? 'Admin Dashboard' :
+                   userProfile?.role === 'recruiter' ? 'Recruiter Dashboard' :
+                   userProfile?.role === 'hr' ? 'HR Dashboard' :
+                   userProfile?.role === 'trainer' ? 'Trainer Dashboard' :
+                   userProfile?.role === 'content_manager' ? 'Content Manager Dashboard' :
+                   'Dashboard') : 
                  currentView === 'post-job' ? 'Post Job' :
                  currentView === 'manage-jobs' ? 'Manage Jobs' :
                  currentView === 'submissions' ? 'Submissions' :
@@ -80,7 +86,7 @@ const AdminHeader: React.FC<AdminHeaderProps> = ({ onMenuClick, onNavigate, curr
                  currentView === 'content-manager' ? 'Content Manager' :
                  currentView === 'settings' ? 'Settings' :
                  currentView === 'profile-settings' ? 'Profile Settings' :
-                 'Admin Dashboard'}
+                 'Dashboard'}
               </h1>
             </div>
           </div>

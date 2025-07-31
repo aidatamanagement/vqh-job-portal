@@ -26,6 +26,7 @@ import {
 } from 'lucide-react';
 import { useAppContext } from '@/contexts/AppContext';
 import { getRolePermissions } from '@/utils/rolePermissions';
+import { StatCard } from './components/StatCard'
 
 type AdminView = 
   | 'dashboard'
@@ -203,7 +204,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
   // Module cards configuration
   const moduleCards = [
     {
-      title: 'Job Portal',
+      title: 'HR',
       icon: Briefcase,
       color: 'bg-[#D8E5E3]',
       borderColor: 'outline-[#A1C6C0]',
@@ -228,7 +229,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
       ]
     },
     {
-      title: 'Training',
+      title: 'Employee Training',
       icon: BookOpen,
       color: 'bg-[#EED5D6]',
       borderColor: 'outline-[#DFA0A0]',
@@ -240,7 +241,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
       ]
     },
     {
-      title: 'Content Manager',
+      title: 'Marketing',
       icon: Building,
       color: 'bg-[#D9E7F0]',
       borderColor: 'outline-[#92BFFF]',
@@ -257,81 +258,65 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
     <div className="space-y-6" style={{ backgroundColor: '#FDF9F6', minHeight: '100vh', padding: '24px' }}>
       {/* Module Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {moduleCards.map((module, index) => {
-          const Icon = module.icon;
-          const filteredItems = module.items.filter(item => permissions[item.permission]);
-          
-          return (
-            <div key={index} className={`w-64 h-32 relative ${module.color || 'bg-zinc-200'} rounded-2xl outline outline-1 outline-offset-[-1px] ${module.borderColor || 'outline-slate-400'} hover:shadow-lg transition-all duration-200`}>
-              {/* Title */}
-              <div className="w-52 left-[48px] top-[18px] absolute rounded-lg inline-flex flex-col justify-center items-start">
-                <div className={`self-stretch h-5 justify-start ${module.textColor || 'text-black'} text-sm font-semibold font-['Open_Sans'] leading-tight`}>
-                  {module.title}
+        {moduleCards
+          .map((module, index) => {
+            const Icon = module.icon;
+            const filteredItems = module.items.filter(item => permissions[item.permission]);
+            
+            // Only render module card if user has access to at least one item
+            if (filteredItems.length === 0) return null;
+            
+            return (
+              <div key={index} className={`w-64 h-32 relative ${module.color || 'bg-zinc-200'} rounded-2xl outline outline-1 outline-offset-[-1px] ${module.borderColor || 'outline-slate-400'} hover:shadow-lg transition-all duration-200`}>
+                {/* Title */}
+                <div className="w-52 left-[48px] top-[18px] absolute rounded-lg inline-flex flex-col justify-center items-start">
+                  <div className={`self-stretch h-5 justify-start ${module.textColor || 'text-black'} text-sm font-semibold font-['Open_Sans'] leading-tight`}>
+                    {module.title}
+                  </div>
                 </div>
-              </div>
-              
-              {/* Icon */}
-              <div className="left-[24px] top-[20px] absolute rounded-lg inline-flex justify-center items-center">
-                <div className="w-4 h-4 rounded-lg flex items-center justify-center">
-                  <Icon className={`w-4 h-4 ${module.textColor || 'text-gray-600'}`} />
+                
+                {/* Icon */}
+                <div className="left-[24px] top-[20px] absolute rounded-lg inline-flex justify-center items-center">
+                  <div className="w-4 h-4 rounded-lg flex items-center justify-center">
+                    <Icon className={`w-4 h-4 ${module.textColor || 'text-gray-600'}`} />
+                  </div>
                 </div>
-              </div>
-              
-              {/* Menu Items */}
-              <div className="absolute left-0 right-0 top-[52px] px-6">
-                <div className="grid grid-cols-2 gap-x-8 gap-y-2">
-                  {filteredItems.map((item, idx) => (
-                    <div key={idx} className="flex items-center gap-2">
-                      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" className="flex-shrink-0">
-                        <path fillRule="evenodd" clipRule="evenodd" d="M5.65967 12.3536C5.44678 12.1583 5.44678 11.8417 5.65967 11.6464L9.25 8.35355C9.4629 8.15829 9.4629 7.84171 9.25 7.64645L5.65968 4.35355C5.44678 4.15829 5.44678 3.84171 5.65968 3.64645C5.87257 3.45118 6.21775 3.45118 6.43065 3.64645L10.021 6.93934C10.6597 7.52513 10.6597 8.47487 10.021 9.06066L6.43065 12.3536C6.21775 12.5488 5.87257 12.5488 5.65967 12.3536Z" fill="#333333"/>
-                      </svg>
-                      <div className={`text-xs font-normal font-['Open_Sans'] leading-none cursor-pointer hover:text-gray-900 ${module.textColor || 'text-zinc-800'}`} onClick={item.onClick}>
-                        {item.label}
+                
+                {/* Menu Items */}
+                <div className="absolute left-0 right-0 top-[52px] px-6">
+                  <div className="grid grid-cols-2 gap-x-8 gap-y-2">
+                    {filteredItems.map((item, idx) => (
+                      <div key={idx} className="flex items-center gap-2">
+                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" className="flex-shrink-0">
+                          <path fillRule="evenodd" clipRule="evenodd" d="M5.65967 12.3536C5.44678 12.1583 5.44678 11.8417 5.65967 11.6464L9.25 8.35355C9.4629 8.15829 9.4629 7.84171 9.25 7.64645L5.65968 4.35355C5.44678 4.15829 5.44678 3.84171 5.65968 3.64645C5.87257 3.45118 6.21775 3.45118 6.43065 3.64645L10.021 6.93934C10.6597 7.52513 10.6597 8.47487 10.021 9.06066L6.43065 12.3536C6.21775 12.5488 5.87257 12.5488 5.65967 12.3536Z" fill="#333333"/>
+                        </svg>
+                        <div className={`text-xs font-normal font-['Open_Sans'] leading-none cursor-pointer hover:text-gray-900 ${module.textColor || 'text-zinc-800'}`} onClick={item.onClick}>
+                          {item.label}
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
                 </div>
               </div>
-            </div>
-          );
-        })}
+            );
+          })
+          .filter(Boolean) // Remove null values from cards that shouldn't be shown
+        }
       </div>
 
       {/* Summary Cards */}
       {summaryCards.length > 0 && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {summaryCards.map((card, index) => {
-            const Icon = card.icon;
-            const TrendIcon = card.trendUp ? ArrowUpRight : ArrowDownRight;
-            return (
-              <Card 
-                key={index} 
-                className="relative overflow-hidden cursor-pointer hover:shadow-lg transition-all duration-200 hover:scale-105"
-                onClick={card.onClick}
-              >
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between">
-                    <div className="flex-1">
-                      <p className="text-sm font-medium text-gray-600">{card.title}</p>
-                      <div className="flex items-center space-x-2 mt-2">
-                        <p className="text-3xl font-bold text-gray-900">{card.value}</p>
-                        <div className={`flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                          card.trendUp ? 'text-green-600 bg-green-50' : 'text-red-600 bg-red-50'
-                        }`}>
-                          <TrendIcon className="w-3 h-3 mr-1" />
-                          {card.trend}
-                        </div>
-                      </div>
-                      <p className="text-xs text-gray-500 mt-1">{card.subtitle}</p>
-                    </div>
-                    <div className={`p-3 rounded-full ${card.color}`}>
-                      <Icon className="w-6 h-6 text-white" />
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            );
-          })}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          {summaryCards.map((card, index) => (
+            <StatCard
+              key={index}
+              title={card.title}
+              count={card.value}
+              subtext={card.subtitle}
+              className="cursor-pointer hover:shadow-lg transition-all duration-200 hover:scale-105"
+              onClick={card.onClick}
+            />
+          ))}
         </div>
       )}
 
