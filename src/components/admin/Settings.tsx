@@ -34,7 +34,7 @@ import { toast } from '@/hooks/use-toast';
 import { UserRole } from '@/types';
 import { hasPermission } from '@/utils/rolePermissions';
 import CalendlySettings from './CalendlySettings';
-import { useProfileImage } from '@/hooks/useProfileImage';
+
 import { testProfileImageConnection } from '@/utils/testProfileImageConnection';
 import {
   Dialog,
@@ -58,11 +58,8 @@ interface AdminUser {
 
 const Settings: React.FC = () => {
   const { user, userProfile, updateUserDisplayName, locations } = useAppContext();
-  const { uploadProfileImage, deleteProfileImage, isUploading } = useProfileImage();
-  const [activeTab, setActiveTab] = useState('profile');
-  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
-  const [showNewPassword, setShowNewPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
+  const [activeTab, setActiveTab] = useState('calendly');
   const [showAdminPassword, setShowAdminPassword] = useState(false);
   const [showAdminConfirmPassword, setShowAdminConfirmPassword] = useState(false);
   const [adminList, setAdminList] = useState<AdminUser[]>([]);
@@ -71,31 +68,10 @@ const Settings: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [roleFilter, setRoleFilter] = useState<string>('all');
   const [editingUser, setEditingUser] = useState<AdminUser | null>(null);
-  const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
-  const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
   const [isUserModalOpen, setIsUserModalOpen] = useState(false);
   const [userModalMode, setUserModalMode] = useState<'add' | 'edit'>('add');
-  
-  // Profile form state
-  const [profileForm, setProfileForm] = useState({
-    fullName: '',
-    email: user?.email || '',
-    location: 'none',
-    currentPassword: '',
-    newPassword: '',
-    confirmPassword: '',
-  });
 
-  // Update profile form when userProfile changes
-  useEffect(() => {
-    if (userProfile) {
-      setProfileForm(prev => ({
-        ...prev,
-        fullName: userProfile.admin_name || userProfile.display_name || '',
-        location: userProfile.location || 'none',
-      }));
-    }
-  }, [userProfile]);
+
 
   // New admin form state
   const [newAdminForm, setNewAdminForm] = useState({
@@ -172,11 +148,7 @@ const Settings: React.FC = () => {
     }
   };
 
-  const handleProfileInputChange = (field: string, value: string) => {
-    // Convert "none" back to empty string for location field
-    const actualValue = field === 'location' && value === 'none' ? '' : value;
-    setProfileForm(prev => ({ ...prev, [field]: actualValue }));
-  };
+
 
   const handleNewAdminInputChange = (field: string, value: string) => {
     // For location field, keep "none" as is - don't convert to empty string
@@ -189,129 +161,7 @@ const Settings: React.FC = () => {
     setEditUserForm(prev => ({ ...prev, [field]: actualValue }));
   };
 
-  const updateProfile = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!profileForm.email) {
-      toast({
-        title: "Missing Email",
-        description: "Please enter your email address",
-        variant: "destructive",
-      });
-      return;
-    }
 
-    setIsLoading(true);
-
-    try {
-      // Update profile in database
-      const { error } = await supabase
-        .from('profiles')
-        .update({ 
-          admin_name: profileForm.fullName,
-          display_name: profileForm.fullName,
-          location: profileForm.location
-        })
-        .eq('id', user?.id);
-
-      if (error) {
-        toast({
-          title: "Error",
-          description: error.message,
-          variant: "destructive",
-        });
-        return;
-      }
-
-      // Update display name in context
-      if (profileForm.fullName !== userProfile?.display_name) {
-        updateUserDisplayName(profileForm.fullName);
-      }
-
-      setIsEditProfileOpen(false);
-      toast({
-        title: "Profile Updated",
-        description: "Your profile information has been successfully updated",
-      });
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to update profile",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const changePassword = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!profileForm.currentPassword || !profileForm.newPassword || !profileForm.confirmPassword) {
-      toast({
-        title: "Missing Fields",
-        description: "Please fill in all password fields",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    if (profileForm.newPassword !== profileForm.confirmPassword) {
-      toast({
-        title: "Password Mismatch",
-        description: "New password and confirmation do not match",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    if (profileForm.newPassword.length < 8) {
-      toast({
-        title: "Password Too Short",
-        description: "Password must be at least 8 characters long",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setIsLoading(true);
-
-    try {
-      const { error } = await supabase.auth.updateUser({
-        password: profileForm.newPassword
-      });
-
-      if (error) {
-        toast({
-          title: "Error",
-          description: error.message,
-          variant: "destructive",
-        });
-        return;
-      }
-
-      setProfileForm(prev => ({
-        ...prev,
-        currentPassword: '',
-        newPassword: '',
-        confirmPassword: '',
-      }));
-
-      setIsChangePasswordOpen(false);
-      toast({
-        title: "Password Changed",
-        description: "Your password has been successfully updated",
-      });
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to change password",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   const addNewUser = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -642,75 +492,7 @@ const Settings: React.FC = () => {
     return matchesSearch && matchesRole;
   });
 
-  const handleProfilePictureUpload = () => {
-    if (!user?.id) return;
 
-    // Create file input
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = 'image/jpeg,image/png,image/webp';
-    input.multiple = false;
-
-    input.onchange = async (e) => {
-      const file = (e.target as HTMLInputElement).files?.[0];
-      if (!file) return;
-
-      console.log('Starting profile image upload...');
-      const result = await uploadProfileImage(file, user.id);
-      
-      if (result.success) {
-        // Fetch updated profile data to refresh the UI
-        try {
-          const { data: updatedProfile, error } = await supabase
-            .from('profiles')
-            .select('*')
-            .eq('id', user.id)
-            .single();
-          
-          if (!error && updatedProfile) {
-            // Update the context with new profile data
-            console.log('Profile updated successfully:', updatedProfile);
-            // Force a small delay to ensure storage URL is accessible
-            setTimeout(() => {
-              window.location.reload();
-            }, 1000);
-          }
-        } catch (error) {
-          console.error('Error fetching updated profile:', error);
-        }
-      }
-    };
-
-    input.click();
-  };
-
-  const handleDeleteProfileImage = async () => {
-    if (!user?.id) return;
-
-    console.log('Starting profile image deletion...');
-    const result = await deleteProfileImage(user.id);
-    
-    if (result.success) {
-      // Fetch updated profile data to refresh the UI
-      try {
-        const { data: updatedProfile, error } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', user.id)
-          .single();
-        
-        if (!error && updatedProfile) {
-          console.log('Profile image deleted successfully:', updatedProfile);
-          // Force a small delay to ensure changes are reflected
-          setTimeout(() => {
-            window.location.reload();
-          }, 500);
-        }
-      } catch (error) {
-        console.error('Error fetching updated profile after deletion:', error);
-      }
-    }
-  };
 
   return (
     <div className="space-y-6">
@@ -725,11 +507,7 @@ const Settings: React.FC = () => {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="animate-fade-in">
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="profile" className="flex items-center space-x-2">
-            <User className="w-4 h-4" />
-            <span>Profile & Security</span>
-          </TabsTrigger>
+        <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="calendly" className="flex items-center space-x-2">
             <Calendar className="w-4 h-4" />
             <span>Calendly</span>
@@ -742,312 +520,7 @@ const Settings: React.FC = () => {
           )}
         </TabsList>
 
-        <TabsContent value="profile" className="space-y-6">
-          {/* Profile Card with Two-Column Layout */}
-          <div className="flex justify-center">
-            <Card className="w-full max-w-4xl p-8">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                {/* Left Side - Profile Info in Gray Box */}
-                <div className="md:col-span-1">
-                  <div className="bg-gray-50 p-6 rounded-lg">
-                    {/* Role Badge - Top Right of Gray Box */}
-                    <div className="flex justify-end mb-4">
-                      <div className="flex items-center space-x-2">
-                        <Badge variant={getRoleBadgeVariant(userProfile?.role as UserRole)} className="text-sm px-3 py-1">
-                          {userRoles.find(r => r.value === userProfile?.role)?.label || 'Unknown'}
-                        </Badge>
-                        {userProfile?.role === 'admin'}
-                      </div>
-                    </div>
 
-                    {/* Profile Picture and Name - Centered in Gray Box */}
-                    <div className="flex flex-col items-center space-y-4">
-                      <div className="relative">
-                        <Avatar className="w-24 h-24">
-                          <AvatarImage src={userProfile?.profile_image_url || ""} />
-                          <AvatarFallback className="text-xl font-semibold bg-primary/10 text-primary">
-                            {(userProfile?.admin_name || userProfile?.display_name || user?.email || '')
-                              .split(' ')
-                              .map(name => name[0])
-                              .join('')
-                              .toUpperCase()
-                              .slice(0, 2)}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div className="absolute -bottom-1 -right-1 flex space-x-1">
-                          <Button
-                            onClick={handleProfilePictureUpload}
-                            size="sm"
-                            variant="secondary"
-                            className="rounded-full w-8 h-8 p-0"
-                            disabled={isUploading}
-                            title="Change profile picture"
-                          >
-                            <Camera className="w-3 h-3" />
-                          </Button>
-                          {userProfile?.profile_image_url && (
-                            <Button
-                              onClick={handleDeleteProfileImage}
-                              size="sm"
-                              variant="destructive"
-                              className="rounded-full w-8 h-8 p-0"
-                              disabled={isUploading}
-                              title="Remove profile picture"
-                            >
-                              <X className="w-3 h-3" />
-                            </Button>
-                          )}
-                        </div>
-                      </div>
-
-                      <div className="text-center">
-                        <h2 className="text-xl font-bold text-gray-900">
-                          {userProfile?.admin_name || userProfile?.display_name || 'Not set'}
-                        </h2>
-                        <p className="text-gray-600 text-sm mt-1">
-                          {userRoles.find(r => r.value === userProfile?.role)?.description || 'User'}
-                        </p>
-                        
-
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Right Side - User Details */}
-                <div className="md:col-span-2 space-y-6">
-                  {/* User Information Grid */}
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                    <div className="flex items-center space-x-3 p-4 bg-gray-50 rounded-lg">
-                      <Mail className="w-5 h-5 text-gray-500" />
-                      <div>
-                        <Label className="text-sm text-gray-600">Email Address</Label>
-                        <p className="font-medium text-gray-900">{user?.email}</p>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center space-x-3 p-4 bg-gray-50 rounded-lg">
-                      <Clock className="w-5 h-5 text-gray-500" />
-                      <div>
-                        <Label className="text-sm text-gray-600">Last Sign-in</Label>
-                        <p className="font-medium text-gray-900">
-                          {user?.last_sign_in_at ? new Date(user.last_sign_in_at).toLocaleDateString() : 'Never'}
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center space-x-3 p-4 bg-gray-50 rounded-lg">
-                      <Calendar className="w-5 h-5 text-gray-500" />
-                      <div>
-                        <Label className="text-sm text-gray-600">Account Created</Label>
-                        <p className="font-medium text-gray-900">
-                          {new Date(user?.created_at || '').toLocaleDateString()}
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center space-x-3 p-4 bg-gray-50 rounded-lg">
-                      <User className="w-5 h-5 text-gray-500" />
-                      <div>
-                        <Label className="text-sm text-gray-600">Full Name</Label>
-                        <p className="font-medium text-gray-900">
-                          {userProfile?.admin_name || userProfile?.display_name || 'Not set'}
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center space-x-3 p-4 bg-gray-50 rounded-lg">
-                      <MapPin className="w-5 h-5 text-gray-500" />
-                      <div>
-                        <Label className="text-sm text-gray-600">Location</Label>
-                        <p className="font-medium text-gray-900">
-                          {userProfile?.location || 'Not set'}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Action Buttons */}
-                  <div className="flex flex-col sm:flex-row gap-4">
-                    <Dialog open={isEditProfileOpen} onOpenChange={setIsEditProfileOpen}>
-                      <DialogTrigger asChild>
-                        <Button className="flex-1 bg-primary hover:bg-primary/90 flex items-center justify-center space-x-2">
-                          <Edit className="w-4 h-4" />
-                          <span>Edit Profile Info</span>
-                        </Button>
-                      </DialogTrigger>
-                      <DialogContent className="max-w-md">
-                        <DialogHeader>
-                          <DialogTitle>Edit Profile Information</DialogTitle>
-                          <DialogDescription>
-                            Update your profile details below.
-                          </DialogDescription>
-                        </DialogHeader>
-                        <form onSubmit={updateProfile} className="space-y-4">
-                          <div>
-                            <Label htmlFor="editFullName">Full Name</Label>
-                            <Input
-                              id="editFullName"
-                              type="text"
-                              value={profileForm.fullName}
-                              onChange={(e) => handleProfileInputChange('fullName', e.target.value)}
-                              className="mt-1"
-                              placeholder="Enter your full name"
-                              disabled={isLoading}
-                            />
-                          </div>
-
-                          <div>
-                            <Label htmlFor="editLocation">Location</Label>
-                            <Select 
-                              value={profileForm.location} 
-                              onValueChange={(value) => handleProfileInputChange('location', value)}
-                              disabled={isLoading}
-                            >
-                              <SelectTrigger className="mt-1">
-                                <SelectValue placeholder="Select your location" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="none">No location specified</SelectItem>
-                                {locations.map((location) => (
-                                  <SelectItem key={location.id} value={location.name}>
-                                    {location.name}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          </div>
-
-                          <div className="flex space-x-3 pt-4">
-                            <Button
-                              type="button"
-                              variant="outline"
-                              onClick={() => setIsEditProfileOpen(false)}
-                              className="flex-1"
-                              disabled={isLoading}
-                            >
-                              Cancel
-                            </Button>
-                            <Button
-                              type="submit"
-                              className="flex-1 bg-primary hover:bg-primary/90"
-                              disabled={isLoading}
-                            >
-                              {isLoading ? 'Saving...' : 'Save Changes'}
-                            </Button>
-                          </div>
-                        </form>
-                      </DialogContent>
-                    </Dialog>
-
-                    <Dialog open={isChangePasswordOpen} onOpenChange={setIsChangePasswordOpen}>
-                      <DialogTrigger asChild>
-                        <Button variant="outline" className="flex-1 flex items-center justify-center space-x-2">
-                          <Lock className="w-4 h-4" />
-                          <span>Change Password</span>
-                        </Button>
-                      </DialogTrigger>
-                      <DialogContent className="max-w-md">
-                        <DialogHeader>
-                          <DialogTitle>Change Password</DialogTitle>
-                          <DialogDescription>
-                            Enter your current password and choose a new one.
-                          </DialogDescription>
-                        </DialogHeader>
-                        <form onSubmit={changePassword} className="space-y-4">
-                          <div>
-                            <Label htmlFor="currentPassword">Current Password</Label>
-                            <div className="relative mt-1">
-                              <Input
-                                id="currentPassword"
-                                type={showCurrentPassword ? 'text' : 'password'}
-                                value={profileForm.currentPassword}
-                                onChange={(e) => handleProfileInputChange('currentPassword', e.target.value)}
-                                className="pr-10"
-                                disabled={isLoading}
-                              />
-                              <button
-                                type="button"
-                                onClick={() => setShowCurrentPassword(!showCurrentPassword)}
-                                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                              >
-                                {showCurrentPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                              </button>
-                            </div>
-                          </div>
-
-                          <div>
-                            <Label htmlFor="newPassword">New Password</Label>
-                            <div className="relative mt-1">
-                              <Input
-                                id="newPassword"
-                                type={showNewPassword ? 'text' : 'password'}
-                                value={profileForm.newPassword}
-                                onChange={(e) => handleProfileInputChange('newPassword', e.target.value)}
-                                className="pr-10"
-                                disabled={isLoading}
-                              />
-                              <button
-                                type="button"
-                                onClick={() => setShowNewPassword(!showNewPassword)}
-                                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                              >
-                                {showNewPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                              </button>
-                            </div>
-                            <p className="text-xs text-gray-500 mt-1">
-                              Password must be at least 8 characters long
-                            </p>
-                          </div>
-
-                          <div>
-                            <Label htmlFor="confirmPassword">Confirm New Password</Label>
-                            <div className="relative mt-1">
-                              <Input
-                                id="confirmPassword"
-                                type={showConfirmPassword ? 'text' : 'password'}
-                                value={profileForm.confirmPassword}
-                                onChange={(e) => handleProfileInputChange('confirmPassword', e.target.value)}
-                                className="pr-10"
-                                disabled={isLoading}
-                              />
-                              <button
-                                type="button"
-                                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                              >
-                                {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                              </button>
-                            </div>
-                          </div>
-
-                          <div className="flex space-x-3 pt-4">
-                            <Button
-                              type="button"
-                              variant="outline"
-                              onClick={() => setIsChangePasswordOpen(false)}
-                              className="flex-1"
-                              disabled={isLoading}
-                            >
-                              Cancel
-                            </Button>
-                            <Button
-                              type="submit"
-                              className="flex-1 bg-primary hover:bg-primary/90"
-                              disabled={isLoading}
-                            >
-                              {isLoading ? 'Changing...' : 'Change Password'}
-                            </Button>
-                          </div>
-                        </form>
-                      </DialogContent>
-                    </Dialog>
-                  </div>
-                </div>
-              </div>
-            </Card>
-          </div>
-        </TabsContent>
 
         <TabsContent value="calendly" className="space-y-6">
           <CalendlySettings />

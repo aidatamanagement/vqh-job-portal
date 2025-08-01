@@ -1,5 +1,44 @@
 # Vqh Job Portal Updates
 
+## 2025-01-03 16:00 - Fixed Profile Image Upload RLS Issue
+
+### User Request
+- **Request**: Fix RLS policy error when uploading profile images
+- **Issue**: "new row violates rls policy" error when trying to upload avatar images
+- **Root Cause**: Storage bucket RLS policies were missing, preventing authenticated users from uploading to profile-images bucket
+
+### Database Changes
+- **Migration**: Created `supabase/migrations/20250103000012_create_profile_images_storage.sql`
+- **Manual Setup Required**: Create `profile-images` bucket manually in Supabase dashboard
+  - Go to Storage → Create bucket → Name: `profile-images` → Public bucket
+  - Set file size limit to 5MB
+  - Allow file types: JPEG, PNG, WebP
+- **RLS Policies**: Added comprehensive storage policies for authenticated users:
+  - Users can upload their own profile images (name LIKE auth.uid()::text || '/%')
+  - Users can view their own profile images
+  - Users can update their own profile images
+  - Users can delete their own profile images
+  - Public can view profile images (for UI display)
+
+### Frontend Changes
+- **Component**: Fixed `src/components/admin/components/ProfileHeader.tsx`
+- **Bug Fix**: Added missing `userId` parameter to `uploadProfileImage` function call
+- **Error Handling**: Proper parameter validation before upload attempt
+
+### Technical Benefits
+- **Security**: Users can only access their own profile images
+- **Performance**: Proper indexing and file size limits
+- **Scalability**: Organized file structure with user-specific folders
+- **Type Safety**: Maintained existing TypeScript interfaces
+
+### Files Updated
+- `supabase/migrations/20250103000012_create_profile_images_storage.sql` - New storage migration
+- `src/components/admin/components/ProfileHeader.tsx` - Fixed upload function call
+- `updates.md` - Documentation update
+
+### Impact
+Resolved profile image upload functionality, allowing users to successfully upload and manage their profile pictures without RLS policy violations.
+
 ## 2025-01-03 15:30 - Linked Status History to Profiles Table
 
 ### User Request
