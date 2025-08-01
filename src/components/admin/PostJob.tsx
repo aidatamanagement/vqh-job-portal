@@ -67,6 +67,9 @@ const PostJob: React.FC = () => {
   const [isAddingLocation, setIsAddingLocation] = useState(false);
   const [isAddingFacility, setIsAddingFacility] = useState(false);
 
+  // Auto-fill state
+  const [lastJobForPosition, setLastJobForPosition] = useState<any>(null);
+
   // Fetch master data and Managers on component mount
   useEffect(() => {
     fetchMasterData();
@@ -81,20 +84,66 @@ const PostJob: React.FC = () => {
       fetchHRManagers(jobForm.officeLocation).then(managers => {
         console.log('Received managers:', managers);
         setHRManagers(managers);
+        
+        // If we have a selected manager but it's not in the new list, clear it
+        if (jobForm.hrManagerId && !managers.find(m => m.id === jobForm.hrManagerId)) {
+          setJobForm(prev => ({ ...prev, hrManagerId: '' }));
+        }
+        
+        // If we're auto-filling and have a last job with a manager, try to set it
+        if (lastJobForPosition && lastJobForPosition.hrManagerId && !jobForm.hrManagerId) {
+          const matchingManager = managers.find(m => m.id === lastJobForPosition.hrManagerId);
+          if (matchingManager) {
+            setJobForm(prev => ({ ...prev, hrManagerId: lastJobForPosition.hrManagerId }));
+          }
+        }
       });
-      // Clear manager selection when office location changes
-      setJobForm(prev => ({ ...prev, hrManagerId: '' }));
     } else {
       console.log('No office location selected, clearing managers');
       // If no office location selected, clear managers and manager selection
       setHRManagers([]);
       setJobForm(prev => ({ ...prev, hrManagerId: '' }));
     }
-  }, [jobForm.officeLocation, fetchHRManagers]);
+  }, [jobForm.officeLocation, fetchHRManagers, lastJobForPosition]);
+
+  // Auto-fill form when position changes and existing job is found
+  useEffect(() => {
+    if (jobForm.position && jobs.length > 0) {
+      const existingJobs = jobs.filter(job => job.position === jobForm.position);
+      if (existingJobs.length > 0) {
+        // Get the most recent job with this position
+        const mostRecentJob = existingJobs.sort((a, b) => 
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+        )[0];
+        setLastJobForPosition(mostRecentJob);
+        
+        // Auto-fill the form immediately
+        setJobForm(prev => ({
+          ...prev,
+          description: mostRecentJob.description,
+          officeLocation: mostRecentJob.officeLocation,
+          workLocation: mostRecentJob.workLocation,
+          facilities: mostRecentJob.facilities || [],
+          isUrgent: mostRecentJob.isUrgent || false,
+        }));
+
+        toast({
+          title: "Form Auto-Filled",
+          description: `Form has been filled with data from the most recent ${jobForm.position} job posting. You can modify any fields as needed.`,
+        });
+      } else {
+        setLastJobForPosition(null);
+      }
+    } else {
+      setLastJobForPosition(null);
+    }
+  }, [jobForm.position, jobs]);
 
   const handleJobInputChange = (field: string, value: string | boolean) => {
     setJobForm(prev => ({ ...prev, [field]: value }));
   };
+
+
 
   const handleFacilityToggle = (facility: string) => {
     setJobForm(prev => ({
@@ -561,6 +610,23 @@ const PostJob: React.FC = () => {
                         ))}
                       </SelectContent>
                     </Select>
+                    
+                    {/* Auto-fill notification */}
+                    {lastJobForPosition && (
+                      <div className="mt-3 p-3 bg-green-50 border border-green-200 rounded-lg">
+                        <div className="flex items-center space-x-2">
+                          <CheckCircle className="w-4 h-4 text-green-600" />
+                          <div>
+                            <p className="text-sm font-medium text-green-900">
+                              Form auto-filled with data from previous {jobForm.position} job
+                            </p>
+                            <p className="text-xs text-green-700">
+                              Created {new Date(lastJobForPosition.createdAt).toLocaleDateString()}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    )}
                   </div>
 
                   <div>
