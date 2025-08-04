@@ -195,10 +195,10 @@ const ManageJobCard: React.FC<ManageJobCardProps> = ({
         {/* Desktop action buttons */}
         <div className="hidden sm:flex items-center space-x-2 ml-6">
           <Button
-            variant="ghost"
+            variant="default"
             size="sm"
             onClick={() => onPreview(job)}
-            className="text-gray-600 hover:text-gray-900"
+            className="bg-primary hover:bg-primary/90 text-white"
           >
             <Eye className="w-4 h-4" />
           </Button>

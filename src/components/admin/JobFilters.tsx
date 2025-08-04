@@ -18,6 +18,8 @@ interface JobFiltersProps {
   setFilterStatus: (status: string) => void;
   filterHRManager: string;
   setFilterHRManager: (hrManager: string) => void;
+  sortBy: string;
+  setSortBy: (sort: string) => void;
   positions: JobPosition[];
   locations: JobLocation[];
   hrManagers: HRManager[];
@@ -36,6 +38,8 @@ const JobFilters: React.FC<JobFiltersProps> = ({
   setFilterStatus,
   filterHRManager,
   setFilterHRManager,
+  sortBy,
+  setSortBy,
   positions,
   locations,
   hrManagers,
@@ -57,7 +61,7 @@ const JobFilters: React.FC<JobFiltersProps> = ({
         </div>
         
         {/* Filters - Stack on mobile, grid on larger screens */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4">
           <Select value={filterPosition} onValueChange={setFilterPosition}>
             <SelectTrigger>
               <SelectValue placeholder="All Positions" />
@@ -108,6 +112,18 @@ const JobFilters: React.FC<JobFiltersProps> = ({
               <SelectItem value="all">All Status</SelectItem>
               <SelectItem value="active">Active</SelectItem>
               <SelectItem value="inactive">Inactive</SelectItem>
+            </SelectContent>
+          </Select>
+
+          <Select value={sortBy} onValueChange={setSortBy}>
+            <SelectTrigger>
+              <SelectValue placeholder="Sort by" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="newest">Newest First</SelectItem>
+              <SelectItem value="oldest">Oldest First</SelectItem>
+              <SelectItem value="deadline-asc">Deadline (Earliest)</SelectItem>
+              <SelectItem value="deadline-desc">Deadline (Oldest)</SelectItem>
             </SelectContent>
           </Select>
         </div>

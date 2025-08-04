@@ -80,10 +80,10 @@ const SubmissionsTable: React.FC<SubmissionsTableProps> = ({
                   <TableCell className="text-right min-w-[160px]">
                     <div className="flex gap-2 justify-end">
                       <Button
-                        variant="outline"
+                        variant="default"
                         size="sm"
                         onClick={() => onViewApplication(application)}
-                        className="inline-flex items-center gap-1 text-xs px-2 py-1"
+                        className="inline-flex items-center gap-1 text-xs px-2 py-1 bg-primary hover:bg-primary/90 text-white"
                       >
                         <Eye className="w-3 h-3" />
                         <span className="hidden sm:inline">View</span>

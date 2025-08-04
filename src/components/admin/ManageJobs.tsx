@@ -17,6 +17,7 @@ const ManageJobs: React.FC = () => {
   const [filterLocation, setFilterLocation] = useState('all');
   const [filterStatus, setFilterStatus] = useState('all');
   const [filterHRManager, setFilterHRManager] = useState('all');
+  const [sortBy, setSortBy] = useState('newest');
   const [editingJob, setEditingJob] = useState<Job | null>(null);
   const [previewingJob, setPreviewingJob] = useState<Job | null>(null);
   const [jobForm, setJobForm] = useState<Partial<Job> & { customFacility?: string }>({});
@@ -28,7 +29,7 @@ const ManageJobs: React.FC = () => {
   }, [fetchHRManagers]);
 
   // Check if any filters are active
-  const hasActiveFilters = searchTerm !== '' || filterPosition !== 'all' || filterLocation !== 'all' || filterStatus !== 'all' || filterHRManager !== 'all';
+  const hasActiveFilters = searchTerm !== '' || filterPosition !== 'all' || filterLocation !== 'all' || filterStatus !== 'all' || filterHRManager !== 'all' || sortBy !== 'newest';
 
   // Clear all filters
   const clearAllFilters = () => {
@@ -37,6 +38,7 @@ const ManageJobs: React.FC = () => {
     setFilterLocation('all');
     setFilterStatus('all');
     setFilterHRManager('all');
+    setSortBy('newest');
   };
 
   // Get application counts for each job
@@ -57,14 +59,42 @@ const ManageJobs: React.FC = () => {
     
     return matchesSearch && matchesPosition && matchesLocation && matchesStatus && matchesHRManager;
   }).sort((a, b) => {
-    // First priority: Featured jobs come first
+    // First priority: Featured jobs come first (regardless of sort)
     if (a.isUrgent && !b.isUrgent) return -1;
     if (!a.isUrgent && b.isUrgent) return 1;
     
-    // Second priority: Sort by creation date (newest first)
-    const dateA = new Date(a.createdAt).getTime();
-    const dateB = new Date(b.createdAt).getTime();
-    return dateB - dateA;
+    // If both are featured or both are not featured, apply the selected sort
+    if (a.isUrgent === b.isUrgent) {
+      switch (sortBy) {
+        case 'newest':
+          const dateA = new Date(a.createdAt).getTime();
+          const dateB = new Date(b.createdAt).getTime();
+          return dateB - dateA;
+        case 'oldest':
+          const dateAOld = new Date(a.createdAt).getTime();
+          const dateBOld = new Date(b.createdAt).getTime();
+          return dateAOld - dateBOld;
+        case 'deadline-asc':
+          // Sort by deadline, earliest first (null deadlines go to end)
+          if (!a.applicationDeadline && !b.applicationDeadline) return 0;
+          if (!a.applicationDeadline) return 1;
+          if (!b.applicationDeadline) return -1;
+          return new Date(a.applicationDeadline).getTime() - new Date(b.applicationDeadline).getTime();
+        case 'deadline-desc':
+          // Sort by deadline, latest first (null deadlines go to end)
+          if (!a.applicationDeadline && !b.applicationDeadline) return 0;
+          if (!a.applicationDeadline) return 1;
+          if (!b.applicationDeadline) return -1;
+          return new Date(b.applicationDeadline).getTime() - new Date(a.applicationDeadline).getTime();
+        default:
+          const dateADefault = new Date(a.createdAt).getTime();
+          const dateBDefault = new Date(b.createdAt).getTime();
+          return dateBDefault - dateADefault;
+      }
+    }
+    
+    // This should never be reached due to the featured job logic above
+    return 0;
   });
 
   const toggleJobStatus = async (jobId: string) => {
@@ -269,6 +299,8 @@ const ManageJobs: React.FC = () => {
         setFilterStatus={setFilterStatus}
         filterHRManager={filterHRManager}
         setFilterHRManager={setFilterHRManager}
+        sortBy={sortBy}
+        setSortBy={setSortBy}
         positions={positions}
         locations={locations}
         hrManagers={hrManagers}
@@ -285,7 +317,7 @@ const ManageJobs: React.FC = () => {
             </div>
             <h3 className="text-lg font-semibold text-gray-900 mb-2">No jobs found</h3>
             <p className="text-sm sm:text-base text-gray-600">
-              {searchTerm || filterPosition !== 'all' || filterLocation !== 'all' || filterStatus !== 'all' || filterHRManager !== 'all'
+              {searchTerm || filterPosition !== 'all' || filterLocation !== 'all' || filterStatus !== 'all' || filterHRManager !== 'all' || sortBy !== 'newest'
                 ? "Try adjusting your search criteria" 
                 : "No jobs have been posted yet"
               }

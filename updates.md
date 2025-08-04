@@ -1,5 +1,69 @@
 # Vqh Job Portal Updates
 
+## 2025-01-03 18:25 - Updated Eye Icon Button Styling
+
+### User Request
+- **Request**: Add background color to eye icon buttons in Manage Jobs and Submissions pages
+- **Issue**: Eye icon buttons lacked consistent background styling
+- **Goal**: Use same background style as other primary buttons for consistency
+
+### Visual Improvements
+- **Consistent Button Styling**: Eye icon buttons now use primary background color
+- **Enhanced Visibility**: Buttons are more prominent and easier to identify
+- **Professional Appearance**: Matches the design system used throughout the application
+
+### Technical Changes
+- **ManageJobCard.tsx**: Updated desktop eye icon button from `variant="ghost"` to `variant="default"` with primary background
+- **SubmissionsTable.tsx**: Updated eye icon button from `variant="outline"` to `variant="default"` with primary background
+- **Consistent Styling**: Both buttons now use `bg-primary hover:bg-primary/90 text-white` classes
+
+### Files Modified
+- `src/components/admin/ManageJobCard.tsx` - Updated eye icon button styling
+- `src/components/admin/components/SubmissionsTable.tsx` - Updated eye icon button styling
+
+## 2025-01-03 18:20 - Added Deadline Sorting in Manage Jobs
+
+### User Request
+- **Request**: Add "Sort by Deadline" option in Manage Jobs with featured jobs always at top
+- **Issue**: No way to sort jobs by deadline date
+- **Goal**: Allow sorting by deadline while keeping featured jobs prioritized
+
+### New Sorting Features
+- **Deadline Sorting Options**:
+  - "Deadline (Earliest)" - Jobs with earliest deadlines first
+  - "Deadline (Latest)" - Jobs with latest deadlines first
+  - "Newest First" - Jobs by creation date (newest first)
+  - "Oldest First" - Jobs by creation date (oldest first)
+- **Featured Job Priority**: Featured jobs always appear at the top regardless of sort order
+- **Null Deadline Handling**: Jobs without deadlines are sorted to the end
+
+### Technical Implementation
+- **File**: `src/components/admin/JobFilters.tsx`
+  - Added `sortBy` and `setSortBy` props
+  - Added new sort dropdown with 4 options
+  - Updated grid layout to accommodate 5 columns
+- **File**: `src/components/admin/ManageJobs.tsx`
+  - Added `sortBy` state with default value 'newest'
+  - Enhanced sorting logic to handle deadline sorting
+  - Maintained featured job priority in all sort scenarios
+  - Updated filter detection to include sort changes
+
+### Sorting Logic
+1. **Featured Jobs First**: All featured jobs appear at the top
+2. **Within Featured Group**: Apply selected sort (deadline/date)
+3. **Within Non-Featured Group**: Apply selected sort (deadline/date)
+4. **Null Deadlines**: Jobs without deadlines go to the end
+
+### User Experience
+- **Clear Options**: Dropdown shows all sorting options clearly
+- **Consistent Behavior**: Featured jobs always prioritized
+- **Flexible Filtering**: Sort works with all existing filters
+- **Reset Functionality**: Clear filters resets sort to "Newest First"
+
+### Files Modified
+- `src/components/admin/JobFilters.tsx` - Added sort dropdown
+- `src/components/admin/ManageJobs.tsx` - Enhanced sorting logic
+
 ## 2025-01-03 18:15 - Enhanced Deadline Highlighting in Manage Jobs
 
 ### User Request
