@@ -47,8 +47,50 @@ const ManageJobCard: React.FC<ManageJobCardProps> = ({
     return new Date(deadline) < new Date();
   };
 
+  const getDeadlineStatus = (deadline: string) => {
+    if (isDeadlinePassed(deadline)) return 'passed';
+    if (isDeadlineApproaching(deadline)) return 'approaching';
+    return 'normal';
+  };
+
+  const getCardBackgroundClass = (deadline: string) => {
+    const status = getDeadlineStatus(deadline);
+    switch (status) {
+      case 'passed':
+        return 'bg-red-50 border-red-200 shadow-red-100';
+      case 'approaching':
+        return 'bg-orange-50 border-orange-200 shadow-orange-100';
+      default:
+        return 'bg-white border-gray-200';
+    }
+  };
+
+  const getDeadlineTextClass = (deadline: string) => {
+    const status = getDeadlineStatus(deadline);
+    switch (status) {
+      case 'passed':
+        return 'text-red-700 font-medium';
+      case 'approaching':
+        return 'text-orange-700 font-medium';
+      default:
+        return 'text-gray-600';
+    }
+  };
+
+  const getDeadlineBadgeClass = (deadline: string) => {
+    const status = getDeadlineStatus(deadline);
+    switch (status) {
+      case 'passed':
+        return 'bg-red-100 text-red-800 border-red-300';
+      case 'approaching':
+        return 'bg-orange-100 text-orange-800 border-orange-300';
+      default:
+        return 'bg-gray-100 text-gray-700 border-gray-300';
+    }
+  };
+
   return (
-    <Card className="p-3 sm:p-4 lg:p-6 animate-fade-in" style={{ animationDelay: `${index * 0.1}s` }}>
+    <Card className={`p-3 sm:p-4 lg:p-6 animate-fade-in transition-all duration-300 ${job.applicationDeadline ? getCardBackgroundClass(job.applicationDeadline) : 'bg-white border-gray-200'}`} style={{ animationDelay: `${index * 0.1}s` }}>
       <div className="space-y-3 sm:space-y-0 sm:flex sm:items-start sm:justify-between">
         <div className="flex-1 space-y-2 sm:space-y-3">
           <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2">
@@ -63,13 +105,17 @@ const ManageJobCard: React.FC<ManageJobCardProps> = ({
                 )}
               </div>
               {job.applicationDeadline && (
-                <p className={`text-xs flex items-center gap-1 mt-1 ${
-                  isDeadlinePassed(job.applicationDeadline) ? 'text-red-600' : 
-                  isDeadlineApproaching(job.applicationDeadline) ? 'text-orange-600' : 'text-gray-600'
-                }`}>
-                  <Clock className="w-3 h-3" />
-                  Deadline: {new Date(job.applicationDeadline).toLocaleDateString()}
-                </p>
+                <div className="flex items-center gap-2 mt-2">
+                  <Badge className={`flex items-center gap-1 text-xs border ${getDeadlineBadgeClass(job.applicationDeadline)}`}>
+                    <Clock className="w-3 h-3" />
+                    {getDeadlineStatus(job.applicationDeadline) === 'passed' ? 'DEADLINE' : 
+                     getDeadlineStatus(job.applicationDeadline) === 'approaching' ? 'DEADLINE' : 
+                     'Deadline'}
+                  </Badge>
+                  <span className={`text-sm ${getDeadlineTextClass(job.applicationDeadline)}`}>
+                    {new Date(job.applicationDeadline).toLocaleDateString()}
+                  </span>
+                </div>
               )}
             </div>
             

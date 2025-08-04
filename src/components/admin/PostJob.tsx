@@ -630,7 +630,7 @@ const PostJob: React.FC = () => {
                   </div>
 
                   <div>
-                    <Label htmlFor="hrManager">Assigned Manager *</Label>
+                    <Label htmlFor="hrManager">Hiring Manager *</Label>
                     <Select 
                       value={jobForm.hrManagerId} 
                       onValueChange={(value) => handleJobInputChange('hrManagerId', value)} 
@@ -691,8 +691,8 @@ const PostJob: React.FC = () => {
                     </Select>
                     <p className="text-xs text-gray-500 mt-1">
                       {!jobForm.officeLocation 
-                        ? "Please select an office location first to see available managers"
-                        : "Manager will handle all applicants for this job"
+                        ? "Please select an office location first to see available hiring managers"
+                        : "Hiring manager will handle all applicants for this job"
                       }
                     </p>
                   </div>

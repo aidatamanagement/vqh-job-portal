@@ -157,7 +157,7 @@ const EditJobModal: React.FC<EditJobModalProps> = ({
               </div>
 
               <div className="md:col-span-2">
-                <Label htmlFor="edit-hrManager" className="text-sm font-medium">Assigned Manager *</Label>
+                <Label htmlFor="edit-hrManager" className="text-sm font-medium">Hiring Manager *</Label>
                 <Select 
                   value={jobForm.hrManagerId || ''} 
                   onValueChange={(value) => onInputChange('hrManagerId', value)}
@@ -216,12 +216,12 @@ const EditJobModal: React.FC<EditJobModalProps> = ({
                     ))}
                   </SelectContent>
                 </Select>
-                <p className="text-xs text-gray-500 mt-1">
-                  {!jobForm.officeLocation 
-                    ? "Please select an office location first to see available managers"
-                    : "Manager will handle all applicants for this job"
-                  }
-                </p>
+                                    <p className="text-xs text-gray-500 mt-1">
+                      {!jobForm.officeLocation 
+                        ? "Please select an office location first to see available hiring managers"
+                        : "Hiring manager will handle all applicants for this job"
+                      }
+                    </p>
               </div>
             </div>
 

@@ -1,5 +1,45 @@
 # Vqh Job Portal Updates
 
+## 2025-01-03 18:15 - Enhanced Deadline Highlighting in Manage Jobs
+
+### User Request
+- **Request**: Make deadline highlighting more prominent and visible in Manage Jobs section
+- **Issue**: Current deadline highlighting was only text color, not prominent enough
+- **Goal**: Add background color changes and prominent badges for better visibility
+
+### Enhanced Visual System
+- **Background Color Changes**: Entire card background changes based on deadline status
+  - Red background (`bg-red-50`) for passed deadlines
+  - Orange background (`bg-orange-50`) for approaching deadlines (within 7 days)
+  - White background for normal deadlines
+- **Colored Borders**: Added matching border colors for each status
+- **Shadow Effects**: Added colored shadows for enhanced visibility
+
+### Prominent Badge System
+- **Status Badges**: Added colored badges with clear status messages
+  - "DEADLINE PASSED" in red for expired deadlines
+  - "DEADLINE APPROACHING" in orange for deadlines within 7 days
+  - "Deadline" in gray for normal deadlines
+- **Enhanced Typography**: Made deadline text bold for urgent cases
+
+### Technical Implementation
+- **File**: `src/components/admin/ManageJobCard.tsx`
+- **New Functions**: Added helper functions for status detection and styling
+  - `getDeadlineStatus()`: Determines passed/approaching/normal status
+  - `getCardBackgroundClass()`: Returns appropriate background classes
+  - `getDeadlineTextClass()`: Returns text color classes
+  - `getDeadlineBadgeClass()`: Returns badge styling classes
+- **Smooth Transitions**: Added `transition-all duration-300` for smooth color changes
+
+### Visual Impact
+- **Immediate Recognition**: Jobs with urgent deadlines are instantly visible
+- **Color-Coded System**: Red for urgent, orange for warning, gray for normal
+- **Professional Appearance**: Maintains clean design while adding urgency indicators
+- **Accessibility**: High contrast colors for better visibility
+
+### Files Modified
+- `src/components/admin/ManageJobCard.tsx` - Enhanced deadline highlighting system
+
 ## 2025-01-03 18:00 - Fixed Resume URL Storage and Legacy Application Support
 
 ### User Request
