@@ -51,6 +51,7 @@ interface AdminUser {
   admin_name: string | null;
   display_name: string | null;
   location: string | null;
+  locationName?: string;
   role: UserRole;
   created_at: string;
   updated_at: string;
@@ -80,22 +81,30 @@ const Settings: React.FC = () => {
     confirmPassword: '',
     fullName: '',
     location: 'none',
-    role: 'recruiter' as UserRole,
+    role: 'branch_manager' as UserRole,
   });
 
   // Edit user form state
   const [editUserForm, setEditUserForm] = useState({
     fullName: '',
     location: '',
-    role: 'recruiter' as UserRole,
+    role: 'branch_manager' as UserRole,
   });
 
   const userRoles: { label: string; value: UserRole; description: string }[] = [
-    { label: 'Administrator', value: 'admin', description: 'Full system access' },
-    { label: 'Recruiter', value: 'recruiter', description: 'Job and application management' },
-    { label: 'Manager', value: 'hr', description: 'People and visit management' },
-    { label: 'Trainer', value: 'trainer', description: 'Training content management' },
-    { label: 'Content Manager', value: 'content_manager', description: 'Content and media management' },
+    { label: 'Admin', value: 'admin', description: 'Full system access' },
+    { label: 'Branch Manager', value: 'branch_manager', description: 'Job and application management' },
+    { label: 'HR Manager', value: 'hr', description: 'HR and training management' },
+    { label: 'Trainer', value: 'trainer', description: 'Training video management' },
+    { label: 'Content Manager', value: 'content_manager', description: 'Content management' },
+  ];
+
+  const roleOptions = [
+    { label: 'Admin', value: 'admin', description: 'Full system access' },
+    { label: 'Branch Manager', value: 'branch_manager', description: 'Job and application management' },
+    { label: 'HR Manager', value: 'hr', description: 'HR and training management' },
+    { label: 'Trainer', value: 'trainer', description: 'Training video management' },
+    { label: 'Content Manager', value: 'content_manager', description: 'Content management' },
   ];
 
   const canManageUsers = hasPermission(userProfile?.role as UserRole, 'canManageUsers');
@@ -130,11 +139,16 @@ const Settings: React.FC = () => {
       }
 
       console.log('Users fetched:', data);
-      // Cast the role field to UserRole to fix TypeScript error
-      const typedUsers = (data || []).map(user => ({
-        ...user,
-        role: user.role as UserRole
-      }));
+      // Cast the role field to UserRole and map location names
+      const typedUsers = (data || []).map(user => {
+        // Find the location name from the locations context
+        const locationObj = locations.find(loc => loc.id === user.location);
+        return {
+          ...user,
+          role: user.role as UserRole,
+          locationName: locationObj?.name || user.location || 'No Location'
+        };
+      });
       setAdminList(typedUsers);
     } catch (error) {
       console.error('Error fetching users:', error);
@@ -230,10 +244,19 @@ const Settings: React.FC = () => {
       });
 
       if (error) {
-        console.error('Function error:', error);
+        console.error('Function error details:', error);
+        console.error('Error message:', error.message);
+        console.error('Error status:', error.status);
+        console.error('Error name:', error.name);
+        
+        // Try to get more details from the error
+        if (error.context) {
+          console.error('Error context:', error.context);
+        }
+        
         toast({
           title: "Error",
-          description: error.message || "Failed to create user account",
+          description: `Failed to create user: ${error.message || 'Unknown error'}`,
           variant: "destructive",
         });
         return;
@@ -440,7 +463,7 @@ const Settings: React.FC = () => {
       confirmPassword: '',
       fullName: '',
       location: 'none',
-      role: 'recruiter',
+      role: 'branch_manager',
     });
     setIsUserModalOpen(true);
   };
@@ -476,7 +499,7 @@ const Settings: React.FC = () => {
     switch (role) {
       case 'admin':
         return 'destructive';
-      case 'recruiter':
+      case 'branch_manager':
         return 'default';
       default:
         return 'secondary';
@@ -487,7 +510,7 @@ const Settings: React.FC = () => {
     const matchesSearch = user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          (user.admin_name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
                          (user.display_name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         (user.location || '').toLowerCase().includes(searchTerm.toLowerCase());
+                         (user.locationName || '').toLowerCase().includes(searchTerm.toLowerCase());
     const matchesRole = roleFilter === 'all' || user.role === roleFilter;
     return matchesSearch && matchesRole;
   });
@@ -508,16 +531,16 @@ const Settings: React.FC = () => {
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="animate-fade-in">
         <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="calendly" className="flex items-center space-x-2">
-            <Calendar className="w-4 h-4" />
-            <span>Calendly</span>
-          </TabsTrigger>
           {canManageUsers && (
             <TabsTrigger value="users" className="flex items-center space-x-2">
               <Users className="w-4 h-4" />
               <span>User Management</span>
             </TabsTrigger>
           )}
+          <TabsTrigger value="calendly" className="flex items-center space-x-2">
+            <Calendar className="w-4 h-4" />
+            <span>Calendly</span>
+          </TabsTrigger>
         </TabsList>
 
 
@@ -615,10 +638,10 @@ const Settings: React.FC = () => {
                             {userItem.role === 'admin'}
                           </div>
                           <p className="text-sm text-gray-600">{userItem.email}</p>
-                          {userItem.location && (
+                          {userItem.locationName && userItem.locationName !== 'No Location' && (
                             <p className="text-xs text-gray-500 flex items-center">
                               <MapPin className="w-3 h-3 mr-1" />
-                              {userItem.location}
+                              {userItem.locationName}
                             </p>
                           )}
                           <p className="text-xs text-gray-500">

@@ -1,5 +1,68 @@
 # Vqh Job Portal Updates
 
+## 2025-01-03 18:35 - Fixed Location Display in User Management
+
+### User Request
+- **Request**: Fix location display showing UUID instead of location name in user management
+- **Issue**: Admin could see all users' locations but their own location showed UUID
+- **Goal**: Display actual location names instead of UUIDs for all users
+
+### Technical Fix
+- **File**: `src/components/admin/Settings.tsx`
+- **Problem**: `fetchAllUsers` function was not resolving location UUIDs to location names
+- **Solution**: Added location name mapping using the locations context
+
+### Changes Made
+- **Enhanced Data Fetching**: Modified `fetchAllUsers` to map location UUIDs to names
+- **Updated Interface**: Added `locationName` property to `AdminUser` interface
+- **Improved Display**: Updated UI to show location names instead of UUIDs
+- **Enhanced Search**: Updated search functionality to include location names
+
+### Technical Implementation
+- **Location Mapping**: `const locationObj = locations.find(loc => loc.id === user.location)`
+- **Fallback Logic**: `locationObj?.name || user.location || 'No Location'`
+- **UI Update**: Display `userItem.locationName` instead of `userItem.location`
+- **Search Enhancement**: Include `locationName` in search filter
+
+### Files Modified
+- `src/components/admin/Settings.tsx` - Fixed location display and search functionality
+
+## 2025-01-03 18:30 - Changed Role Name: Recruiter to Branch Manager
+
+### User Request
+- **Request**: Change role name from "Recruiter" to "Branch Manager"
+- **Issue**: Role name needed to be more descriptive and professional
+- **Goal**: Update all references to use "Branch Manager" instead of "Recruiter"
+
+### Changes Made
+- **TypeScript Types**: Updated `UserRole` type in `src/types/index.ts`
+- **Role Permissions**: Updated role permissions in `src/utils/rolePermissions.ts`
+- **UI Components**: Updated all UI components to display "Branch Manager"
+- **Database Migrations**: Updated RLS policies and constraints
+- **Supabase Functions**: Updated admin-create-user function
+
+### Files Modified
+- `src/types/index.ts` - Updated UserRole type
+- `src/utils/rolePermissions.ts` - Updated role permissions
+- `src/components/admin/AdminHeader.tsx` - Updated dashboard title
+- `src/components/admin/AdminSidebar.tsx` - Updated default role
+- `src/components/admin/Dashboard.tsx` - Updated default role
+- `src/components/admin/Settings.tsx` - Updated role options and defaults
+- `src/components/UserProfileModal.tsx` - Updated role options
+- `src/components/admin/components/ProfileHeader.tsx` - Updated display text
+- `supabase/migrations/20250103000013_comprehensive_rls_policies.sql` - Updated RLS policies
+- `supabase/migrations/20250628150410-d8da554d-5592-4287-8f87-42f5be45f2a8.sql` - Updated role constraints
+- `supabase/functions/admin-create-user/index.ts` - Updated allowed roles
+
+### Role Hierarchy (Updated)
+```
+Admin (Full Access)
+├── Branch Manager (Job + Training)
+├── HR Manager (Job + Training + Email)
+├── Trainer (Training Only)
+└── Content Manager (Content Only)
+```
+
 ## 2025-01-03 18:25 - Updated Eye Icon Button Styling
 
 ### User Request

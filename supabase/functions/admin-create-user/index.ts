@@ -29,14 +29,18 @@ serve(async (req) => {
     // Get the request body
     const { email, password, user_metadata } = await req.json()
 
+    console.log('=== ADMIN CREATE USER FUNCTION DEBUG ===')
+    console.log('Received request body:', { email, password: '***', user_metadata })
     console.log('Received user_metadata:', user_metadata)
     console.log('Location from metadata:', user_metadata?.location)
+    console.log('Role from metadata:', user_metadata?.role)
     console.log('Location type:', typeof user_metadata?.location)
     console.log('Location === null:', user_metadata?.location === null)
     console.log('Location === "none":', user_metadata?.location === 'none')
 
     // Validate required fields
     if (!email || !password) {
+      console.log('ERROR: Missing email or password')
       return new Response(
         JSON.stringify({ error: 'Email and password are required' }),
         { 
@@ -47,11 +51,16 @@ serve(async (req) => {
     }
 
     // Validate role is one of the allowed values
-    const allowedRoles = ['admin', 'recruiter', 'hr', 'trainer', 'content_manager'];
-    const role = user_metadata?.role || 'recruiter';
+    const allowedRoles = ['admin', 'branch_manager', 'hr', 'trainer', 'content_manager'];
+    const role = user_metadata?.role || 'branch_manager';
+    console.log('Validating role:', role)
+    console.log('Allowed roles:', allowedRoles)
+    console.log('Role is allowed:', allowedRoles.includes(role))
+    
     if (!allowedRoles.includes(role)) {
+      console.log('ERROR: Invalid role specified:', role)
       return new Response(
-        JSON.stringify({ error: 'Invalid role specified' }),
+        JSON.stringify({ error: 'Invalid role specified: ' + role }),
         { 
           status: 400, 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
@@ -68,6 +77,7 @@ serve(async (req) => {
     })
 
     if (createError) {
+      console.log('ERROR: Failed to create user:', createError.message)
       return new Response(
         JSON.stringify({ error: createError.message }),
         { 
@@ -77,12 +87,22 @@ serve(async (req) => {
       )
     }
 
+    console.log('User created successfully:', user?.user?.id)
+
     // Create or update the user's profile with role and other metadata
     if (user?.user && user_metadata) {
       const finalLocation = user_metadata.location === 'none' ? null : user_metadata.location || null;
       console.log('Creating profile with location:', user_metadata.location)
       console.log('Final location value:', finalLocation)
       console.log('Final location type:', typeof finalLocation)
+      console.log('Profile data to insert:', {
+        id: user.user.id,
+        email: user.user.email,
+        role: role,
+        admin_name: user_metadata.admin_name,
+        display_name: user_metadata.display_name,
+        location: finalLocation
+      })
       
       const { error: profileError } = await supabaseAdmin
         .from('profiles')
@@ -99,7 +119,9 @@ serve(async (req) => {
         .eq('id', user.user.id)
 
       if (profileError) {
-        console.error('Error creating/updating profile:', profileError)
+        console.error('ERROR: Failed to create/update profile:', profileError)
+        console.error('Profile error details:', profileError.message)
+        console.error('Profile error code:', profileError.code)
         return new Response(
           JSON.stringify({ error: 'Failed to create user profile: ' + profileError.message }),
           { 
@@ -108,6 +130,8 @@ serve(async (req) => {
           }
         )
       }
+      
+      console.log('Profile created/updated successfully')
     }
 
     return new Response(

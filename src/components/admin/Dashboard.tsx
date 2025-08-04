@@ -52,7 +52,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
   const { jobs, applications, salespeople, visitLogs, trainingVideos, userProfile } = useAppContext();
 
   // Get user permissions
-  const userRole = userProfile?.role || 'recruiter';
+  const userRole = userProfile?.role || 'branch_manager';
   const permissions = getRolePermissions(userRole);
 
   const activeJobs = jobs.filter(job => job.isActive).length;

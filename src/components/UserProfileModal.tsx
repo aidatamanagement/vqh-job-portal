@@ -58,7 +58,7 @@ const UserProfileModal: React.FC<UserProfileModalProps> = ({ isOpen, onClose }) 
 
   const userRoles: { label: string; value: UserRole; description: string }[] = [
     { label: 'Administrator', value: 'admin', description: 'Full system access' },
-    { label: 'Recruiter', value: 'recruiter', description: 'Job and application management' },
+    { label: 'Branch Manager', value: 'branch_manager', description: 'Job and application management' },
     { label: 'Manager', value: 'hr', description: 'People and visit management' },
     { label: 'Trainer', value: 'trainer', description: 'Training content management' },
     { label: 'Content Manager', value: 'content_manager', description: 'Content and media management' },
@@ -198,7 +198,7 @@ const UserProfileModal: React.FC<UserProfileModalProps> = ({ isOpen, onClose }) 
     switch (role) {
       case 'admin':
         return 'destructive';
-      case 'recruiter':
+      case 'branch_manager':
         return 'default';
       default:
         return 'secondary';

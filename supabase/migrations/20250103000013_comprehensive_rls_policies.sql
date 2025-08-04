@@ -33,7 +33,7 @@ RETURNS BOOLEAN AS $$
 BEGIN
   RETURN EXISTS (
     SELECT 1 FROM public.profiles 
-    WHERE id = user_id AND role IN ('admin', 'recruiter')
+    WHERE id = user_id AND role IN ('admin', 'branch_manager')
   );
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER STABLE;
@@ -44,7 +44,7 @@ RETURNS BOOLEAN AS $$
 BEGIN
   RETURN EXISTS (
     SELECT 1 FROM public.profiles 
-    WHERE id = user_id AND role IN ('admin', 'recruiter', 'hr')
+    WHERE id = user_id AND role IN ('admin', 'branch_manager', 'hr')
   );
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER STABLE;

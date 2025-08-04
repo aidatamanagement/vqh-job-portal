@@ -82,7 +82,7 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({ currentView, onViewChange, 
   const pendingApplications = applications.filter(app => app.status === 'application_submitted').length;
 
   // Get user permissions
-  const userRole = userProfile?.role || 'recruiter';
+  const userRole = userProfile?.role || 'branch_manager';
   const permissions = getRolePermissions(userRole);
 
   const toggleMenu = (menuId: string) => {

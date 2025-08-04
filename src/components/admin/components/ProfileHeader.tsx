@@ -34,18 +34,20 @@ export function ProfileHeader() {
             <div className="flex items-center space-x-4">
               <div>
                 <h1 className="text-white font-bold text-lg font-['Open_Sans']">
-                  Profile - {userProfile?.role === 'admin' ? 'Administrator' : 
-                             userProfile?.role === 'recruiter' ? 'Recruiter' :
-                             userProfile?.role === 'hr' ? 'Manager' :
+                  Profile - {userProfile?.role === 'admin' ? 'Admin' :
+                             userProfile?.role === 'branch_manager' ? 'Branch Manager' :
+                             userProfile?.role === 'hr' ? 'HR Manager' :
                              userProfile?.role === 'trainer' ? 'Trainer' :
-                             userProfile?.role === 'content_manager' ? 'Content Manager' : 'User'}
+                             userProfile?.role === 'content_manager' ? 'Content Manager' :
+                             'User'}
                 </h1>
                 <p className="text-white/90 text-sm font-['Open_Sans']">
                   {userProfile?.role === 'admin' ? 'Full System Access' :
-                   userProfile?.role === 'recruiter' ? 'Job and Application Management' :
-                   userProfile?.role === 'hr' ? 'People and Visit Management' :
-                   userProfile?.role === 'trainer' ? 'Training Content Management' :
-                   userProfile?.role === 'content_manager' ? 'Content and Media Management' : 'User Access'}
+                   userProfile?.role === 'branch_manager' ? 'Job and Application Management' :
+                   userProfile?.role === 'hr' ? 'HR and Training Management' :
+                   userProfile?.role === 'trainer' ? 'Training Management' :
+                   userProfile?.role === 'content_manager' ? 'Content Management' :
+                   'Limited Access'}
                 </p>
               </div>
             </div>

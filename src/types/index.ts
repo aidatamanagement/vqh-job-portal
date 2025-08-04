@@ -61,7 +61,7 @@ export interface JobApplication {
   updatedAt: string;
 }
 
-export type UserRole = 'admin' | 'recruiter' | 'hr' | 'trainer' | 'content_manager';
+export type UserRole = 'admin' | 'branch_manager' | 'hr' | 'trainer' | 'content_manager';
 
 export interface User {
   id: string;

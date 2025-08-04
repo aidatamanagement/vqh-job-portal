@@ -68,8 +68,8 @@ const AdminHeader: React.FC<AdminHeaderProps> = ({ onMenuClick, onNavigate, curr
               <h1 className="text-xl font-bold text-gray-900">
                 {currentView === 'dashboard' ? 
                   (userProfile?.role === 'admin' ? 'Admin Dashboard' :
-                   userProfile?.role === 'recruiter' ? 'Recruiter Dashboard' :
-                   userProfile?.role === 'hr' ? 'HR Dashboard' :
+                   userProfile?.role === 'branch_manager' ? 'Branch Manager Dashboard' :
+                   userProfile?.role === 'hr' ? 'HR Manager Dashboard' :
                    userProfile?.role === 'trainer' ? 'Trainer Dashboard' :
                    userProfile?.role === 'content_manager' ? 'Content Manager Dashboard' :
                    'Dashboard') : 

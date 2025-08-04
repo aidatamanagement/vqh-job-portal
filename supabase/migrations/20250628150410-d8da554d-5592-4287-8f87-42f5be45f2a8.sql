@@ -1,22 +1,24 @@
 
 -- First, let's see what roles currently exist and update them properly
+-- Update existing profiles to use new role names
 UPDATE public.profiles 
 SET role = CASE 
-  WHEN role = 'user' OR role IS NULL THEN 'recruiter'
+  WHEN role = 'user' OR role IS NULL THEN 'branch_manager'
   WHEN role = 'admin' THEN 'admin'
-  WHEN role = 'recruiter' THEN 'recruiter'
+  WHEN role = 'branch_manager' THEN 'branch_manager'
   WHEN role = 'hr' THEN 'hr'
   WHEN role = 'trainer' THEN 'trainer'
   WHEN role = 'content_manager' THEN 'content_manager'
-  ELSE 'recruiter'  -- Default for any other values
+  ELSE 'branch_manager'  -- Default for any other values
 END;
 
--- Drop existing constraint if it exists
-ALTER TABLE public.profiles DROP CONSTRAINT IF EXISTS profiles_role_check;
+-- Add check constraint to ensure only valid roles are used
+ALTER TABLE public.profiles 
+DROP CONSTRAINT IF EXISTS profiles_role_check;
 
--- Add the new role constraint with the specified roles
-ALTER TABLE public.profiles ADD CONSTRAINT profiles_role_check 
-CHECK (role IN ('admin', 'recruiter', 'hr', 'trainer', 'content_manager'));
+ALTER TABLE public.profiles 
+ADD CONSTRAINT profiles_role_check 
+CHECK (role IN ('admin', 'branch_manager', 'hr', 'trainer', 'content_manager'));
 
 -- Drop ALL existing RLS policies to recreate them properly
 DROP POLICY IF EXISTS "Users can view own profile" ON public.profiles;

@@ -38,7 +38,7 @@ export const getRolePermissions = (role: UserRole): RolePermissions => {
         canManageContent: true,
       };
     
-    case 'recruiter':
+    case 'branch_manager':
       return {
         canManageJobs: true,
         canViewApplications: true,
