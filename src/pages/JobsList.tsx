@@ -179,9 +179,9 @@ const JobsList: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-white text-gray-900">
-      <div className="max-w-6xl mx-auto px-6 py-8">
-        <div className="space-y-8">
-          {/* Search and Filters */}
+      {/* Sticky Search and Filters Section */}
+      <div className="sticky top-0 z-10 bg-white shadow-sm">
+        <div className="max-w-6xl mx-auto px-6 py-4">
           <div className="space-y-4">
             {/* Search Bar */}
             <div className="relative">
@@ -248,29 +248,33 @@ const JobsList: React.FC = () => {
                 </Select>
               </div>
 
-              {/* Clear Filters */}
+              {/* Clear Filters Button */}
               {hasActiveFilters && (
                 <Button
                   variant="outline"
                   onClick={clearFilters}
-                  className="flex items-center gap-2 whitespace-nowrap"
+                  className="md:w-auto"
                 >
-                  <X className="w-4 h-4" />
                   Clear Filters
                 </Button>
               )}
             </div>
+          </div>
+        </div>
+      </div>
 
-            {/* Results Count */}
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between text-sm text-gray-600 gap-2">
-              <div className="flex items-center gap-2">
-                <Filter className="w-4 h-4" />
-                <span>{totalJobs} job{totalJobs !== 1 ? 's' : ''} found</span>
-              </div>
-              {hasActiveFilters && (
-                <span className="text-xs sm:text-sm">Filtered from {jobs.filter(job => job.isActive).length} total jobs</span>
-              )}
+      {/* Scrollable Job Listings Section */}
+      <div className="max-w-6xl mx-auto px-6 py-8 pt-4">
+        <div className="space-y-6">
+          {/* Results Count */}
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between text-sm text-gray-600 gap-2">
+            <div className="flex items-center gap-2">
+              <Filter className="w-4 h-4" />
+              <span>{totalJobs} job{totalJobs !== 1 ? 's' : ''} found</span>
             </div>
+            {hasActiveFilters && (
+              <span className="text-xs sm:text-sm">Filtered from {jobs.filter(job => job.isActive).length} total jobs</span>
+            )}
           </div>
 
           {/* Jobs List */}
