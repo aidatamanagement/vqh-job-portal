@@ -16,17 +16,15 @@ import {
   Clock, 
   Edit, 
   Lock, 
-  Camera, 
   Crown,
   Eye,
   EyeOff,
-  Shield,
-  X
+  Shield
 } from 'lucide-react';
 import { useAppContext } from '@/contexts/AppContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
-import { useProfileImage } from '@/hooks/useProfileImage';
+
 import { testProfileImageConnection } from '@/utils/testProfileImageConnection';
 import { UserRole } from '@/types';
 
@@ -37,7 +35,7 @@ interface UserProfileModalProps {
 
 const UserProfileModal: React.FC<UserProfileModalProps> = ({ isOpen, onClose }) => {
   const { user, userProfile, updateUserDisplayName, locations } = useAppContext();
-  const { uploadProfileImage, deleteProfileImage, isUploading } = useProfileImage();
+
   const [isLoading, setIsLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('profile');
   const [isEditing, setIsEditing] = useState(false);
@@ -194,75 +192,7 @@ const UserProfileModal: React.FC<UserProfileModalProps> = ({ isOpen, onClose }) 
     }
   };
 
-  const handleProfilePictureUpload = () => {
-    if (!user?.id) return;
 
-    // Create file input
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = 'image/jpeg,image/png,image/webp';
-    input.multiple = false;
-
-    input.onchange = async (e) => {
-      const file = (e.target as HTMLInputElement).files?.[0];
-      if (!file) return;
-
-      console.log('Starting profile image upload...');
-      const result = await uploadProfileImage(file, user.id);
-      
-      if (result.success) {
-        // Fetch updated profile data to refresh the UI
-        try {
-          const { data: updatedProfile, error } = await supabase
-            .from('profiles')
-            .select('*')
-            .eq('id', user.id)
-            .single();
-          
-          if (!error && updatedProfile) {
-            // Update the context with new profile data
-            console.log('Profile updated successfully:', updatedProfile);
-            // Force a small delay to ensure storage URL is accessible
-            setTimeout(() => {
-              window.location.reload();
-            }, 1000);
-          }
-        } catch (error) {
-          console.error('Error fetching updated profile:', error);
-        }
-      }
-    };
-
-    input.click();
-  };
-
-  const handleDeleteProfileImage = async () => {
-    if (!user?.id) return;
-
-    console.log('Starting profile image deletion...');
-    const result = await deleteProfileImage(user.id);
-    
-    if (result.success) {
-      // Fetch updated profile data to refresh the UI
-      try {
-        const { data: updatedProfile, error } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', user.id)
-          .single();
-        
-        if (!error && updatedProfile) {
-          console.log('Profile image deleted successfully:', updatedProfile);
-          // Force a small delay to ensure changes are reflected
-          setTimeout(() => {
-            window.location.reload();
-          }, 500);
-        }
-      } catch (error) {
-        console.error('Error fetching updated profile after deletion:', error);
-      }
-    }
-  };
 
   const getRoleBadgeVariant = (role: UserRole): "default" | "secondary" | "destructive" => {
     switch (role) {
@@ -341,30 +271,7 @@ const UserProfileModal: React.FC<UserProfileModalProps> = ({ isOpen, onClose }) 
                             .slice(0, 2)}
                         </AvatarFallback>
                       </Avatar>
-                      <div className="absolute -bottom-1 -right-1 flex space-x-1">
-                        <Button
-                          onClick={handleProfilePictureUpload}
-                          size="sm"
-                          variant="secondary"
-                          className="rounded-full w-8 h-8 p-0"
-                          disabled={isUploading}
-                          title="Change profile picture"
-                        >
-                          <Camera className="w-3 h-3" />
-                        </Button>
-                        {userProfile.profile_image_url && (
-                          <Button
-                            onClick={handleDeleteProfileImage}
-                            size="sm"
-                            variant="destructive"
-                            className="rounded-full w-8 h-8 p-0"
-                            disabled={isUploading}
-                            title="Remove profile picture"
-                          >
-                            <X className="w-3 h-3" />
-                          </Button>
-                        )}
-                      </div>
+
                     </div>
 
                     {/* Role Badge */}

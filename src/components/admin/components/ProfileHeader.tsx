@@ -1,27 +1,12 @@
 import React from 'react';
-import { Search, Settings, Bell, Edit3 } from 'lucide-react';
+import { Search, Settings, Bell } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { useAppContext } from '@/contexts/AppContext';
-import { useProfileImage } from '@/hooks/useProfileImage';
 
 export function ProfileHeader() {
   const { userProfile } = useAppContext();
-  const { uploadProfileImage, deleteProfileImage, isUploading } = useProfileImage();
-
-  const handleProfilePictureUpload = () => {
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = 'image/*';
-    input.onchange = async (e) => {
-      const file = (e.target as HTMLInputElement).files?.[0];
-      if (file && userProfile?.id) {
-        await uploadProfileImage(file, userProfile.id);
-      }
-    };
-    input.click();
-  };
 
   return (
     <div className="relative">
@@ -92,7 +77,7 @@ export function ProfileHeader() {
       <div className="absolute left-6 right-6 -bottom-12 z-20">
         <div className="bg-white/95 backdrop-blur-md rounded-xl shadow-lg border border-gray-200/50 p-4">
           <div className="flex items-center space-x-4">
-            {/* Profile Picture - Square with small edit icon */}
+            {/* Profile Picture - Square without edit icon */}
             <div className="relative">
               <div className="w-16 h-16 rounded-md bg-red-500 flex items-center justify-center text-white font-semibold text-lg shadow-md overflow-hidden">
                 {userProfile?.profile_image_url ? (
@@ -112,14 +97,6 @@ export function ProfileHeader() {
                   </span>
                 )}
               </div>
-              <button
-                onClick={handleProfilePictureUpload}
-                className="absolute -bottom-1 -right-1 w-6 h-6 bg-white rounded-full shadow-md flex items-center justify-center hover:bg-gray-50 transition-colors"
-                disabled={isUploading}
-                title="Edit profile picture"
-              >
-                <Edit3 className="w-3 h-3 text-gray-600" />
-              </button>
             </div>
 
             {/* User Info - Compact and left-aligned */}

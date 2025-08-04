@@ -198,15 +198,7 @@ const JobPreviewModal: React.FC<JobPreviewModalProps> = ({ job, isOpen, onClose 
                         </div>
                       )}
 
-                      {job.hrManagerName && (
-                        <div className="flex items-start space-x-3">
-                          <User className="w-5 h-5 text-primary mt-0.5" />
-                          <div>
-                            <p className="text-sm font-medium text-gray-900">Manager</p>
-                            <p className="text-sm text-gray-600">{job.hrManagerName}</p>
-                          </div>
-                        </div>
-                      )}
+
                       
                       <div className="flex items-start space-x-3">
                         <Clock className="w-5 h-5 text-primary mt-0.5" />
