@@ -225,6 +225,7 @@ const ApplicationModal: React.FC<ApplicationModalProps> = ({ isOpen, onClose, jo
         city_state: formData.cityState,
         cover_letter: formData.coverLetter,
         cover_letter_url: coverLetterUrl,
+        resume_url: resumeUrl,
         additional_docs_urls: additionalDocsUrls,
         is_referred_by_employee: formData.isReferredByEmployee,
         referred_by_employee_name: formData.isReferredByEmployee ? formData.referredByEmployeeName : null,

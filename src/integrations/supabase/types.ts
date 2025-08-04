@@ -214,6 +214,7 @@ export type Database = {
           last_name: string
           phone: string | null
           referred_by_employee_name: string | null
+          resume_url: string | null
           status: string | null
           tracking_token: string
           updated_at: string | null
@@ -235,8 +236,9 @@ export type Database = {
           last_name: string
           phone?: string | null
           referred_by_employee_name?: string | null
+          resume_url?: string | null
           status?: string | null
-          tracking_token?: string
+          tracking_token: string
           updated_at?: string | null
           user_id?: string | null
         }
@@ -256,6 +258,7 @@ export type Database = {
           last_name?: string
           phone?: string | null
           referred_by_employee_name?: string | null
+          resume_url?: string | null
           status?: string | null
           tracking_token?: string
           updated_at?: string | null

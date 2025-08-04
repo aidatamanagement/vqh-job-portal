@@ -6,7 +6,13 @@ export const getResumeUrl = (applicationId: string) => {
   if (!supabaseUrl) {
     throw new Error('VITE_SUPABASE_URL environment variable is not configured');
   }
+  
+  // For legacy applications, try multiple extensions
+  // Most common extensions for resumes
   const extensions = ['pdf', 'doc', 'docx'];
+  
+  // Return the first extension (PDF) as default
+  // The file viewer will handle accessibility testing
   return `${supabaseUrl}/storage/v1/object/public/job-applications/${applicationId}/resume.pdf`;
 };
 

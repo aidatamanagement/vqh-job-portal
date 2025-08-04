@@ -1,14 +1,26 @@
 
 import { useState, useEffect } from 'react';
-import { JobApplication } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
-import {
-  getResumeUrl,
+import { JobApplication } from '@/types';
+import { 
+  getResumeUrl, 
+  formatDate, 
+  getStatusBadgeVariant, 
+  getStatusText, 
+  getValidNextStatuses, 
+  validateStatusTransition,
+  getUniquePositions,
+  getUniqueHrManagers,
+  filterSubmissions,
+  sortSubmissions,
+  getSubmissionsByStatus,
+  getStatusCount,
   deleteApplicationFiles,
   deleteApplicationFromDatabase,
   updateApplicationStatusInDatabase
-} from '../utils/submissionsUtils';
+} from '@/components/admin/utils/submissionsUtils';
+import { getLegacyResumeUrl } from '@/utils/fileUtils';
 
 export const useSubmissions = () => {
   const [submissions, setSubmissions] = useState<JobApplication[]>([]);
@@ -66,7 +78,7 @@ export const useSubmissions = () => {
         cityState: item.city_state || '',
         coverLetter: item.cover_letter || '',
         coverLetterUrl: item.cover_letter_url,
-        resumeUrl: getResumeUrl(item.id),
+        resumeUrl: (item.resume_url && item.resume_url !== 'legacy-application') ? item.resume_url : getResumeUrl(item.id), // Use stored URL, fallback to hardcoded for legacy
         additionalDocsUrls: item.additional_docs_urls || [],
         hrManagerName: item.jobs?.hr_manager ? (item.jobs.hr_manager.admin_name || item.jobs.hr_manager.display_name || 'Unknown') : 'Unassigned',
         hrManagerEmail: item.jobs?.hr_manager?.email || undefined,

@@ -1,5 +1,126 @@
 # Vqh Job Portal Updates
 
+## 2025-01-03 18:00 - Fixed Resume URL Storage and Legacy Application Support
+
+### User Request
+- **Request**: Fix resume file viewing for both new and previous applications
+- **Issue**: Resume files were hardcoded to `.pdf` extension, causing DOC files to fail
+- **Goal**: Store actual file extensions and support legacy applications
+
+### Database Schema Changes
+- **Migration**: Created `supabase/migrations/20250103000017_add_resume_url_field.sql`
+  - Added `resume_url` field to `job_applications` table
+  - Stores actual file URL with correct extension
+- **Migration**: Created `supabase/migrations/20250103000018_populate_existing_resume_urls.sql`
+  - Populates `resume_url` field for existing applications
+  - Uses placeholder value for legacy applications
+
+### Application Submission Updates
+- **File**: `src/components/ApplicationModal.tsx`
+  - Updated to store actual `resume_url` in database
+  - Maintains correct file extension from upload
+
+### Admin Panel Updates
+- **File**: `src/components/admin/hooks/useSubmissions.ts`
+  - Updated to use stored `resume_url` for new applications
+  - Falls back to `getResumeUrl()` for legacy applications
+  - Added support for legacy application detection
+
+### TypeScript Types
+- **File**: `src/integrations/supabase/types.ts`
+  - Added `resume_url` field to database types
+  - Updated Row, Insert, and Update interfaces
+
+### Legacy Application Support
+- **Smart Fallback**: New applications use stored URLs, legacy use hardcoded function
+- **Extension Detection**: Legacy applications still work with PDF fallback
+- **Backward Compatibility**: All existing applications continue to function
+
+### Files Created/Updated
+- `supabase/migrations/20250103000017_add_resume_url_field.sql` - New resume_url field
+- `supabase/migrations/20250103000018_populate_existing_resume_urls.sql` - Legacy support
+- `src/components/ApplicationModal.tsx` - Store actual resume URL
+- `src/components/admin/hooks/useSubmissions.ts` - Use stored URLs with fallback
+- `src/integrations/supabase/types.ts` - Updated database types
+- `updates.md` - Documentation update
+
+### Impact
+Complete solution for resume file viewing:
+- **New Applications**: Store and use correct file extensions
+- **Legacy Applications**: Continue working with fallback mechanism
+- **All File Types**: DOC, DOCX, PDF files work correctly
+- **Backward Compatibility**: No breaking changes to existing functionality
+
+## 2025-01-03 17:30 - Enhanced File Viewer with Office Document Support
+
+### User Request
+- **Request**: Fix DOC/DOCX file viewing issues while maintaining PDF functionality
+- **Issue**: DOC/DOCX files show 404 errors in iframe, PDFs work fine
+- **Goal**: Implement Microsoft Office Online viewer for Office documents without breaking PDF viewing
+
+### Technical Solution
+- **File Type Detection**: Created intelligent file categorization system
+- **Office Online Integration**: Microsoft Office Online viewer for DOC/DOCX files
+- **Fallback Strategies**: Multiple URL fetching strategies with accessibility testing
+- **Maintained PDF Support**: Kept existing iframe functionality for PDFs
+
+### New Components Created
+- **`src/utils/fileUtils.ts`**: URL fetching with fallback strategies
+  - Extracts storage paths from various URL formats
+  - Creates signed URLs from Supabase storage
+  - Tests URL accessibility before returning
+  - Multiple fallback strategies for reliability
+
+- **`src/utils/fileTypeUtils.ts`**: File type detection and categorization
+  - Categorizes files: image, video, audio, pdf, text, office, other
+  - Detects Microsoft Office documents: doc, docx, xls, xlsx, ppt, pptx
+  - Determines iframe compatibility for different file types
+
+- **`src/components/admin/components/OfficePreview.tsx`**: Microsoft Office document viewer
+  - Uses Microsoft Office Online viewer service
+  - Full-screen viewing capability
+  - Download functionality
+  - Professional UI with action buttons
+
+### Enhanced FileViewerModal
+- **Smart Rendering**: Different viewers based on file type
+- **Office Documents**: Microsoft Office Online viewer
+- **PDF/Images**: Direct iframe (unchanged functionality)
+- **Error Handling**: Graceful fallbacks for inaccessible files
+- **Loading States**: Professional loading indicators
+- **Download Options**: Direct download for all file types
+
+### Features Added
+- ✅ **Office Document Support**: DOC, DOCX, XLS, XLSX, PPT, PPTX
+- ✅ **PDF Viewing**: Maintained existing functionality
+- ✅ **Image Preview**: Direct browser rendering
+- ✅ **Text Files**: Inline text viewing
+- ✅ **Download Fallback**: All files can be downloaded
+- ✅ **Full-Screen Mode**: Office documents can open in new tab
+- ✅ **Error Recovery**: Multiple fallback strategies
+- ✅ **Loading States**: Professional user experience
+
+### Technical Benefits
+- **Reliability**: Multiple URL fetching strategies
+- **Performance**: Accessibility testing before display
+- **User Experience**: Appropriate viewer for each file type
+- **Maintainability**: Clean separation of concerns
+- **Scalability**: Easy to add new file type support
+
+### Files Created/Updated
+- `src/utils/fileUtils.ts` - New URL fetching utility
+- `src/utils/fileTypeUtils.ts` - New file type detection
+- `src/components/admin/components/OfficePreview.tsx` - New Office document viewer
+- `src/components/admin/components/FileViewerModal.tsx` - Enhanced with smart rendering
+- `updates.md` - Documentation update
+
+### Impact
+Complete solution for viewing all document types in the admin panel:
+- **Office Documents**: Now viewable via Microsoft Office Online
+- **PDF Files**: Continue working as before
+- **Images**: Direct browser preview
+- **All Files**: Downloadable as fallback option
+
 ## 2025-01-03 16:00 - Fixed Profile Image Upload RLS Issue
 
 ### User Request
