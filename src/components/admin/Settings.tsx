@@ -60,7 +60,7 @@ interface AdminUser {
 const Settings: React.FC = () => {
   const { user, userProfile, updateUserDisplayName, locations } = useAppContext();
 
-  const [activeTab, setActiveTab] = useState('calendly');
+  const [activeTab, setActiveTab] = useState('users');
   const [showAdminPassword, setShowAdminPassword] = useState(false);
   const [showAdminConfirmPassword, setShowAdminConfirmPassword] = useState(false);
   const [adminList, setAdminList] = useState<AdminUser[]>([]);
