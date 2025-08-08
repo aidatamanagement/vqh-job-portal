@@ -432,6 +432,38 @@ export type Database = {
         }
         Relationships: []
       }
+      default_branch_managers: {
+        Row: {
+          id: string
+          location_name: string
+          manager_id: string
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          location_name: string
+          manager_id: string
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          location_name?: string
+          manager_id?: string
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "default_branch_managers_manager_id_fkey"
+            columns: ["manager_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       salespeople: {
         Row: {
           created_at: string

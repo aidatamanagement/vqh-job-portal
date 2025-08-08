@@ -198,7 +198,12 @@ const EditJobModal: React.FC<EditJobModalProps> = ({
                             <div className="flex items-center space-x-2">
                               <span className="font-medium truncate">{manager.name}</span>
                               <Badge variant="outline" className="text-xs">
-                                {manager.role === 'admin' ? 'Admin' : 'HR Manager'}
+                                {manager.role === 'admin' ? 'Admin' : 
+                                 manager.role === 'hr' ? 'HR Manager' :
+                                 manager.role === 'branch_manager' ? 'Branch Manager' :
+                                 manager.role === 'trainer' ? 'Trainer' :
+                                 manager.role === 'content_manager' ? 'Content Manager' :
+                                 manager.role}
                               </Badge>
                             </div>
                             <div className="flex items-center space-x-2 text-xs text-muted-foreground">

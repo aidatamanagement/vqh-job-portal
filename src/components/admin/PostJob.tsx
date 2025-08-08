@@ -12,6 +12,8 @@ import { useAppContext } from '@/contexts/AppContext';
 import { toast } from '@/hooks/use-toast';
 import RichTextEditor from '@/components/ui/rich-text-editor';
 import { HRManager } from '@/types';
+import DefaultBranchManagersCard from './components/DefaultBranchManagersCard';
+import { supabase } from '@/integrations/supabase/client';
 // import { useDocumentParser } from '@/hooks/useDocumentParser'; // DISABLED: Document parsing feature temporarily disabled
 
 const PostJob: React.FC = () => {
@@ -90,7 +92,32 @@ const PostJob: React.FC = () => {
           setJobForm(prev => ({ ...prev, hrManagerId: '' }));
         }
         
-        // If we're auto-filling and have a last job with a manager, try to set it
+        // Check for default manager assignment for this location
+        const getDefaultManager = async () => {
+          try {
+            const { data, error } = await supabase
+              .from('default_branch_managers')
+              .select('manager_id')
+              .eq('location_name', jobForm.officeLocation)
+              .single();
+
+            if (!error && data && data.manager_id) {
+              console.log('Found default manager for location:', data.manager_id);
+              // Check if the default manager is in the available managers list
+              const defaultManager = managers.find(m => m.id === data.manager_id);
+              if (defaultManager) {
+                setJobForm(prev => ({ ...prev, hrManagerId: data.manager_id }));
+                console.log('Auto-assigned default manager:', defaultManager.name);
+              }
+            }
+          } catch (error) {
+            console.error('Error checking default manager:', error);
+          }
+        };
+
+        getDefaultManager();
+        
+        // If we're auto-filling and have a last job with a manager, try to set it (only if no default manager)
         if (lastJobForPosition && lastJobForPosition.hrManagerId && !jobForm.hrManagerId) {
           const matchingManager = managers.find(m => m.id === lastJobForPosition.hrManagerId);
           if (matchingManager) {
@@ -671,7 +698,12 @@ const PostJob: React.FC = () => {
                                 <div className="flex items-center space-x-2">
                                   <span className="font-medium truncate">{manager.name}</span>
                                   <Badge variant="outline" className="text-xs">
-                                    {manager.role === 'admin' ? 'Admin' : 'HR Manager'}
+                                    {manager.role === 'admin' ? 'Admin' : 
+                                     manager.role === 'hr' ? 'HR Manager' :
+                                     manager.role === 'branch_manager' ? 'Branch Manager' :
+                                     manager.role === 'trainer' ? 'Trainer' :
+                                     manager.role === 'content_manager' ? 'Content Manager' :
+                                     manager.role}
                                   </Badge>
                                 </div>
                                 <div className="flex items-center space-x-2 text-xs text-muted-foreground">
@@ -903,6 +935,9 @@ const PostJob: React.FC = () => {
         </TabsContent>
 
         <TabsContent value="manage-attributes" className="space-y-6">
+          {/* Default Branch Managers Card - Full Width */}
+          <DefaultBranchManagersCard locations={locations} />
+          
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {/* Manage Positions */}
             <Card className="p-6">

@@ -60,6 +60,27 @@ export const useAdminOperations = (
     }
   }, []);
 
+  // Get default manager for a specific location
+  const getDefaultManagerForLocation = useCallback(async (locationName: string): Promise<string | null> => {
+    try {
+      const { data, error } = await supabase
+        .from('default_branch_managers')
+        .select('manager_id')
+        .eq('location_name', locationName)
+        .single();
+
+      if (error || !data) {
+        console.log(`No default manager found for location: ${locationName}`);
+        return null;
+      }
+
+      return data.manager_id;
+    } catch (error) {
+      console.error('Error getting default manager for location:', error);
+      return null;
+    }
+  }, []);
+
   // Admin database operations
   const createJob = useCallback(async (jobData: Omit<Job, 'id' | 'createdAt' | 'updatedAt'>): Promise<boolean> => {
     try {

@@ -1,5 +1,83 @@
 # Vqh Job Portal Updates
 
+## 2025-01-03 19:30 - Implemented Default Branch Manager Assignment System
+
+### User Request
+- **Request**: Create a "Manage Default Branch Managers" card in Manage Attributes section
+- **Goal**: Allow admins to assign default branch managers to locations for automatic job posting assignments
+
+### Changes Made
+
+#### Database Schema
+- **File**: `supabase/migrations/20250103000021_create_default_managers_table.sql`
+  - Created `default_branch_managers` table with location-manager mapping
+  - Added RLS policies for admin, HR, and branch manager access (management) and public read access
+  - Ensured one manager per location with unique constraint
+
+#### TypeScript Types
+- **File**: `src/types/index.ts`
+  - Added `DefaultBranchManager` interface for type safety
+- **File**: `src/integrations/supabase/types.ts`
+  - Added `default_branch_managers` table to Database type definition
+
+#### Backend Logic
+- **File**: `src/hooks/useDefaultBranchManagers.ts` - **NEW FILE**
+  - Created comprehensive hook for managing default branch manager assignments
+  - Functions: `fetchDefaultManagers`, `fetchBranchManagers`, `saveDefaultManager`, `deleteDefaultManager`
+  - Includes error handling and toast notifications
+
+#### Frontend Components
+- **File**: `src/components/admin/components/DefaultBranchManagersCard.tsx` - **NEW FILE**
+  - Created UI component for managing default branch manager assignments
+  - Features: Location selection, manager selection, save/delete operations
+  - Shows current assignments with visual indicators
+  - Includes helpful information section
+
+#### Job Posting Integration
+- **File**: `src/components/admin/PostJob.tsx`
+  - Added DefaultBranchManagersCard to Manage Attributes section
+  - Updated location change handler to auto-assign default managers
+  - Added supabase import for default manager lookup
+  - Maintains existing auto-fill functionality as fallback
+
+### Features Implemented
+- ✅ **Database Table**: Stores location-manager mappings with proper constraints
+- ✅ **Admin Interface**: Full CRUD operations for default manager assignments
+- ✅ **Auto-Assignment**: Automatically selects default manager when location is chosen
+- ✅ **Visual Feedback**: Shows current assignments with clear indicators
+- ✅ **Error Handling**: Comprehensive error handling and user notifications
+- ✅ **Type Safety**: Full TypeScript support with proper type definitions
+
+### User Experience
+- **Admin/HR/Branch Manager Workflow**: 
+  1. Go to Post Job → Manage Attributes
+  2. Select location and manager in "Default Branch Managers" card
+  3. Click "Save Assignment"
+  4. Assignment is stored and available for job posting
+
+- **Job Posting Workflow**:
+  1. Select location in job form
+  2. Default manager is automatically selected
+  3. User can still manually change if needed
+  4. Visual indicator shows auto-assigned manager
+
+### Technical Benefits
+- **Consistency**: Ensures same manager handles same location
+- **Efficiency**: Reduces manual selection time
+- **Flexibility**: Users can still override default assignments
+- **Scalability**: Easy to add new location-manager mappings
+- **Data Integrity**: Proper database constraints and relationships
+- **Access Control**: Admins, HR, and Branch Managers can manage assignments
+
+### Files Updated
+- `supabase/migrations/20250103000021_create_default_managers_table.sql` - Database schema
+- `src/types/index.ts` - TypeScript interfaces
+- `src/integrations/supabase/types.ts` - Supabase types
+- `src/hooks/useDefaultBranchManagers.ts` - Backend logic
+- `src/components/admin/components/DefaultBranchManagersCard.tsx` - UI component
+- `src/components/admin/PostJob.tsx` - Integration and role display fix
+- `src/components/admin/EditJobModal.tsx` - Role display fix
+
 ## 2025-01-03 19:20 - Implemented Location-Based Hiring Manager Filtering
 
 ### User Request

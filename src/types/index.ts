@@ -171,6 +171,14 @@ export interface Interview {
   updated_at: string;
 }
 
+export interface DefaultBranchManager {
+  id: string;
+  location_name: string;
+  manager_id: string;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface CalendlySettings {
   id: string;
   api_token: string;
