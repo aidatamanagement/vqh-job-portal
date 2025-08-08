@@ -49,8 +49,8 @@ export const getRolePermissions = (role: UserRole): RolePermissions => {
         canViewVisitLogs: false,
         canManageTrainingVideos: true,
         canViewTrainingVideos: true,
-        canManageEmailSettings: false,
-        canViewEmailLogs: false,
+        canManageEmailSettings: true, // ✅ Give Branch Managers email template access
+        canViewEmailLogs: true, // ✅ Give Branch Managers email logs access
         canManageUsers: false,
         canViewDashboard: true,
         canManageContent: false,

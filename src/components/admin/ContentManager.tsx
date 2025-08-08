@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Layout, Clock, Settings } from 'lucide-react';
+import { Layout, BarChart3 } from 'lucide-react';
 
 const ContentManager: React.FC = () => {
   return (
@@ -12,33 +12,39 @@ const ContentManager: React.FC = () => {
           <Layout className="w-4 h-4 text-primary" />
         </div>
         <div>
-      
-          <p className="text-gray-600">Manage your website content and resources</p>
+          <h1 className="text-2xl font-bold">Content Manager</h1>
+          <p className="text-gray-600">Social media analytics and content management</p>
         </div>
       </div>
 
-      {/* Coming Soon Card */}
-      <Card className="max-w-2xl mx-auto">
-        <CardHeader className="text-center">
-          <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
-            <Clock className="w-8 h-8 text-primary" />
-          </div>
-          <CardTitle className="text-2xl font-bold text-gray-900">
-            Coming Soon
+      {/* Coming Soon Message */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center space-x-2">
+            <BarChart3 className="w-5 h-5 text-primary" />
+            <span>Coming Soon</span>
           </CardTitle>
         </CardHeader>
-        <CardContent className="text-center space-y-4">
-          <p className="text-gray-600 text-lg">
-            We are working on the Content Manager feature.
-          </p>
-          <p className="text-gray-500">
-            This powerful tool will allow you to manage your website content, 
-            create and edit pages, manage media files, and customize your site's 
-            appearance. Stay tuned for updates!
-          </p>
-          <div className="flex items-center justify-center space-x-2 text-sm text-gray-400 pt-4">
-            <Settings className="w-4 h-4" />
-            <span>Feature in development</span>
+        <CardContent>
+          <div className="text-center py-12">
+            <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
+              <BarChart3 className="w-8 h-8 text-primary" />
+            </div>
+            <h3 className="text-xl font-semibold mb-2">Social Media Analytics</h3>
+            <p className="text-gray-600 mb-6 max-w-md mx-auto">
+              We're working on integrating comprehensive social media analytics and content management features. 
+              This will include platform performance tracking, engagement metrics, and content scheduling tools.
+            </p>
+            <div className="bg-gray-50 rounded-lg p-4 max-w-md mx-auto">
+              <h4 className="font-medium mb-2">Planned Features:</h4>
+              <ul className="text-sm text-gray-600 space-y-1">
+                <li>• Multi-platform social media analytics</li>
+                <li>• Engagement and reach tracking</li>
+                <li>• Content performance insights</li>
+                <li>• Automated reporting</li>
+                <li>• Content scheduling tools</li>
+              </ul>
+            </div>
           </div>
         </CardContent>
       </Card>

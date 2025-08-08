@@ -54,18 +54,33 @@ export const useEmailSettings = () => {
 
   const saveSettings = async (newSettings: EmailSettings) => {
     try {
-      console.log('Saving email settings to database:', newSettings);
+      console.log('🔄 Starting saveSettings function...');
+      console.log('📊 New settings to save:', newSettings);
       
       // First check if any settings exist
-      const { data: existing } = await supabase
+      console.log('🔍 Checking for existing settings...');
+      const { data: existing, error: checkError } = await supabase
         .from('email_settings')
         .select('id')
         .limit(1)
         .single();
 
+      if (checkError) {
+        console.error('❌ Error checking existing settings:', checkError);
+        console.log('📋 Check error details:', {
+          message: checkError.message,
+          details: checkError.details,
+          hint: checkError.hint,
+          code: checkError.code
+        });
+      }
+
+      console.log('📋 Existing settings found:', existing);
+
       let result;
       if (existing) {
         // Update existing settings
+        console.log('🔄 Updating existing settings with ID:', existing.id);
         result = await supabase
           .from('email_settings')
           .update({
@@ -79,6 +94,7 @@ export const useEmailSettings = () => {
           .eq('id', existing.id);
       } else {
         // Insert new settings
+        console.log('🆕 Inserting new settings...');
         result = await supabase
           .from('email_settings')
           .insert({
@@ -91,15 +107,23 @@ export const useEmailSettings = () => {
       }
 
       if (result.error) {
-        console.error('Error saving email settings:', result.error);
+        console.error('❌ Error saving email settings:', result.error);
+        console.log('📋 Save error details:', {
+          message: result.error.message,
+          details: result.error.details,
+          hint: result.error.hint,
+          code: result.error.code
+        });
         return false;
       }
 
+      console.log('✅ Email settings saved successfully');
+      console.log('📊 Result:', result);
+      
       setSettings(newSettings);
-      console.log('Email settings saved successfully');
       return true;
     } catch (error) {
-      console.error('Error saving email settings:', error);
+      console.error('❌ Exception in saveSettings:', error);
       return false;
     }
   };

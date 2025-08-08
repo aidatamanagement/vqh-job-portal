@@ -1,5 +1,162 @@
 # Vqh Job Portal Updates
 
+## 2025-01-03 19:20 - Implemented Location-Based Hiring Manager Filtering
+
+### User Request
+- **Request**: When posting a job and selecting a location, only show branch managers from that specific location
+- **Goal**: Filter hiring managers based on selected location to show only relevant branch managers
+
+### Changes Made
+
+#### Backend Logic Update
+- **File**: `src/contexts/hooks/useAdminOperations.ts`
+  - Updated `fetchHRManagers()` function to filter by location
+  - **Location Selected**: Only fetches `branch_manager` role users from that specific location
+  - **No Location**: Shows all branch managers across all locations
+  - **Role Filter**: Changed from `admin` and `hr` roles to only `branch_manager` role
+  - **Location Matching**: Uses `.eq('location', selectedLocation)` for precise filtering
+
+#### Frontend Integration
+- **File**: `src/components/admin/PostJob.tsx`
+  - Already has logic to fetch managers when office location changes
+  - Automatically clears selected manager if not available in new location
+  - Maintains auto-fill functionality for last job's manager if available
+
+### Features Implemented
+- ✅ **Location-Based Filtering**: Only branch managers from selected location appear
+- ✅ **Dynamic Updates**: Manager list updates when location changes
+- ✅ **Auto-Clear**: Selected manager clears if not available in new location
+- ✅ **Role-Specific**: Only shows branch managers (not admins or HR)
+- ✅ **Fallback Logic**: Shows all branch managers if no location selected
+
+### User Experience
+- **Before**: All admins and HR managers shown regardless of location
+- **After**: Only branch managers from selected location shown
+- **Workflow**: Select location → Only relevant branch managers appear → Choose hiring manager
+- **Validation**: Ensures hiring manager is from the correct location
+
+### Technical Benefits
+- **Relevant Options**: Users only see managers who can actually handle the location
+- **Reduced Confusion**: No irrelevant managers from other locations
+- **Better Organization**: Location-specific job management
+- **Data Integrity**: Ensures job-manager-location alignment
+
+### Files Updated
+- `src/contexts/hooks/useAdminOperations.ts` - Updated manager fetching logic
+
+## 2025-01-03 19:15 - Added Email Template Access for Branch Managers
+
+### User Request
+- **Request**: Give HR and Branch Manager roles access to change email templates
+- **Goal**: Allow Branch Managers to manage email automation alongside HR managers and admins
+
+### Changes Made
+
+#### Frontend Role Permissions
+- **File**: `src/utils/rolePermissions.ts`
+  - Updated `branch_manager` role permissions to include:
+    - ✅ `canManageEmailSettings: true` - Email automation configuration
+    - ✅ `canViewEmailLogs: true` - Email sending history access
+
+#### Database Policies
+- **File**: `supabase/migrations/20250103000020_update_branch_manager_email_access.sql`
+  - Updated helper function `is_admin_or_hr_manager()` to include `branch_manager` role
+  - Updated email settings policies to allow Branch Managers:
+    - Email settings configuration (SELECT, INSERT, UPDATE, DELETE)
+    - Email template management (SELECT, INSERT, UPDATE, DELETE)
+    - Email logs viewing (SELECT, INSERT, UPDATE, DELETE)
+  - Added comprehensive documentation for all policies
+
+### Features Now Available to Branch Managers
+- ✅ **Email Automation Configuration**:
+  - Configure email notification settings
+  - Manage admin and staff email lists
+  - Enable/disable notification types
+  - Set up automated email workflows
+
+- ✅ **Email Template Management**:
+  - Create and edit email templates
+  - Customize email content and formatting
+  - Manage template slugs and categories
+  - Preview and test email templates
+
+- ✅ **Email Logs Access**:
+  - View email sending history
+  - Monitor email delivery status
+  - Track email performance metrics
+  - Debug email automation issues
+
+### Security Considerations
+- Branch Managers can manage email automation but cannot manage users
+- All email operations are logged and auditable
+- Role-based access control prevents unauthorized access
+- Email template changes are tracked for compliance
+
+### User Experience
+- Branch Managers can now fully manage email communications
+- Consistent access across all email-related features
+- Professional email automation capabilities
+- Streamlined communication workflows
+
+### Files Updated
+- `src/utils/rolePermissions.ts` - Updated Branch Manager permissions
+- `supabase/migrations/20250103000020_update_branch_manager_email_access.sql` - New database migration
+
+## 2025-01-03 19:00 - Enhanced Email Management with Staff Selection and Confirmation Dialogs
+
+### User Request
+- **Request**: Add staff member selection from profiles and GitHub-style confirmation dialogs for email deletion
+- **Goal**: Improve email management with better UX and safety features
+
+### New Features Added
+
+#### Staff Member Selection
+- **Profile Integration**: Added dropdown to select staff members from profiles table
+- **Smart Filtering**: Only shows staff members not already added to email list
+- **Display Names**: Shows full names, emails, and roles in dropdown
+- **Manual Entry**: Maintained option to add emails manually for external addresses
+- **Dual Interface**: Separate sections for "Add Staff Member from Profile" and "Add Email Manually"
+
+#### GitHub-Style Confirmation Dialogs
+- **Safety Feature**: Added confirmation dialog requiring exact email typing for deletion
+- **Visual Design**: Red warning styling with AlertTriangle icon
+- **Exact Match**: User must type the exact email address to confirm deletion
+- **Admin Protection**: Prevents deletion of last admin email (minimum 1 required)
+- **Clear Feedback**: Shows email to be deleted and requires confirmation
+
+#### Enhanced UI Components
+- **New Icons**: Added Users, Trash2, AlertTriangle icons for better visual hierarchy
+- **Dialog Components**: Integrated Dialog, Select components for modern interface
+- **Visual Indicators**: Green checkmarks for synced emails, yellow alerts for unsaved changes
+- **Loading States**: Proper loading indicators for staff member fetching
+
+### Technical Implementation
+- **File**: `src/components/admin/EmailSettings.tsx`
+  - Added `StaffMember` interface for type safety
+  - Implemented `loadStaffMembers()` function with Supabase query
+  - Added `addStaffMemberEmail()` function for profile-based email addition
+  - Created `showDeleteConfirmation()` and `handleDeleteEmail()` for safe deletion
+  - Enhanced UI with staff member dropdown and confirmation dialog
+
+### Features Added
+- ✅ **Staff Member Selection**: Dropdown with all profile users and their emails
+- ✅ **Confirmation Dialogs**: GitHub-style deletion confirmation requiring exact email typing
+- ✅ **Admin Email Protection**: Cannot delete last admin email (minimum 1 required)
+- ✅ **Visual Feedback**: Clear indicators for synced vs unsaved changes
+- ✅ **Dual Interface**: Both profile selection and manual email entry options
+- ✅ **Smart Filtering**: Only shows available staff members not already added
+- ✅ **Professional UI**: Modern dialog components with proper accessibility
+
+### User Experience
+- **Before**: Simple X buttons for deletion, manual email entry only
+- **After**: Safe confirmation dialogs, staff member selection from profiles, dual entry methods
+- **Safety**: Prevents accidental email deletion with exact confirmation requirement
+- **Efficiency**: Quick staff member selection from existing profiles
+- **Flexibility**: Manual entry still available for external email addresses
+
+### Files Updated
+- `src/components/admin/EmailSettings.tsx` - Complete enhancement with staff selection and confirmation dialogs
+
 ## 2025-01-03 18:35 - Fixed Location Display in User Management
 
 ### User Request

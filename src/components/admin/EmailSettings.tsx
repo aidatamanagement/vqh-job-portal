@@ -8,7 +8,44 @@ import { Switch } from '@/components/ui/switch';
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useEmailSettings } from '@/hooks/useEmailSettings';
-import { Mail, Send, Settings, CheckCircle, AlertCircle, Plus, X, Save, RefreshCw } from 'lucide-react';
+import { 
+  Mail, 
+  Send, 
+  Settings, 
+  CheckCircle, 
+  AlertCircle, 
+  Plus, 
+  X, 
+  Save, 
+  RefreshCw,
+  Users,
+  Trash2,
+  AlertTriangle
+} from 'lucide-react';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+
+interface StaffMember {
+  id: string;
+  email: string;
+  first_name: string | null;
+  last_name: string | null;
+  display_name: string | null;
+  role: string | null;
+}
 
 const EmailSettings: React.FC = () => {
   const { settings, saveSettings, loadSettings } = useEmailSettings();
@@ -20,12 +57,54 @@ const EmailSettings: React.FC = () => {
   const [isTesting, setIsTesting] = useState(false);
   const [testEmail, setTestEmail] = useState('');
   const [lastTestResult, setLastTestResult] = useState<{ success: boolean; message: string } | null>(null);
+  
+  // Staff member selection
+  const [staffMembers, setStaffMembers] = useState<StaffMember[]>([]);
+  const [selectedStaffMember, setSelectedStaffMember] = useState<string>('');
+  const [isLoadingStaff, setIsLoadingStaff] = useState(false);
+  
+  // Confirmation dialogs
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [emailToDelete, setEmailToDelete] = useState<{ email: string; type: 'admin' | 'staff' } | null>(null);
+  const [deleteConfirmation, setDeleteConfirmation] = useState('');
 
   // Update local settings when database settings change
   useEffect(() => {
     console.log('Database settings updated, syncing to local state:', settings);
     setLocalSettings(settings);
   }, [settings]);
+
+  // Load staff members from profiles
+  useEffect(() => {
+    loadStaffMembers();
+  }, []);
+
+  const loadStaffMembers = async () => {
+    setIsLoadingStaff(true);
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('id, email, first_name, last_name, display_name, role')
+        .not('email', 'is', null)
+        .order('first_name', { ascending: true });
+
+      if (error) {
+        console.error('Error loading staff members:', error);
+        toast({
+          title: "Error",
+          description: "Failed to load staff members",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      setStaffMembers(data || []);
+    } catch (error) {
+      console.error('Error loading staff members:', error);
+    } finally {
+      setIsLoadingStaff(false);
+    }
+  };
 
   const addAdminEmail = () => {
     if (!newAdminEmail || !newAdminEmail.includes('@')) {
@@ -79,11 +158,30 @@ const EmailSettings: React.FC = () => {
     setNewStaffEmail('');
   };
 
-  const removeAdminEmail = (emailToRemove: string) => {
-    if (localSettings.adminEmails.length === 1) {
+  const addStaffMemberEmail = () => {
+    if (!selectedStaffMember) {
       toast({
-        title: "Cannot Remove",
-        description: "At least one admin email is required",
+        title: "No Staff Member Selected",
+        description: "Please select a staff member to add",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const staffMember = staffMembers.find(member => member.id === selectedStaffMember);
+    if (!staffMember || !staffMember.email) {
+      toast({
+        title: "Invalid Staff Member",
+        description: "Selected staff member has no email address",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (localSettings.staffEmails.includes(staffMember.email)) {
+      toast({
+        title: "Email Already Added",
+        description: "This staff member's email is already in the list",
         variant: "destructive",
       });
       return;
@@ -91,36 +189,85 @@ const EmailSettings: React.FC = () => {
 
     setLocalSettings(prev => ({
       ...prev,
-      adminEmails: prev.adminEmails.filter(email => email !== emailToRemove)
+      staffEmails: [...prev.staffEmails, staffMember.email]
     }));
+    setSelectedStaffMember('');
   };
 
-  const removeStaffEmail = (emailToRemove: string) => {
-    setLocalSettings(prev => ({
-      ...prev,
-      staffEmails: prev.staffEmails.filter(email => email !== emailToRemove)
-    }));
+  const showDeleteConfirmation = (email: string, type: 'admin' | 'staff') => {
+    setEmailToDelete({ email, type });
+    setDeleteConfirmation('');
+    setShowDeleteDialog(true);
+  };
+
+  const handleDeleteEmail = () => {
+    if (!emailToDelete) return;
+
+    if (deleteConfirmation !== emailToDelete.email) {
+      toast({
+        title: "Confirmation Required",
+        description: "Please type the email address exactly to confirm deletion",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (emailToDelete.type === 'admin') {
+      if (localSettings.adminEmails.length === 1) {
+        toast({
+          title: "Cannot Remove",
+          description: "At least one admin email is required",
+          variant: "destructive",
+        });
+        return;
+      }
+      setLocalSettings(prev => ({
+        ...prev,
+        adminEmails: prev.adminEmails.filter(email => email !== emailToDelete.email)
+      }));
+    } else {
+      setLocalSettings(prev => ({
+        ...prev,
+        staffEmails: prev.staffEmails.filter(email => email !== emailToDelete.email)
+      }));
+    }
+
+    setShowDeleteDialog(false);
+    setEmailToDelete(null);
+    setDeleteConfirmation('');
+    
+    toast({
+      title: "Email Removed",
+      description: `${emailToDelete.email} has been removed from the ${emailToDelete.type} list`,
+    });
   };
 
   const handleSaveSettings = async () => {
     setIsSaving(true);
     try {
-      console.log('Saving settings to database:', localSettings);
+      console.log('🔄 Starting to save settings...');
+      console.log('📊 Settings to save:', localSettings);
+      
       const success = await saveSettings(localSettings);
+      
       if (success) {
+        console.log('✅ Settings saved successfully to database');
         toast({
           title: "Settings Saved",
           description: "Email settings have been saved successfully",
         });
-        console.log('Settings saved successfully, database should be updated');
+        
+        // Reload settings from database to confirm
+        await loadSettings();
       } else {
-        throw new Error('Failed to save settings');
+        console.error('❌ Failed to save settings - saveSettings returned false');
+        throw new Error('Failed to save settings - no database update occurred');
       }
     } catch (error) {
-      console.error('Error saving settings:', error);
+      console.error('❌ Error saving settings:', error);
       toast({
         title: "Error",
-        description: "Failed to save settings",
+        description: `Failed to save settings: ${error instanceof Error ? error.message : 'Unknown error'}`,
         variant: "destructive",
       });
     } finally {
@@ -199,6 +346,13 @@ const EmailSettings: React.FC = () => {
     } finally {
       setIsTesting(false);
     }
+  };
+
+  const getStaffMemberDisplayName = (member: StaffMember) => {
+    if (member.display_name) return member.display_name;
+    if (member.first_name && member.last_name) return `${member.first_name} ${member.last_name}`;
+    if (member.first_name) return member.first_name;
+    return member.email;
   };
 
   return (
@@ -310,11 +464,11 @@ const EmailSettings: React.FC = () => {
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={() => removeAdminEmail(email)}
+                    onClick={() => showDeleteConfirmation(email, 'admin')}
                     className="text-red-600 hover:text-red-700"
                     disabled={localSettings.adminEmails.length === 1}
                   >
-                    <X className="w-4 h-4" />
+                    <Trash2 className="w-4 h-4" />
                   </Button>
                 </div>
               ))}
@@ -357,27 +511,65 @@ const EmailSettings: React.FC = () => {
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={() => removeStaffEmail(email)}
+                    onClick={() => showDeleteConfirmation(email, 'staff')}
                     className="text-red-600 hover:text-red-700"
                   >
-                    <X className="w-4 h-4" />
+                    <Trash2 className="w-4 h-4" />
                   </Button>
                 </div>
               ))}
             </div>
 
-            {/* Add New Staff Email */}
-            <div className="flex space-x-2">
-              <Input
-                type="email"
-                value={newStaffEmail}
-                onChange={(e) => setNewStaffEmail(e.target.value)}
-                placeholder="staff@viaquesthospice.com"
-                onKeyPress={(e) => e.key === 'Enter' && addStaffEmail()}
-              />
-              <Button onClick={addStaffEmail} variant="outline">
-                <Plus className="w-4 h-4" />
-              </Button>
+            {/* Add Staff Member from Profile */}
+            <div className="space-y-3">
+              <div className="flex items-center gap-2">
+                <Users className="w-4 h-4 text-gray-500" />
+                <span className="text-sm font-medium text-gray-700">Add Staff Member from Profile</span>
+              </div>
+              
+              <div className="flex space-x-2">
+                <Select value={selectedStaffMember} onValueChange={setSelectedStaffMember}>
+                  <SelectTrigger className="flex-1">
+                    <SelectValue placeholder={isLoadingStaff ? "Loading staff members..." : "Select a staff member"} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {staffMembers
+                      .filter(member => member.email && !localSettings.staffEmails.includes(member.email))
+                      .map((member) => (
+                        <SelectItem key={member.id} value={member.id}>
+                          <div className="flex flex-col">
+                            <span className="font-medium">{getStaffMemberDisplayName(member)}</span>
+                            <span className="text-xs text-gray-500">{member.email}</span>
+                          </div>
+                        </SelectItem>
+                      ))}
+                  </SelectContent>
+                </Select>
+                <Button onClick={addStaffMemberEmail} variant="outline" disabled={!selectedStaffMember}>
+                  <Plus className="w-4 h-4" />
+                </Button>
+              </div>
+            </div>
+
+            {/* Add New Staff Email Manually */}
+            <div className="space-y-3 mt-4">
+              <div className="flex items-center gap-2">
+                <Mail className="w-4 h-4 text-gray-500" />
+                <span className="text-sm font-medium text-gray-700">Add Email Manually</span>
+              </div>
+              
+              <div className="flex space-x-2">
+                <Input
+                  type="email"
+                  value={newStaffEmail}
+                  onChange={(e) => setNewStaffEmail(e.target.value)}
+                  placeholder="staff@viaquesthospice.com"
+                  onKeyPress={(e) => e.key === 'Enter' && addStaffEmail()}
+                />
+                <Button onClick={addStaffEmail} variant="outline">
+                  <Plus className="w-4 h-4" />
+                </Button>
+              </div>
             </div>
           </div>
         </div>
@@ -450,6 +642,56 @@ const EmailSettings: React.FC = () => {
           )}
         </div>
       </Card>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="w-5 h-5 text-red-500" />
+              Confirm Email Deletion
+            </DialogTitle>
+            <DialogDescription>
+              This action cannot be undone. This will permanently remove the email address from the {emailToDelete?.type} list.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            <div className="p-3 bg-red-50 border border-red-200 rounded-md">
+              <p className="text-sm font-medium text-red-800">
+                Email to delete: <span className="font-mono">{emailToDelete?.email}</span>
+              </p>
+            </div>
+            
+            <div>
+              <Label htmlFor="delete-confirmation">
+                Type the email address to confirm deletion:
+              </Label>
+              <Input
+                id="delete-confirmation"
+                value={deleteConfirmation}
+                onChange={(e) => setDeleteConfirmation(e.target.value)}
+                placeholder={emailToDelete?.email}
+                className="mt-1"
+              />
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowDeleteDialog(false)}>
+              Cancel
+            </Button>
+            <Button 
+              variant="destructive" 
+              onClick={handleDeleteEmail}
+              disabled={deleteConfirmation !== emailToDelete?.email}
+            >
+              <Trash2 className="w-4 h-4 mr-2" />
+              Delete Email
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

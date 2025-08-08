@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ChevronDown, ChevronUp, Clock, User } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
+import { useStatusHistoryQuery } from '@/hooks/useStatusHistoryQuery';
 
 interface StatusHistoryEntry {
   id: string;
@@ -24,70 +24,15 @@ interface StatusHistoryTimelineProps {
 }
 
 const StatusHistoryTimeline: React.FC<StatusHistoryTimelineProps> = ({ applicationId }) => {
-  const [history, setHistory] = useState<StatusHistoryEntry[]>([]);
-  const [loading, setLoading] = useState(true);
   const [expanded, setExpanded] = useState(false);
-
-  useEffect(() => {
-    fetchStatusHistory();
-  }, [applicationId]);
+  
+  // Use TanStack Query for automatic background updates
+  const { history, isLoading: loading, error } = useStatusHistoryQuery(applicationId);
 
   const handleExpandToggle = () => {
     console.log('Expand toggle clicked, current expanded state:', expanded);
     setExpanded(!expanded);
     console.log('New expanded state will be:', !expanded);
-  };
-
-  const fetchStatusHistory = async () => {
-    try {
-      // Join with profiles table to get user names
-      const { data, error } = await supabase
-        .from('status_history')
-        .select(`
-          *,
-          profiles!status_history_changed_by_fkey(
-            admin_name,
-            display_name,
-            first_name,
-            last_name,
-            email
-          )
-        `)
-        .eq('application_id', applicationId)
-        .order('changed_at', { ascending: false });
-
-      if (error) {
-        console.error('Error fetching status history:', error);
-        return;
-      }
-
-      // Transform the data to include user names
-      const transformedData = (data || []).map((entry: any) => {
-        const profile = entry.profiles;
-        let changedByName = null;
-        
-        if (profile) {
-          // Use admin_name first, then display_name, then first_name + last_name, then email
-          changedByName = profile.admin_name || 
-                         profile.display_name || 
-                         (profile.first_name && profile.last_name ? `${profile.first_name} ${profile.last_name}` : null) ||
-                         profile.email;
-        }
-
-        return {
-          ...entry,
-          changed_by_name: changedByName,
-          changed_by_email: profile?.email || null
-        };
-      });
-
-      setHistory(transformedData);
-      console.log('Status history loaded:', transformedData.length, 'entries');
-    } catch (error) {
-      console.error('Error fetching status history:', error);
-    } finally {
-      setLoading(false);
-    }
   };
 
   const getStatusBadgeVariant = (status: string) => {

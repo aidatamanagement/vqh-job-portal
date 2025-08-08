@@ -7,39 +7,29 @@ export const useAdminOperations = (
   fetchJobs: () => Promise<void>,
   fetchMasterData: () => Promise<void>
 ) => {
-  // Fetch Managers for job assignment
+  // Fetch Branch Managers for job assignment based on location
   const fetchHRManagers = useCallback(async (selectedLocation?: string): Promise<HRManager[]> => {
     try {
       let data;
       let error;
       
       if (selectedLocation) {
-        // If location is provided, fetch all admins and HR managers from that location
-        const { data: adminsData, error: adminsError } = await supabase
-          .from('profiles')
-          .select('id, email, admin_name, display_name, role, location, profile_image_url')
-          .eq('role', 'admin')
-          .order('admin_name');
-          
-        const { data: hrData, error: hrError } = await supabase
-          .from('profiles')
-          .select('id, email, admin_name, display_name, role, location, profile_image_url')
-          .eq('role', 'hr')
-          .eq('location', selectedLocation)
-          .order('admin_name');
-          
-        if (adminsError || hrError) {
-          console.error('Error fetching managers:', adminsError || hrError);
-          return [];
-        }
-        
-        data = [...(adminsData || []), ...(hrData || [])];
-      } else {
-        // If no location provided, show all admins and HR managers
+        // If location is provided, fetch only branch managers from that specific location
         const result = await supabase
           .from('profiles')
           .select('id, email, admin_name, display_name, role, location, profile_image_url')
-          .in('role', ['admin', 'hr'])
+          .eq('role', 'branch_manager')
+          .eq('location', selectedLocation)
+          .order('admin_name');
+          
+        data = result.data;
+        error = result.error;
+      } else {
+        // If no location provided, show all branch managers
+        const result = await supabase
+          .from('profiles')
+          .select('id, email, admin_name, display_name, role, location, profile_image_url')
+          .eq('role', 'branch_manager')
           .order('admin_name');
           
         data = result.data;
@@ -47,7 +37,7 @@ export const useAdminOperations = (
       }
 
       if (error) {
-        console.error('Error fetching Managers:', error);
+        console.error('Error fetching branch managers:', error);
         return [];
       }
 
@@ -55,17 +45,17 @@ export const useAdminOperations = (
         id: profile.id,
         email: profile.email,
         name: profile.admin_name || profile.display_name || profile.email,
-        role: profile.role as 'admin' | 'hr',
+        role: profile.role as 'branch_manager',
         location: profile.location,
         profile_image_url: profile.profile_image_url
       }));
       
-      console.log('Fetched managers:', managers);
+      console.log('Fetched branch managers:', managers);
       console.log('Selected location:', selectedLocation);
       
       return managers;
     } catch (error) {
-      console.error('Error fetching Managers:', error);
+      console.error('Error fetching branch managers:', error);
       return [];
     }
   }, []);
