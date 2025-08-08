@@ -80,58 +80,91 @@ const PostJob: React.FC = () => {
 
   // Fetch managers when office location changes
   useEffect(() => {
-    console.log('Office location changed to:', jobForm.officeLocation);
-    if (jobForm.officeLocation) {
-      console.log('Fetching managers for office location:', jobForm.officeLocation);
-      fetchHRManagers(jobForm.officeLocation).then(managers => {
-        console.log('Received managers:', managers);
-        setHRManagers(managers);
-        
-        // If we have a selected manager but it's not in the new list, clear it
-        if (jobForm.hrManagerId && !managers.find(m => m.id === jobForm.hrManagerId)) {
-          setJobForm(prev => ({ ...prev, hrManagerId: '' }));
-        }
-        
-        // Check for default manager assignment for this location
-        const getDefaultManager = async () => {
-          try {
-            const { data, error } = await supabase
-              .from('default_branch_managers')
-              .select('manager_id')
-              .eq('location_name', jobForm.officeLocation)
-              .single();
+    const selectedLocation = jobForm.officeLocation
+    console.log('Office location changed to:', selectedLocation)
 
-            if (!error && data && data.manager_id) {
-              console.log('Found default manager for location:', data.manager_id);
-              // Check if the default manager is in the available managers list
-              const defaultManager = managers.find(m => m.id === data.manager_id);
-              if (defaultManager) {
-                setJobForm(prev => ({ ...prev, hrManagerId: data.manager_id }));
-                console.log('Auto-assigned default manager:', defaultManager.name);
-              }
-            }
-          } catch (error) {
-            console.error('Error checking default manager:', error);
-          }
-        };
-
-        getDefaultManager();
-        
-        // If we're auto-filling and have a last job with a manager, try to set it (only if no default manager)
-        if (lastJobForPosition && lastJobForPosition.hrManagerId && !jobForm.hrManagerId) {
-          const matchingManager = managers.find(m => m.id === lastJobForPosition.hrManagerId);
-          if (matchingManager) {
-            setJobForm(prev => ({ ...prev, hrManagerId: lastJobForPosition.hrManagerId }));
-          }
-        }
-      });
-    } else {
-      console.log('No office location selected, clearing managers');
-      // If no office location selected, clear managers and manager selection
-      setHRManagers([]);
-      setJobForm(prev => ({ ...prev, hrManagerId: '' }));
+    if (!selectedLocation) {
+      console.log('No office location selected, clearing managers')
+      setHRManagers([])
+      setJobForm(prev => ({ ...prev, hrManagerId: '' }))
+      return
     }
-  }, [jobForm.officeLocation, fetchHRManagers, lastJobForPosition]);
+
+    // Clear any previous selection immediately to avoid stale UI while we compute defaults
+    setJobForm(prev => ({ ...prev, hrManagerId: '' }))
+
+    ;(async () => {
+      try {
+        // Helper: find default manager id by exact city, then fallback to state-level mapping
+        const findDefaultManagerId = async (loc: string): Promise<string | undefined> => {
+          // 1) exact city match
+          const exact = await supabase
+            .from('default_branch_managers')
+            .select('manager_id')
+            .eq('location_name', loc)
+            .single()
+          if (!exact.error && exact.data?.manager_id) return exact.data.manager_id
+
+          // 2) fallback to state-wide default: infer state code from "City, ST"
+          const stateCode = loc.split(',').pop()?.trim()
+          if (!stateCode) return undefined
+          const state = await supabase
+            .from('default_branch_managers')
+            .select('manager_id, location_name')
+            .like('location_name', `%, ${stateCode}`)
+            .limit(1)
+          if (!state.error && state.data && state.data.length > 0) return state.data[0].manager_id as string
+
+          return undefined
+        }
+
+        // Run default lookup and location-filtered managers in parallel
+        const [defaultManagerIdResolved, managersRes] = await Promise.all([
+          findDefaultManagerId(selectedLocation),
+          fetchHRManagers(selectedLocation),
+        ])
+
+        const defaultManagerId = defaultManagerIdResolved
+        let managers = managersRes
+
+        // If default manager exists and is not in the filtered list, fetch and merge it so it shows up in the dropdown
+        if (defaultManagerId && !managers.find(m => m.id === defaultManagerId)) {
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('id, email, admin_name, display_name, role, location, profile_image_url')
+            .eq('id', defaultManagerId)
+            .single()
+
+          if (profile) {
+            managers = [
+              {
+                id: profile.id,
+                email: profile.email,
+                name: profile.admin_name || profile.display_name || profile.email,
+                role: (profile.role as any) || 'branch_manager',
+                location: profile.location || selectedLocation,
+                profile_image_url: profile.profile_image_url || undefined,
+              },
+              ...managers,
+            ]
+          }
+        }
+
+        setHRManagers(managers)
+
+        // Select the default manager if available; otherwise try last job's manager if valid
+        if (defaultManagerId) {
+          setJobForm(prev => ({ ...prev, hrManagerId: defaultManagerId }))
+        } else if (lastJobForPosition?.hrManagerId) {
+          const matching = managers.find(m => m.id === lastJobForPosition.hrManagerId)
+          if (matching) setJobForm(prev => ({ ...prev, hrManagerId: lastJobForPosition.hrManagerId }))
+        }
+      } catch (err) {
+        console.error('Error preparing managers for location:', err)
+        setHRManagers([])
+      }
+    })()
+  }, [jobForm.officeLocation, fetchHRManagers, lastJobForPosition])
 
   // Auto-fill form when position changes and existing job is found
   useEffect(() => {
