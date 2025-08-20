@@ -32,6 +32,7 @@ type AdminView =
   | 'interviews'
   | 'settings' 
   | 'email-management' 
+  | 'delayed-emails'
   | 'guide-training'
   | 'salespeople'
   | 'visit-logs'
@@ -219,6 +220,13 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({ currentView, onViewChange, 
           label: 'Email & Config',
           icon: Mail,
           view: 'email-management' as AdminView,
+          visible: permissions.canManageEmailSettings,
+        },
+        {
+          id: 'delayed-emails',
+          label: 'Delayed Emails',
+          icon: Clock,
+          view: 'delayed-emails' as AdminView,
           visible: permissions.canManageEmailSettings,
         },
         {

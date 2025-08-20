@@ -4,11 +4,16 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { JobApplication } from '@/types';
 import { getStatusText, getValidNextStatuses, validateStatusTransition } from '../../utils/submissionsUtils';
 import StatusTransitionValidator from '../../StatusTransitionValidator';
 import { useStatusUpdate } from '@/hooks/useStatusUpdate';
+import { useEmailAutomation } from '@/hooks/useEmailAutomation';
 import { toast } from '@/hooks/use-toast';
+import { Calendar, Clock, Mail } from 'lucide-react';
 
 type ApplicationStatus = 'application_submitted' | 'shortlisted_for_hr' | 'hr_interviewed' | 'shortlisted_for_manager' | 'manager_interviewed' | 'hired' | 'rejected' | 'waiting_list';
 
@@ -26,7 +31,11 @@ const StatusUpdateSection: React.FC<StatusUpdateSectionProps> = ({
   const [selectedStatus, setSelectedStatus] = useState<string>('');
   const [notes, setNotes] = useState<string>('');
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+  const [scheduleEmail, setScheduleEmail] = useState(false);
+  const [scheduledDate, setScheduledDate] = useState('');
+  const [scheduledTime, setScheduledTime] = useState('');
   const { updateApplicationStatus, isUpdating } = useStatusUpdate();
+  const { sendStatusChangeNotification, getDelayedEmails, updateDelayedEmailSchedule, cancelDelayedEmail } = useEmailAutomation();
 
   const allStatusOptions = [
     { value: 'application_submitted', label: 'Application Submitted' },
@@ -46,14 +55,53 @@ const StatusUpdateSection: React.FC<StatusUpdateSectionProps> = ({
 
   const isTransitionValid = selectedStatus ? validateStatusTransition(application.status, selectedStatus) : false;
   const isNotesValid = notes.trim().length > 0;
+  const isRejectedStatus = selectedStatus === 'rejected';
+  const isSchedulingValid = !scheduleEmail || (scheduledDate && scheduledTime);
+
+  // Track if an active schedule already exists for this application
+  const [hasActiveSchedule, setHasActiveSchedule] = useState(false);
+  const [activeScheduleId, setActiveScheduleId] = useState<string | null>(null);
+
+  // Set default scheduled date to tomorrow at 9 AM
+  React.useEffect(() => {
+    if (isRejectedStatus && scheduleEmail && !scheduledDate) {
+      const tomorrow = new Date();
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      tomorrow.setHours(9, 0, 0, 0);
+      setScheduledDate(tomorrow.toISOString().split('T')[0]);
+      setScheduledTime('09:00');
+    }
+  }, [isRejectedStatus, scheduleEmail, scheduledDate]);
+
+  // Check existing delayed email for this application
+  React.useEffect(() => {
+    let cancelled = false;
+    async function checkExisting() {
+      try {
+        const existing = await getDelayedEmails(application.id);
+        const active = (existing || []).find((e: any) => e.status === 'scheduled' || e.status === 'processing');
+        if (!cancelled) {
+          setHasActiveSchedule(!!active);
+          setActiveScheduleId(active ? active.id : null);
+          if (active?.scheduled_for) {
+            const dt = new Date(active.scheduled_for);
+            setScheduledDate(dt.toISOString().split('T')[0]);
+            setScheduledTime(dt.toTimeString().slice(0,5));
+          }
+        }
+      } catch {}
+    }
+    if (isRejectedStatus) checkExisting();
+    return () => { cancelled = true };
+  }, [application.id, isRejectedStatus, getDelayedEmails]);
 
   const handleStatusUpdateClick = () => {
-    if (!selectedStatus || selectedStatus === application.status || !isTransitionValid || !isNotesValid) return;
+    if (!selectedStatus || selectedStatus === application.status || !isTransitionValid || !isNotesValid || !isSchedulingValid) return;
     setShowConfirmDialog(true);
   };
 
   const handleConfirmStatusUpdate = async () => {
-    if (!selectedStatus || selectedStatus === application.status || !isTransitionValid || !isNotesValid) return;
+    if (!selectedStatus || selectedStatus === application.status || !isTransitionValid || !isNotesValid || !isSchedulingValid) return;
     
     try {
       console.log('Updating status from modal:', { 
@@ -61,13 +109,49 @@ const StatusUpdateSection: React.FC<StatusUpdateSectionProps> = ({
         currentStatus: application.status, 
         newStatus: selectedStatus,
         notes: notes.trim(),
-        notes_length: notes.trim().length,
-        notes_is_empty: notes.trim().length === 0
+        scheduleEmail,
+        scheduledDate,
+        scheduledTime
       });
       
-      const result = await updateApplicationStatus(application.id, selectedStatus as ApplicationStatus, notes.trim());
+      const result = await updateApplicationStatus(application.id, selectedStatus as ApplicationStatus, notes.trim(), isRejectedStatus && scheduleEmail);
       
       if (result.success) {
+        // If rejected status and email scheduling is enabled, send delayed email
+        if (isRejectedStatus && scheduleEmail && scheduledDate && scheduledTime) {
+          try {
+            const scheduledDateTime = new Date(`${scheduledDate}T${scheduledTime}`);
+            
+            // Send delayed email notification with the NEW status (rejected)
+            await sendStatusChangeNotification(
+              {
+                email: application.email,
+                firstName: application.firstName,
+                lastName: application.lastName,
+                appliedPosition: application.appliedPosition,
+                status: selectedStatus as ApplicationStatus, // Use the NEW status, not the current one
+                id: application.id
+              },
+              { location: application.jobLocation },
+              undefined, // trackingToken
+              {
+                scheduledFor: scheduledDateTime,
+                applicationId: application.id,
+                status: selectedStatus // Use the NEW status
+              }
+            );
+            
+            console.log('Delayed rejection email scheduled for:', scheduledDateTime);
+          } catch (emailError) {
+            console.error('Failed to schedule delayed email:', emailError);
+            toast({
+              title: "Email Scheduling Failed",
+              description: "Status updated but failed to schedule delayed email. Please check the delayed emails section.",
+              variant: "destructive",
+            });
+          }
+        }
+        
         console.log('Status update successful, calling onUpdateStatus and refreshSubmissions');
         onUpdateStatus(application.id, selectedStatus as ApplicationStatus);
         
@@ -82,14 +166,18 @@ const StatusUpdateSection: React.FC<StatusUpdateSectionProps> = ({
         
         // Check if job was deactivated due to hire
         const jobDeactivatedMessage = selectedStatus === 'hired' ? ' The job posting has been automatically deactivated.' : '';
+        const emailScheduledMessage = isRejectedStatus && scheduleEmail ? ' Rejection email scheduled for delayed delivery.' : '';
         
         toast({
           title: "Status Updated Successfully",
-          description: `Application status has been updated to ${getStatusText(selectedStatus)}. Email notification sent to candidate.${jobDeactivatedMessage}`,
+          description: `Application status has been updated to ${getStatusText(selectedStatus)}.${emailScheduledMessage}${jobDeactivatedMessage}`,
         });
         
         setSelectedStatus('');
         setNotes('');
+        setScheduleEmail(false);
+        setScheduledDate('');
+        setScheduledTime('');
         setShowConfirmDialog(false);
       }
     } catch (error) {
@@ -143,22 +231,116 @@ const StatusUpdateSection: React.FC<StatusUpdateSectionProps> = ({
           </div>
         ) : (
           <div className="space-y-4">
-          <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-end">
-            <div className="flex-1 max-w-xs">
-              <Select value={selectedStatus} onValueChange={setSelectedStatus}>
-                <SelectTrigger className="w-full bg-white border-gray-300 focus:border-primary focus:ring-primary">
-                  <SelectValue placeholder="Select new status..." />
-                </SelectTrigger>
-                <SelectContent className="bg-white border shadow-lg z-50 max-h-60">
-                  {statusOptions.map((option) => (
-                    <SelectItem key={option.value} value={option.value} className="hover:bg-gray-100 cursor-pointer">
-                      {option.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+            <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-end">
+              <div className="flex-1 max-w-xs">
+                <Select value={selectedStatus} onValueChange={setSelectedStatus}>
+                  <SelectTrigger className="w-full bg-white border-gray-300 focus:border-primary focus:ring-primary">
+                    <SelectValue placeholder="Select new status..." />
+                  </SelectTrigger>
+                  <SelectContent className="bg-white border shadow-lg z-50 max-h-60">
+                    {statusOptions.map((option) => (
+                      <SelectItem key={option.value} value={option.value} className="hover:bg-gray-100 cursor-pointer">
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
+
+            {/* Email Scheduling Section for Rejected Status */}
+            {isRejectedStatus && (
+              <Card className="border-blue-200 bg-blue-50/30">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-sm font-medium text-blue-900 flex items-center gap-2">
+                    <Mail className="w-4 h-4" />
+                    Email Scheduling Options
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="schedule-email"
+                      checked={scheduleEmail}
+                      onCheckedChange={(checked) => setScheduleEmail(checked as boolean)}
+                    />
+                    <Label htmlFor="schedule-email" className="text-sm font-medium text-blue-900">
+                      Schedule delayed email delivery
+                    </Label>
+                  </div>
+                  
+                  {(scheduleEmail || hasActiveSchedule) && (
+                    <div className="space-y-3 pl-6">
+                      <p className="text-xs text-blue-700">
+                        {hasActiveSchedule ? 'Edit the scheduled time for this rejection email.' : 'Schedule when the rejection email should be sent to the candidate. This allows for better timing and professional communication.'}
+                      </p>
+                      
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div className="space-y-2">
+                          <Label htmlFor="scheduled-date" className="text-xs font-medium text-blue-900 flex items-center gap-1">
+                            <Calendar className="w-3 h-3" />
+                            Date
+                          </Label>
+                          <Input
+                            id="scheduled-date"
+                            type="date"
+                            value={scheduledDate}
+                            onChange={(e) => setScheduledDate(e.target.value)}
+                            min={new Date().toISOString().split('T')[0]}
+                            className="text-sm"
+                          />
+                        </div>
+                        
+                        <div className="space-y-2">
+                          <Label htmlFor="scheduled-time" className="text-xs font-medium text-blue-900 flex items-center gap-1">
+                            <Clock className="w-3 h-3" />
+                            Time
+                          </Label>
+                          <Input
+                            id="scheduled-time"
+                            type="time"
+                            value={scheduledTime}
+                            onChange={(e) => setScheduledTime(e.target.value)}
+                            className="text-sm"
+                          />
+                        </div>
+                      </div>
+                      
+                      {scheduledDate && scheduledTime && (
+                        <div className="space-y-3">
+                          <div className="text-xs text-blue-700 bg-blue-100 p-2 rounded">
+                            Email will be sent on {new Date(`${scheduledDate}T${scheduledTime}`).toLocaleString()}
+                          </div>
+                          <div className="text-xs text-gray-600">
+                            This schedule will be saved when you click <strong>Update Status</strong>.
+                          </div>
+                          {hasActiveSchedule && activeScheduleId && (
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              onClick={async () => {
+                                try {
+                                  await cancelDelayedEmail(activeScheduleId);
+                                  setHasActiveSchedule(false);
+                                  setActiveScheduleId(null);
+                                  toast({ title: '🗑️ Schedule Cancelled', description: 'The delayed email has been cancelled.' });
+                                } catch (e) {
+                                  toast({ title: 'Failed to cancel', variant: 'destructive' });
+                                }
+                              }}
+                              className="text-xs text-red-600 hover:text-red-700"
+                            >
+                              Cancel Schedule
+                            </Button>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
 
             {/* Mandatory Notes Section */}
             <div className="space-y-2">
@@ -182,7 +364,7 @@ const StatusUpdateSection: React.FC<StatusUpdateSectionProps> = ({
               <AlertDialogTrigger asChild>
                 <Button
                   onClick={handleStatusUpdateClick}
-                  disabled={!selectedStatus || !isTransitionValid || !isNotesValid || isUpdating}
+                  disabled={!selectedStatus || !isTransitionValid || !isNotesValid || !isSchedulingValid || isUpdating}
                   className="bg-primary hover:bg-primary/90 min-w-[100px] whitespace-nowrap"
                 >
                   {isUpdating ? 'Updating...' : 'Update Status'}
@@ -198,6 +380,14 @@ const StatusUpdateSection: React.FC<StatusUpdateSectionProps> = ({
                   <br />
                   <br />
                   <strong>Notes:</strong> {notes.trim()}
+                  {isRejectedStatus && scheduleEmail && scheduledDate && scheduledTime && (
+                    <>
+                      <br />
+                      <br />
+                      <strong>Email Scheduling:</strong> Rejection email will be sent on{' '}
+                      {new Date(`${scheduledDate}T${scheduledTime}`).toLocaleString()}
+                    </>
+                  )}
                     <br />
                     <br />
                     This will send an email notification to the candidate and cannot be undone.

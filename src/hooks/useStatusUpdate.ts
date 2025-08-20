@@ -12,11 +12,12 @@ export const useStatusUpdate = () => {
   const updateApplicationStatus = async (
     applicationId: string,
     newStatus: ApplicationStatus,
-    notes: string
+    notes: string,
+    skipImmediateEmail: boolean = false
   ) => {
     setIsUpdating(true);
     try {
-      console.log(`Updating application ${applicationId} to status: ${newStatus} with notes: ${notes}`);
+      console.log(`Updating application ${applicationId} to status: ${newStatus} with notes: ${notes}, skipImmediateEmail: ${skipImmediateEmail}`);
       
       // Validate notes are provided
       if (!notes || notes.trim().length === 0) {
@@ -77,36 +78,40 @@ export const useStatusUpdate = () => {
         }
       }
 
-      // Send email notification for the status change
-      console.log('Sending status update email notification...');
-      try {
-        const emailResult = await sendStatusUpdateEmail(
-          {
-            id: updatedApplication.id,
-            email: updatedApplication.email,
-            firstName: updatedApplication.first_name,
-            lastName: updatedApplication.last_name,
-            appliedPosition: updatedApplication.applied_position,
-            status: updatedApplication.status as ApplicationStatus,
-            jobId: updatedApplication.job_id,
-            phone: updatedApplication.phone || '',
-            cityState: '',
-            coverLetter: '',
-            earliestStartDate: '',
-            additionalDocsUrls: [],
-            trackingToken: updatedApplication.tracking_token,
-            createdAt: updatedApplication.created_at,
-            updatedAt: updatedApplication.updated_at,
-          },
-          updatedApplication.jobs ? { 
-            location: updatedApplication.jobs.office_location 
-          } : undefined
-        );
-        
-        console.log('Email notification result:', emailResult);
-      } catch (emailError) {
-        console.error('Failed to send email notification:', emailError);
-        // Don't throw the error - status update succeeded, email failed
+      // Send email notification for the status change (unless skipped for delayed scheduling)
+      if (!skipImmediateEmail) {
+        console.log('Sending status update email notification...');
+        try {
+          const emailResult = await sendStatusUpdateEmail(
+            {
+              id: updatedApplication.id,
+              email: updatedApplication.email,
+              firstName: updatedApplication.first_name,
+              lastName: updatedApplication.last_name,
+              appliedPosition: updatedApplication.applied_position,
+              status: updatedApplication.status as ApplicationStatus,
+              jobId: updatedApplication.job_id,
+              phone: updatedApplication.phone || '',
+              cityState: '',
+              coverLetter: '',
+              earliestStartDate: '',
+              additionalDocsUrls: [],
+              trackingToken: updatedApplication.tracking_token,
+              createdAt: updatedApplication.created_at,
+              updatedAt: updatedApplication.updated_at,
+            },
+            updatedApplication.jobs ? { 
+              location: updatedApplication.jobs.office_location 
+            } : undefined
+          );
+          
+          console.log('Email notification result:', emailResult);
+        } catch (emailError) {
+          console.error('Failed to send email notification:', emailError);
+          // Don't throw the error - status update succeeded, email failed
+        }
+      } else {
+        console.log('Skipping immediate email notification (delayed scheduling enabled)');
       }
 
       return { success: true, application: updatedApplication };

@@ -12,6 +12,7 @@ import ArchiveSubmissions from '@/components/admin/ArchiveSubmissions';
 import Interviews from '@/components/admin/Interviews';
 import Settings from '@/components/admin/Settings';
 import EmailManagement from '@/components/admin/EmailManagement';
+import DelayedEmails from '@/components/admin/DelayedEmails';
 import Salespeople from '@/components/admin/Salespeople';
 import VisitLogs from '@/components/admin/VisitLogs';
 import TrainingVideos from '@/components/admin/TrainingVideos';
@@ -32,6 +33,7 @@ type AdminView =
   | 'interviews'
   | 'settings' 
   | 'email-management' 
+  | 'delayed-emails'
   | 'guide-training'
   | 'salespeople'
   | 'visit-logs'
@@ -62,6 +64,7 @@ const AdminDashboard: React.FC = () => {
       'archive-submissions': 'archive-submissions',
       'interviews': 'interviews',
       'email-management': 'email-management',
+      'delayed-emails': 'delayed-emails',
       'guide-training': 'guide-training',
       'salespeople': 'salespeople',
       'visit-logs': 'visit-logs',
@@ -109,6 +112,8 @@ const AdminDashboard: React.FC = () => {
         return <Interviews />;
       case 'email-management':
         return <EmailManagement />;
+      case 'delayed-emails':
+        return <DelayedEmails />;
       case 'guide-training':
         return <GuideTraining />;
       case 'salespeople':

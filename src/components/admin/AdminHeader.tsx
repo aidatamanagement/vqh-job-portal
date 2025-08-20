@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { useAppContext } from '@/contexts/AppContext';
-import { LogOut, User, Menu, BarChart3, Plus, Briefcase, FileText, Calendar, Mail, BookOpen, Users, MapPin, ClipboardList, Video, Settings, Building, Archive } from 'lucide-react';
+import { LogOut, User, Menu, BarChart3, Plus, Briefcase, FileText, Calendar, Mail, BookOpen, Users, MapPin, ClipboardList, Video, Settings, Building, Archive, Clock } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 interface AdminHeaderProps {
@@ -64,6 +64,7 @@ const AdminHeader: React.FC<AdminHeaderProps> = ({ onMenuClick, onNavigate, curr
                  currentView === 'content-manager' ? <Building className="w-4 h-4 text-white" /> :
                  currentView === 'settings' ? <Settings className="w-4 h-4 text-white" /> :
                  currentView === 'profile-settings' ? <User className="w-4 h-4 text-white" /> :
+                 currentView === 'delayed-emails' ? <Clock className="w-4 h-4 text-white" /> :
                  <BarChart3 className="w-4 h-4 text-white" />}
               </div>
               <h1 className="text-xl font-bold text-gray-900">
@@ -88,6 +89,7 @@ const AdminHeader: React.FC<AdminHeaderProps> = ({ onMenuClick, onNavigate, curr
                  currentView === 'content-manager' ? 'Content Manager' :
                  currentView === 'settings' ? 'Settings' :
                  currentView === 'profile-settings' ? 'Profile Settings' :
+                 currentView === 'delayed-emails' ? 'Delayed Emails' :
                  'Dashboard'}
               </h1>
             </div>

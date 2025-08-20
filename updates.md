@@ -210,6 +210,251 @@ Complete archive submissions feature providing admins with easy access to view a
 - **Accessibility**: Clear visual indicators with proper contrast
 - **Maintainable**: Centralized logic for new application detection
 
+## 2025-01-03 22:00 - Added Delayed Email Functionality for Rejected Applications
+
+### User Request
+- **Request**: Implement delayed email sending for rejected applications with scheduling capability
+- **Goal**: Allow admins to schedule rejection emails to be sent at a specific time and date instead of immediately
+
+### Changes Made
+
+#### New Edge Functions
+- **File**: `supabase/functions/send-delayed-email/index.ts` - **NEW**
+  - Creates delayed email records in database
+  - Validates scheduled time (must be in future)
+  - Stores email template and variables for later sending
+  - Links to specific application and status type
+
+- **File**: `supabase/functions/process-delayed-emails/index.ts` - **NEW**
+  - Runs on schedule to process due delayed emails
+  - Sends emails via Brevo API when scheduled time arrives
+  - Updates status and logs results
+  - Handles failures and retries
+
+#### Database Schema
+- **File**: `supabase/migrations/20250103000022_create_delayed_emails_table.sql` - **NEW**
+  - `delayed_emails` table with scheduling fields
+  - Status tracking (scheduled, processing, sent, failed, cancelled)
+  - Application linking and status type tracking
+  - RLS policies for admin access
+  - Indexes for efficient querying
+
+#### Email Automation Enhancement
+- **File**: `src/hooks/useEmailAutomation.ts` - **UPDATED**
+  - Added `sendDelayedEmail()` function for scheduling
+  - Enhanced `sendApplicationStatusEmail()` to support delayed sending
+  - Added `getDelayedEmails()` and `cancelDelayedEmail()` functions
+  - Integrated with existing email flow for rejected applications
+
+#### Admin Interface
+- **File**: `src/components/admin/DelayedEmails.tsx` - **NEW**
+  - Complete management interface for delayed emails
+  - Summary cards showing scheduled, sent, failed, and cancelled counts
+  - Tables for scheduled and processed emails
+  - Cancel functionality for pending emails
+  - Error tracking and display
+
+### Key Features
+
+#### Delayed Email Scheduling:
+- **Time Selection**: Schedule emails for any future date/time
+- **Application Linking**: Associate delayed emails with specific applications
+- **Status Tracking**: Monitor email status through the entire lifecycle
+- **Cancellation**: Cancel scheduled emails before they're sent
+- **Error Handling**: Track and display failed email attempts
+
+#### Admin Management:
+- **Dashboard View**: Overview of all delayed email activity
+- **Scheduled Emails**: View and manage pending emails
+- **Processed Emails**: Review sent, failed, and cancelled emails
+- **Real-time Updates**: Refresh to see latest status changes
+- **Bulk Operations**: Cancel multiple emails if needed
+
+#### Integration with Existing System:
+- **Seamless Flow**: Works with existing email templates and variables
+- **Brevo Integration**: Uses same Brevo API for sending
+- **Logging**: Integrates with existing email_logs table
+- **RLS Security**: Proper access control for admin users
+
+### Technical Implementation
+
+#### Scheduling Process:
+1. **Admin Action**: When rejecting application, admin can choose delayed sending
+2. **Database Storage**: Email details stored in `delayed_emails` table
+3. **Scheduled Processing**: `process-delayed-emails` function runs periodically
+4. **Email Delivery**: When scheduled time arrives, email sent via Brevo
+5. **Status Update**: Record updated with sent/failed status
+
+#### Database Schema:
+```sql
+delayed_emails (
+  id, template_slug, recipient_email, subject, html_content,
+  variables_used, scheduled_for, status, application_id,
+  status_type, brevo_message_id, sent_at, error_message
+)
+```
+
+#### Status Flow:
+- **scheduled** → **processing** → **sent** (success)
+- **scheduled** → **processing** → **failed** (error)
+- **scheduled** → **cancelled** (admin action)
+
+### User Experience Benefits
+- **Better Candidate Experience**: Delayed rejection emails can be sent at appropriate times
+- **Admin Control**: Full control over when rejection emails are sent
+- **Transparency**: Clear visibility into scheduled email status
+- **Flexibility**: Can cancel emails if decision changes
+- **Professional Timing**: Send emails during business hours or specific dates
+
+### Technical Benefits
+- **Reliable Delivery**: Robust scheduling and processing system
+- **Error Recovery**: Failed emails tracked and can be retried
+- **Scalable**: Can handle multiple delayed emails efficiently
+- **Audit Trail**: Complete history of all delayed email activity
+- **Integration**: Seamlessly works with existing email infrastructure
+
+## 2025-01-03 22:30 - Fixed Delayed Email Scheduling to Prevent Immediate Email Sending
+
+## 2025-01-03 22:45 - Prevent Duplicate Schedules and Disable UI After Set
+
+### Backend Safeguards
+- Added migration `20250103000023_limit_one_active_delayed_email.sql` with partial unique index:
+  - Ensures only one active delayed email (status in `scheduled`, `processing`) per `application_id`
+- Updated Edge Function `send-delayed-email` to:
+  - Check for existing active schedule before insert and return 409 `ALREADY_SCHEDULED`
+  - Gracefully map unique violations (23505) to 409 error
+
+### Frontend UX
+- Updated `StatusUpdateSection.tsx`:
+  - Fetch existing delayed emails via `getDelayedEmails(application.id)` and detect active schedule
+  - Disable "📅 Set Schedule" button if a schedule exists, show label as "📅 Scheduled"
+  - After a successful schedule, disable the button and collapse the scheduling UI
+
+### Result
+- Admins cannot create multiple delayed schedules for the same application
+- Clear UI prevents accidental repeated scheduling
+- Backend guarantees data integrity even if UI is bypassed
+
+### User Request
+- **Request**: Prevent immediate email sending when delayed scheduling is enabled for rejected applications
+- **Goal**: Ensure rejected applications with delayed scheduling only send emails at the scheduled time, not immediately
+
+### Changes Made
+
+#### Status Update Logic Enhancement
+- **File**: `src/hooks/useStatusUpdate.ts` - **UPDATED**
+  - Added `skipImmediateEmail` parameter to `updateApplicationStatus` function
+  - Modified email sending logic to skip immediate emails when delayed scheduling is enabled
+  - Added logging to track when immediate emails are skipped
+
+#### Status Update Interface Enhancement
+- **File**: `src/components/admin/components/modal/StatusUpdateSection.tsx` - **UPDATED**
+  - Updated status update call to pass `skipImmediateEmail: true` when delayed scheduling is enabled
+  - Ensures rejected applications with delayed scheduling don't send immediate emails
+
+### Key Features Added
+
+#### Email Control Logic:
+- **Conditional Email Sending**: Immediate emails only sent when delayed scheduling is disabled
+- **Delayed Scheduling Priority**: When delayed scheduling is enabled, immediate email is skipped
+- **Status Update Integrity**: Status updates work normally, only email timing is affected
+- **Clear Logging**: Console logs show when immediate emails are skipped
+
+#### User Experience Improvements:
+- **No Duplicate Emails**: Candidates only receive one email at the scheduled time
+- **Clear Feedback**: Success messages indicate delayed scheduling status
+- **Consistent Behavior**: All other status updates work as expected
+- **Professional Timing**: Emails sent only at the scheduled time
+
+### Technical Implementation
+
+#### Email Flow Control:
+1. **Status Update**: Application status updated in database
+2. **Email Check**: Check if delayed scheduling is enabled for rejected status
+3. **Conditional Sending**: 
+   - If delayed scheduling: Skip immediate email, schedule for later
+   - If no delayed scheduling: Send immediate email as usual
+4. **Scheduled Delivery**: Delayed emails sent at scheduled time via processor
+
+#### Parameter Flow:
+```typescript
+updateApplicationStatus(
+  applicationId, 
+  newStatus, 
+  notes, 
+  skipImmediateEmail // true when delayed scheduling enabled
+)
+```
+
+### User Workflow:
+1. **Select Rejected Status**: Choose "rejected" from status dropdown
+2. **Enable Delayed Scheduling**: Check "Schedule delayed email delivery"
+3. **Set Date/Time**: Choose when to send the rejection email
+4. **Update Status**: Click "Update Status" button
+5. **Result**: Status updated, immediate email skipped, delayed email scheduled
+
+### Benefits:
+- **No Email Duplication**: Candidates receive only one rejection email
+- **Professional Timing**: Emails sent at appropriate scheduled times
+- **Better Control**: Admins have full control over email timing
+- **Clean Process**: Status updates and email scheduling work independently
+
+## 2025-01-03 22:15 - Enhanced Status Update Interface with Delayed Email Scheduling
+
+### User Request
+- **Request**: Add frontend interface to set delay date when rejecting applications
+- **Goal**: Show email scheduling options when "rejected" status is selected in the status update modal
+
+### Changes Made
+
+#### Status Update Interface Enhancement
+- **File**: `src/components/admin/components/modal/StatusUpdateSection.tsx` - **UPDATED**
+  - Added email scheduling section that appears when "rejected" status is selected
+  - Added checkbox to enable/disable delayed email delivery
+  - Added date and time picker inputs for scheduling
+  - Added validation for scheduling fields
+  - Enhanced confirmation dialog to show scheduling details
+  - Integrated with delayed email functionality
+
+### Key Features Added
+
+#### Email Scheduling Interface:
+- **Conditional Display**: Email scheduling section only appears when "rejected" status is selected
+- **Checkbox Control**: Toggle to enable/disable delayed email delivery
+- **Date Picker**: Select future date for email delivery
+- **Time Picker**: Select specific time for email delivery
+- **Default Values**: Automatically sets tomorrow at 9 AM as default
+- **Validation**: Ensures date/time are selected when scheduling is enabled
+- **Preview**: Shows when email will be sent
+
+#### User Experience Improvements:
+- **Visual Design**: Blue-themed card with clear icons and labels
+- **Intuitive Flow**: Scheduling options appear contextually
+- **Clear Messaging**: Explains the purpose and benefits of delayed delivery
+- **Confirmation**: Shows scheduling details in confirmation dialog
+- **Success Feedback**: Toast notifications include scheduling information
+
+#### Technical Integration:
+- **Seamless Integration**: Works with existing status update flow
+- **Error Handling**: Graceful handling of scheduling failures
+- **State Management**: Proper cleanup of scheduling fields after update
+- **Validation**: Prevents submission with invalid scheduling data
+
+### User Workflow:
+1. **Select Status**: Choose "rejected" from status dropdown
+2. **Enable Scheduling**: Check "Schedule delayed email delivery" checkbox
+3. **Set Date/Time**: Choose when to send the rejection email
+4. **Add Notes**: Provide required notes for status change
+5. **Confirm**: Review scheduling details in confirmation dialog
+6. **Submit**: Status updated and email scheduled for delivery
+
+### Visual Design:
+- **Blue Theme**: Consistent with application's color scheme
+- **Icons**: Calendar and clock icons for date/time fields
+- **Card Layout**: Clean, organized presentation of scheduling options
+- **Responsive**: Works on all screen sizes
+- **Accessibility**: Proper labels and form structure
+
 ## 2025-01-03 20:45 - Updated Archive Button Placement and Header Design
 
 ### User Request

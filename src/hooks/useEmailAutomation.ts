@@ -17,6 +17,12 @@ interface EmailVariables {
   calendlyUrl?: string;
 }
 
+interface DelayedEmailOptions {
+  scheduledFor: Date;
+  applicationId?: string;
+  status?: string;
+}
+
 // Define which statuses should trigger email notifications - updated for HR/Manager status flow
 const EMAIL_ENABLED_STATUSES = {
   'application_submitted': true,
@@ -131,6 +137,44 @@ export const useEmailAutomation = () => {
     }
   };
 
+  const sendDelayedEmail = async (
+    templateSlug: string,
+    recipientEmail: string,
+    variables: EmailVariables,
+    options: DelayedEmailOptions
+  ) => {
+    try {
+      console.log('Scheduling delayed email:', { 
+        templateSlug, 
+        recipientEmail, 
+        scheduledFor: options.scheduledFor,
+        applicationId: options.applicationId 
+      });
+      
+      const { data, error } = await supabase.functions.invoke('send-delayed-email', {
+        body: {
+          templateSlug,
+          recipientEmail,
+          variables,
+          scheduledFor: options.scheduledFor.toISOString(),
+          applicationId: options.applicationId,
+          status: options.status
+        }
+      });
+
+      if (error) {
+        console.error('Delayed email scheduling error:', error);
+        throw error;
+      }
+
+      console.log('Delayed email scheduled successfully:', data);
+      return data;
+    } catch (error) {
+      console.error('Failed to schedule delayed email:', error);
+      throw error;
+    }
+  };
+
   const sendApplicationSubmittedEmail = async (
     application: {
       email: string;
@@ -208,17 +252,20 @@ export const useEmailAutomation = () => {
       lastName: string;
       appliedPosition: string;
       status: string;
+      id?: string;
     },
     job?: {
       location?: string;
     },
-    trackingToken?: string
+    trackingToken?: string,
+    delayedOptions?: DelayedEmailOptions
   ) => {
     try {
       console.log('Preparing status update email for:', {
         email: application.email,
         status: application.status,
-        position: application.appliedPosition
+        position: application.appliedPosition,
+        delayed: !!delayedOptions
       });
 
       // Check if this status should trigger an email
@@ -254,9 +301,26 @@ export const useEmailAutomation = () => {
 
       console.log('Using template:', templateSlug);
       console.log('Email variables for status update:', variables);
+
+      // If delayed options are provided and status is rejected, schedule delayed email
+      if (delayedOptions && application.status === 'rejected') {
+        console.log('Scheduling delayed rejection email for:', application.email);
+        const result = await sendDelayedEmail(
+          templateSlug, 
+          application.email, 
+          variables, 
+          {
+            ...delayedOptions,
+            applicationId: application.id,
+            status: application.status
+          }
+        );
+        return { success: true, result, delayed: true };
+      }
+
+      // Otherwise send immediately
       const result = await sendEmail(templateSlug, application.email, variables);
-      
-      return { success: true, result };
+      return { success: true, result, delayed: false };
     } catch (error) {
       console.error('Error in sendApplicationStatusEmail:', error);
       throw new Error(`Failed to send ${application.status} email: ${error instanceof Error ? error.message : 'Unknown error'}`);
@@ -271,13 +335,15 @@ export const useEmailAutomation = () => {
       lastName: string;
       appliedPosition: string;
       status: 'application_submitted' | 'shortlisted_for_hr' | 'hr_interviewed' | 'shortlisted_for_manager' | 'manager_interviewed' | 'hired' | 'rejected' | 'waiting_list';
+      id?: string;
     },
     job?: {
       location?: string;
     },
-    trackingToken?: string
+    trackingToken?: string,
+    delayedOptions?: DelayedEmailOptions
   ) => {
-    return sendApplicationStatusEmail(application, job, trackingToken);
+    return sendApplicationStatusEmail(application, job, trackingToken, delayedOptions);
   };
 
   // Function to check if email should be sent for a status
@@ -292,15 +358,88 @@ export const useEmailAutomation = () => {
     return STATUS_TO_TEMPLATE_MAP[statusKey] || null;
   };
 
+  // Function to get delayed emails for an application
+  const getDelayedEmails = async (applicationId?: string) => {
+    try {
+      let query = supabase
+        .from('delayed_emails')
+        .select('*')
+        .order('scheduled_for', { ascending: true });
+
+      if (applicationId) {
+        query = query.eq('application_id', applicationId);
+      }
+
+      const { data, error } = await query;
+
+      if (error) {
+        console.error('Error fetching delayed emails:', error);
+        throw error;
+      }
+
+      return data || [];
+    } catch (error) {
+      console.error('Failed to fetch delayed emails:', error);
+      throw error;
+    }
+  };
+
+  // Function to cancel a delayed email
+  const cancelDelayedEmail = async (delayedEmailId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('delayed_emails')
+        .update({ status: 'cancelled' })
+        .eq('id', delayedEmailId)
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error cancelling delayed email:', error);
+        throw error;
+      }
+
+      console.log('Delayed email cancelled successfully:', data);
+      return data;
+    } catch (error) {
+      console.error('Failed to cancel delayed email:', error);
+      throw error;
+    }
+  };
+
+  // Function to update the scheduled time for a delayed email
+  const updateDelayedEmailSchedule = async (delayedEmailId: string, scheduledFor: Date) => {
+    try {
+      const { data, error } = await supabase
+        .from('delayed_emails')
+        .update({ scheduled_for: scheduledFor.toISOString(), status: 'scheduled' })
+        .eq('id', delayedEmailId)
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error updating delayed email schedule:', error)
+        throw error
+      }
+
+      console.log('Delayed email schedule updated successfully:', data)
+      return data
+    } catch (error) {
+      console.error('Failed to update delayed email schedule:', error)
+      throw error
+    }
+  }
+
   return {
     sendEmail,
+    sendDelayedEmail,
     sendApplicationSubmittedEmail,
     sendApplicationStatusEmail,
     sendStatusChangeNotification,
     shouldSendEmailForStatus,
     getTemplateSlugForStatus,
-    EMAIL_ENABLED_STATUSES,
-    STATUS_TO_TEMPLATE_MAP,
-    getCalendlyUrl
+    getDelayedEmails,
+    cancelDelayedEmail,
+    updateDelayedEmailSchedule,
   };
 };
