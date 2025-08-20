@@ -86,6 +86,43 @@
 ### Impact
 Enhanced application form with comprehensive additional fields for better candidate information collection, improved compliance with privacy requirements, and better admin visibility of candidate preferences and history.
 
+## 2025-01-03 23:00 - Fixed Data Fetching for New Application Fields
+
+### Issue Identified
+- **Problem**: New application fields (ViaQuest employment history, certification signature, SMS opt-in, privacy policy) were not being fetched and displayed in the admin interface
+- **Root Cause**: Data transformation functions in hooks were missing the new database columns
+
+### Changes Made
+
+#### Data Fetching Fixes
+- **File**: `src/hooks/useSubmissionsQuery.ts` - **UPDATED**
+  - Added missing field mappings for new application fields
+  - Updated data transformation to include `has_previously_worked_at_viaquest`, `last_day_of_employment`, `certification_signature`, `opt_in_to_sms`, `privacy_policy_accepted`
+  - Fixed field mapping to use correct database column names
+
+- **File**: `src/components/admin/hooks/useSubmissions.ts` - **UPDATED**
+  - Added new fields to data transformation in `useSubmissions` hook
+  - Ensured proper fallback values for optional fields
+  - Fixed field mapping to match database schema
+
+- **File**: `src/contexts/hooks/useDataFetching.ts` - **UPDATED**
+  - Added new application fields to `fetchApplications` function
+  - Updated data transformation to include all new fields
+  - Ensured proper TypeScript typing for new fields
+
+### Technical Details
+- **Database Columns**: `has_previously_worked_at_viaquest`, `last_day_of_employment`, `certification_signature`, `opt_in_to_sms`, `privacy_policy_accepted`
+- **Frontend Fields**: `hasPreviouslyWorkedAtViaQuest`, `lastDayOfEmployment`, `certificationSignature`, `optInToSMS`, `privacyPolicyAccepted`
+- **Data Flow**: Database → Supabase Query → Data Transformation → Frontend State → Admin Interface
+
+### Files Updated
+- `src/hooks/useSubmissionsQuery.ts` - Fixed data transformation
+- `src/components/admin/hooks/useSubmissions.ts` - Added new field mappings
+- `src/contexts/hooks/useDataFetching.ts` - Updated application fetching
+
+### Impact
+Fixed data fetching issue ensuring all new application fields are properly retrieved from the database and displayed in the admin interface. Admin users can now see the complete application information including ViaQuest employment history, certification signatures, SMS preferences, and privacy policy acceptance.
+
 ## 2025-01-03 22:00 - Modal Auto-Close After Status Update
 
 ### User Request
