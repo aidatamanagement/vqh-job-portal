@@ -80,6 +80,41 @@
 ### Impact
 Complete archive submissions feature providing admins with easy access to view and manage rejected applications through a dedicated, professional interface with full filtering and search capabilities.
 
+## 2025-01-03 21:00 - Separated Rejected Applications from Main Submissions
+
+### User Request
+- **Request**: Ensure rejected applications are not shown in the main submissions page
+- **Goal**: Create clear separation between active submissions and archived rejected applications
+
+### Changes Made
+
+#### Submissions Page Filtering
+- **File**: `src/components/admin/Submissions.tsx` - **UPDATED**
+  - Added filtering to exclude rejected applications from main submissions page
+  - Created `activeSubmissions` array that filters out 'rejected' status
+  - Updated all filtering and sorting to use active submissions only
+  - Updated unique positions and managers to use filtered data
+
+#### Status Filter Update
+- **File**: `src/components/admin/components/SubmissionsFilters.tsx` - **UPDATED**
+  - Removed "Rejected" option from status filter dropdown
+  - Fixed status filter options to match actual database status values
+  - Updated status options to use correct values: `shortlisted_for_hr`, `hr_interviewed`, `shortlisted_for_manager`, `manager_interviewed`
+  - Status filter now only shows active application statuses
+  - Maintains all other filtering capabilities
+
+### User Experience Improvements
+- **Clear Separation**: Rejected applications only appear in archive page
+- **Focused View**: Main submissions page shows only active applications
+- **Better Organization**: Logical separation between active and archived applications
+- **Reduced Confusion**: Users won't see rejected applications in main submissions
+
+### Technical Benefits
+- **Data Integrity**: Clear separation of active vs archived data
+- **Performance**: Reduced data processing for main submissions page
+- **Maintainability**: Cleaner code structure with explicit filtering
+- **Consistency**: Archive page is the single source for rejected applications
+
 ## 2025-01-03 20:45 - Updated Archive Button Placement and Header Design
 
 ### User Request

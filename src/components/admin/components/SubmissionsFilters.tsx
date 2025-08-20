@@ -133,11 +133,11 @@ const SubmissionsFilters: React.FC<SubmissionsFiltersProps> = ({
               <SelectContent>
                 <SelectItem value="all">All Statuses</SelectItem>
                 <SelectItem value="application_submitted">Application Submitted</SelectItem>
-                <SelectItem value="under_review">Under Review</SelectItem>
-                <SelectItem value="shortlisted">Shortlisted</SelectItem>
-                <SelectItem value="interviewed">Interviewed</SelectItem>
+                <SelectItem value="shortlisted_for_hr">Shortlisted for HR</SelectItem>
+                <SelectItem value="hr_interviewed">HR Interviewed</SelectItem>
+                <SelectItem value="shortlisted_for_manager">Shortlisted for Manager</SelectItem>
+                <SelectItem value="manager_interviewed">Manager Interviewed</SelectItem>
                 <SelectItem value="hired">Hired</SelectItem>
-                <SelectItem value="rejected">Rejected</SelectItem>
                 <SelectItem value="waiting_list">Waiting List</SelectItem>
               </SelectContent>
             </Select>

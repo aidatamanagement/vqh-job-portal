@@ -43,13 +43,16 @@ const Submissions: React.FC = () => {
     fetchMasterData();
   }, [fetchMasterData]);
 
+  // Filter out rejected applications from main submissions page
+  const activeSubmissions = submissions.filter(submission => submission.status !== 'rejected');
+
   const filteredSubmissions = sortSubmissions(
-    filterSubmissions(submissions, searchTerm, statusFilter, positionFilter, locationFilter, hrManagerFilter),
+    filterSubmissions(activeSubmissions, searchTerm, statusFilter, positionFilter, locationFilter, hrManagerFilter),
     sortBy,
     sortOrder
   );
-  const uniquePositions = getUniquePositions(submissions);
-  const uniqueHrManagers = getUniqueHrManagers(submissions);
+  const uniquePositions = getUniquePositions(activeSubmissions);
+  const uniqueHrManagers = getUniqueHrManagers(activeSubmissions);
 
   const openFileViewer = (url: string, name: string) => {
     setViewingFile({ url, name });
@@ -114,7 +117,7 @@ const Submissions: React.FC = () => {
         onViewApplication={setSelectedApplication}
         onDeleteApplication={handleDeleteApplication}
         deletingApplication={deletingApplication}
-        submissions={submissions}
+        submissions={activeSubmissions}
       />
 
       {/* Application Details Modal */}
