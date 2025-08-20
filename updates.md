@@ -1,6 +1,130 @@
  - 2025-08-12  — Profile Page: Updated `ProfileForm` location selector to use `location.name` as the Select value instead of `location.id`, aligning with stored `profiles.location` string. Fixes mismatch from Figma design where the visible value should reflect human-readable location names.
 # Vqh Job Portal Updates
 
+## 2025-01-03 22:30 - Added Additional Application Fields
+
+### User Request
+- **Request**: Add new fields to the applicant form including ViaQuest employment history, certification signature, SMS opt-in, and privacy policy acceptance
+- **Goal**: Collect additional information from candidates during the application process
+
+### Changes Made
+
+#### New Application Form Fields
+- **File**: `src/components/ApplicationModal.tsx` - **UPDATED**
+  - Added "Previous ViaQuest Employment" section with Yes/No radio buttons
+  - Added conditional "Last Day of Employment" date field when "Yes" is selected
+  - Added "Certification and Signature" section with digital signature input
+  - Added "SMS Communication Preferences" section with opt-in/opt-out options
+  - Added "Privacy Policy Acknowledgement" section with checkbox acceptance
+  - Updated form validation to require new mandatory fields
+  - Updated form submission to include new fields in database insert
+
+#### TypeScript Interface Updates
+- **File**: `src/types/index.ts` - **UPDATED**
+  - Added `hasPreviouslyWorkedAtViaQuest?: boolean` to JobApplication interface
+  - Added `lastDayOfEmployment?: string` to JobApplication interface
+  - Added `certificationSignature?: string` to JobApplication interface
+  - Added `optInToSMS?: boolean` to JobApplication interface
+  - Added `privacyPolicyAccepted?: boolean` to JobApplication interface
+
+#### Admin Interface Updates
+- **File**: `src/components/admin/components/modal/AdditionalInformation.tsx` - **NEW FILE**
+  - Created new component to display additional application information
+  - Shows ViaQuest employment history with last day of employment
+  - Displays certification signature in a styled format
+  - Shows SMS opt-in status with appropriate badges
+  - Displays privacy policy acceptance status
+  - Uses icons and badges for better visual organization
+
+#### Admin Modal Integration
+- **File**: `src/components/admin/components/ApplicationDetailsModal.tsx` - **UPDATED**
+  - Added AdditionalInformation component to the modal layout
+  - Integrated new section between Referral Information and Cover Letter sections
+
+#### Database Schema Updates
+- **File**: `supabase/migrations/20250103000024_add_application_additional_fields.sql` - **NEW FILE**
+  - Added `has_previously_worked_at_viaquest` BOOLEAN column
+  - Added `last_day_of_employment` DATE column
+  - Added `certification_signature` TEXT column
+  - Added `opt_in_to_sms` BOOLEAN column
+  - Added `privacy_policy_accepted` BOOLEAN column
+  - Added database constraints and validation rules
+  - Created indexes for efficient querying
+  - Added column comments for documentation
+
+### Features Implemented
+- ✅ **ViaQuest Employment History**: Yes/No question with conditional date field
+- ✅ **Digital Signature**: Full name input for application certification
+- ✅ **SMS Opt-in**: Communication preference selection
+- ✅ **Privacy Policy**: Required acceptance checkbox
+- ✅ **Form Validation**: Proper validation for all new required fields
+- ✅ **Admin Display**: Clean interface to view additional information
+- ✅ **Database Storage**: Proper schema with constraints and indexes
+- ✅ **Type Safety**: Full TypeScript support for new fields
+
+### User Experience
+- **Comprehensive Information**: Collects all required additional information
+- **Conditional Fields**: Shows relevant fields based on user selections
+- **Clear Validation**: Proper error messages for missing required fields
+- **Professional Interface**: Clean, organized form sections
+- **Admin Visibility**: Easy access to all additional information in admin panel
+
+### Technical Benefits
+- **Data Integrity**: Database constraints ensure data quality
+- **Performance**: Indexes for efficient querying of specific data
+- **Type Safety**: Full TypeScript support prevents runtime errors
+- **Maintainability**: Well-organized code with clear separation of concerns
+- **Scalability**: Proper database design for future enhancements
+
+### Files Created/Updated
+- `src/components/ApplicationModal.tsx` - Added new form fields and validation
+- `src/types/index.ts` - Updated TypeScript interfaces
+- `src/components/admin/components/modal/AdditionalInformation.tsx` - New admin display component
+- `src/components/admin/components/ApplicationDetailsModal.tsx` - Integrated new component
+- `supabase/migrations/20250103000024_add_application_additional_fields.sql` - Database migration
+
+### Impact
+Enhanced application form with comprehensive additional fields for better candidate information collection, improved compliance with privacy requirements, and better admin visibility of candidate preferences and history.
+
+## 2025-01-03 22:00 - Modal Auto-Close After Status Update
+
+### User Request
+- **Request**: Close application details modal automatically after status update
+- **Goal**: Improve UX by returning users to submissions page immediately after status changes
+
+### Changes Made
+
+#### Modal Auto-Close Implementation
+- **File**: `src/components/admin/Submissions.tsx` - **UPDATED**
+  - Modified `handleUpdateApplicationStatus` function to close modal after successful status update
+  - Removed deprecated toast notification about using modal for status updates
+  - Added `setSelectedApplication(null)` to automatically close the modal
+  - Simplified function to focus on modal closure after status update completion
+
+### Features Implemented
+- ✅ **Automatic Modal Closure**: Modal closes immediately after successful status update
+- ✅ **Seamless Navigation**: Users return directly to submissions page
+- ✅ **Improved UX**: Eliminates need to manually close modal after status changes
+- ✅ **Clean Workflow**: Status update → Modal closes → Back to submissions list
+
+### User Experience
+- **Faster Workflow**: No manual modal closure required after status updates
+- **Better Navigation**: Immediate return to submissions page for continued work
+- **Reduced Friction**: Streamlined process for updating multiple application statuses
+- **Consistent Behavior**: Modal closes automatically after any successful status change
+
+### Technical Benefits
+- **Simplified Logic**: Removed deprecated status update handling
+- **Cleaner Code**: Focused function that handles modal closure only
+- **Better Performance**: Immediate UI response after status updates
+- **Consistent UX**: Predictable modal behavior across the application
+
+### Files Updated
+- `src/components/admin/Submissions.tsx` - Modal auto-close functionality
+
+### Impact
+Improved user experience by automatically closing the application details modal after status updates, allowing users to quickly return to the submissions page and continue their workflow without manual intervention.
+
 ## 2025-01-03 20:30 - Implemented Archive Submissions Feature
 
 ### User Request

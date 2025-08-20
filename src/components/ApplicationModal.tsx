@@ -36,6 +36,11 @@ const ApplicationModal: React.FC<ApplicationModalProps> = ({ isOpen, onClose, jo
     coverLetter: '',
     isReferredByEmployee: false,
     referredByEmployeeName: '',
+    hasPreviouslyWorkedAtViaQuest: false,
+    lastDayOfEmployment: '',
+    certificationSignature: '',
+    optInToSMS: false,
+    privacyPolicyAccepted: false,
     confirmTerms: false,
   });
 
@@ -111,6 +116,36 @@ const ApplicationModal: React.FC<ApplicationModalProps> = ({ isOpen, onClose, jo
         });
         return false;
       }
+    }
+
+    // Validate ViaQuest employment history
+    if (formData.hasPreviouslyWorkedAtViaQuest && !formData.lastDayOfEmployment.trim()) {
+      toast({
+        title: "Missing Employment History",
+        description: "Please provide your last day of employment with ViaQuest",
+        variant: "destructive",
+      });
+      return false;
+    }
+
+    // Validate certification signature
+    if (!formData.certificationSignature.trim()) {
+      toast({
+        title: "Missing Certification Signature",
+        description: "Please provide your full name as a digital signature",
+        variant: "destructive",
+      });
+      return false;
+    }
+
+    // Validate privacy policy acceptance
+    if (!formData.privacyPolicyAccepted) {
+      toast({
+        title: "Privacy Policy Required",
+        description: "Please accept the privacy policy to continue",
+        variant: "destructive",
+      });
+      return false;
     }
 
     // Validate referral information
@@ -229,6 +264,11 @@ const ApplicationModal: React.FC<ApplicationModalProps> = ({ isOpen, onClose, jo
         additional_docs_urls: additionalDocsUrls,
         is_referred_by_employee: formData.isReferredByEmployee,
         referred_by_employee_name: formData.isReferredByEmployee ? formData.referredByEmployeeName : null,
+        has_previously_worked_at_viaquest: formData.hasPreviouslyWorkedAtViaQuest,
+        last_day_of_employment: formData.hasPreviouslyWorkedAtViaQuest ? formData.lastDayOfEmployment : null,
+        certification_signature: formData.certificationSignature,
+        opt_in_to_sms: formData.optInToSMS,
+        privacy_policy_accepted: formData.privacyPolicyAccepted,
         tracking_token: trackingToken,
         status: 'application_submitted',
         user_id: null // Anonymous application
@@ -265,6 +305,11 @@ const ApplicationModal: React.FC<ApplicationModalProps> = ({ isOpen, onClose, jo
         coverLetterUrl: coverLetterUrl,
         isReferredByEmployee: formData.isReferredByEmployee,
         referredByEmployeeName: formData.referredByEmployeeName,
+        hasPreviouslyWorkedAtViaQuest: formData.hasPreviouslyWorkedAtViaQuest,
+        lastDayOfEmployment: formData.lastDayOfEmployment,
+        certificationSignature: formData.certificationSignature,
+        optInToSMS: formData.optInToSMS,
+        privacyPolicyAccepted: formData.privacyPolicyAccepted,
         status: 'application_submitted' as const,
         resumeUrl: resumeUrl,
         additionalDocsUrls: additionalDocsUrls,
@@ -329,6 +374,11 @@ const ApplicationModal: React.FC<ApplicationModalProps> = ({ isOpen, onClose, jo
       coverLetter: '',
       isReferredByEmployee: false,
       referredByEmployeeName: '',
+      hasPreviouslyWorkedAtViaQuest: false,
+      lastDayOfEmployment: '',
+      certificationSignature: '',
+      optInToSMS: false,
+      privacyPolicyAccepted: false,
       confirmTerms: false,
     });
     setFiles({
@@ -696,6 +746,152 @@ const ApplicationModal: React.FC<ApplicationModalProps> = ({ isOpen, onClose, jo
                   </p>
                 </div>
               )}
+            </div>
+          </Card>
+
+          {/* Previous ViaQuest Employment */}
+          <Card className="p-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Previous ViaQuest Employment</h3>
+            <div className="space-y-4">
+              <div>
+                <Label className="text-sm font-medium text-gray-700 mb-3 block">
+                  Have you previously worked at ViaQuest Hospice?
+                </Label>
+                <div className="flex items-center space-x-6">
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="radio"
+                      id="viaquest-yes"
+                      name="hasPreviouslyWorkedAtViaQuest"
+                      checked={formData.hasPreviouslyWorkedAtViaQuest === true}
+                      onChange={() => handleInputChange('hasPreviouslyWorkedAtViaQuest', true)}
+                      className="w-4 h-4 text-primary border-gray-300 focus:ring-primary"
+                    />
+                    <Label htmlFor="viaquest-yes" className="text-sm text-gray-700">
+                      Yes
+                    </Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="radio"
+                      id="viaquest-no"
+                      name="hasPreviouslyWorkedAtViaQuest"
+                      checked={formData.hasPreviouslyWorkedAtViaQuest === false}
+                      onChange={() => handleInputChange('hasPreviouslyWorkedAtViaQuest', false)}
+                      className="w-4 h-4 text-primary border-gray-300 focus:ring-primary"
+                    />
+                    <Label htmlFor="viaquest-no" className="text-sm text-gray-700">
+                      No
+                    </Label>
+                  </div>
+                </div>
+              </div>
+              
+              {formData.hasPreviouslyWorkedAtViaQuest && (
+                <div className="ml-6">
+                  <Label htmlFor="lastDayOfEmployment">Last Day of Employment with ViaQuest *</Label>
+                  <Input
+                    id="lastDayOfEmployment"
+                    type="date"
+                    value={formData.lastDayOfEmployment}
+                    onChange={(e) => handleInputChange('lastDayOfEmployment', e.target.value)}
+                    className="mt-1"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Please provide the date of your last day working with ViaQuest Hospice.
+                  </p>
+                </div>
+              )}
+            </div>
+          </Card>
+
+          {/* Certification and Signature */}
+          <Card className="p-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Certification and Signature</h3>
+            <div className="space-y-4">
+              <div className="bg-gray-50 p-4 rounded-lg">
+                <p className="text-sm text-gray-700 leading-relaxed mb-4">
+                  "I certify that my answers to all questions are true and correct without any consequential omissions of any kind whatsoever. I understand that if I am employed, any false, misleading or otherwise incorrect statements made on this application or during the pre-employment process may be grounds for my immediate termination."
+                </p>
+                <div>
+                  <Label htmlFor="certificationSignature">Digital Signature (Full Name) *</Label>
+                  <Input
+                    id="certificationSignature"
+                    value={formData.certificationSignature}
+                    onChange={(e) => handleInputChange('certificationSignature', e.target.value)}
+                    className="mt-1"
+                    placeholder="Enter your full name as a digital signature"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    By typing your full name, you are providing a digital signature agreeing to the above certification.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </Card>
+
+          {/* SMS Opt-in */}
+          <Card className="p-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Communication Preferences</h3>
+            <div className="space-y-4">
+              <div>
+                <Label className="text-sm font-medium text-gray-700 mb-3 block">
+                  Would you like to receive SMS messages from ViaQuest regarding your job application and interview process?
+                </Label>
+                <p className="text-xs text-gray-500 mb-3">
+                  Message frequency may vary. Message and data rates may apply. Reply STOP to unsubscribe or HELP for assistance.
+                </p>
+                <div className="flex items-center space-x-6">
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="radio"
+                      id="sms-yes"
+                      name="optInToSMS"
+                      checked={formData.optInToSMS === true}
+                      onChange={() => handleInputChange('optInToSMS', true)}
+                      className="w-4 h-4 text-primary border-gray-300 focus:ring-primary"
+                    />
+                    <Label htmlFor="sms-yes" className="text-sm text-gray-700">
+                      Yes
+                    </Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="radio"
+                      id="sms-no"
+                      name="optInToSMS"
+                      checked={formData.optInToSMS === false}
+                      onChange={() => handleInputChange('optInToSMS', false)}
+                      className="w-4 h-4 text-primary border-gray-300 focus:ring-primary"
+                    />
+                    <Label htmlFor="sms-no" className="text-sm text-gray-700">
+                      No
+                    </Label>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </Card>
+
+          {/* Privacy Policy */}
+          <Card className="p-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Privacy Policy Acknowledgement</h3>
+            <div className="space-y-4">
+              <div className="bg-gray-50 p-4 rounded-lg">
+                <p className="text-sm text-gray-700 leading-relaxed mb-4">
+                  By checking this box, you acknowledge and consent to terms of the privacy policy which applies to the applicant tracking service being offered by Paycor on behalf of ViaQuest. The privacy policy offers an explanation of how and why your data will be collected, how it will be used and disclosed, how it will be retained and secured, and what legal rights are associated with that data (including the rights of access, correction, and deletion). The policy also describes legal and contractual limitations on these rights. The specific rights and obligations of individuals living and working in different areas may vary by jurisdiction.
+                </p>
+                <div className="flex items-start space-x-3">
+                  <Checkbox
+                    id="privacyPolicyAccepted"
+                    checked={formData.privacyPolicyAccepted}
+                    onCheckedChange={(checked) => handleInputChange('privacyPolicyAccepted', !!checked)}
+                  />
+                  <Label htmlFor="privacyPolicyAccepted" className="text-sm text-gray-700 leading-relaxed">
+                    I have read and agree to this statement *
+                  </Label>
+                </div>
+              </div>
             </div>
           </Card>
 

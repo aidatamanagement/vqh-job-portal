@@ -9,6 +9,7 @@ import AttachmentsSection from './modal/AttachmentsSection';
 import StatusUpdateSection from './modal/StatusUpdateSection';
 import DeleteApplicationSection from './modal/DeleteApplicationSection';
 import ReferralInformation from './modal/ReferralInformation';
+import AdditionalInformation from './modal/AdditionalInformation';
 import StatusHistoryTimeline from './StatusHistoryTimeline';
 
 type ApplicationStatus = 'application_submitted' | 'shortlisted_for_hr' | 'hr_interviewed' | 'shortlisted_for_manager' | 'manager_interviewed' | 'hired' | 'rejected' | 'waiting_list';
@@ -50,6 +51,9 @@ const ApplicationDetailsModal: React.FC<ApplicationDetailsModalProps> = ({
 
           {/* Referral Information */}
           <ReferralInformation application={selectedApplication} />
+
+          {/* Additional Information */}
+          <AdditionalInformation application={selectedApplication} />
 
           {/* Cover Letter */}
           <CoverLetterSection 

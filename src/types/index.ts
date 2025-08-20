@@ -54,6 +54,11 @@ export interface JobApplication {
   hrManagerEmail?: string;
   isReferredByEmployee?: boolean;
   referredByEmployeeName?: string;
+  hasPreviouslyWorkedAtViaQuest?: boolean;
+  lastDayOfEmployment?: string;
+  certificationSignature?: string;
+  optInToSMS?: boolean;
+  privacyPolicyAccepted?: boolean;
   status: 'application_submitted' | 'shortlisted_for_hr' | 'hr_interviewed' | 'shortlisted_for_manager' | 'manager_interviewed' | 'hired' | 'rejected' | 'waiting_list';
   notes?: string;
   trackingToken: string;
