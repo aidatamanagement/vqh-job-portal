@@ -66,14 +66,12 @@ const Submissions: React.FC = () => {
     }
   };
 
-  const handleUpdateApplicationStatus = async (id: string, newStatus: 'application_submitted' | 'shortlisted_for_hr' | 'hr_interviewed' | 'shortlisted_for_manager' | 'manager_interviewed' | 'hired' | 'rejected' | 'waiting_list') => {
-    // Status updates must now include notes - redirect to modal
-    toast({
-      title: "Status Update Method Changed",
-      description: "Please use the application details modal to update status with mandatory notes.",
-      variant: "destructive",
-    });
-    console.log('Direct status updates are deprecated. Use the application details modal.');
+  const handleUpdateApplicationStatus = async (
+    id: string,
+    newStatus: 'application_submitted' | 'shortlisted_for_hr' | 'hr_interviewed' | 'shortlisted_for_manager' | 'manager_interviewed' | 'hired' | 'rejected' | 'waiting_list'
+  ) => {
+    // Modal already performed the update and toasts; simply close the modal here
+    setSelectedApplication(null);
   };
 
   if (loading) {
