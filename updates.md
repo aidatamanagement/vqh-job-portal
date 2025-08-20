@@ -158,6 +158,58 @@ Complete archive submissions feature providing admins with easy access to view a
 - **Maintainability**: Centralized status order definition
 - **Scalability**: Easy to add new status templates in correct order
 
+## 2025-01-03 21:30 - Added New Application Highlighting Feature
+
+### User Request
+- **Request**: Highlight new applications in submissions page to make users aware of recent submissions
+- **Goal**: Provide visual indicators for applications submitted within the last 7 days
+
+### Changes Made
+
+#### Submissions Table Enhancement
+- **File**: `src/components/admin/components/SubmissionsTable.tsx` - **UPDATED**
+  - Added `isNewApplication()` function to check if application is within 7 days
+  - Added visual highlighting for new applications with blue background and left border
+  - Added "New" badge with sparkles icon next to candidate names
+  - Added "Recent" label under application dates for new submissions
+  - Enhanced row styling with subtle blue background for new applications
+
+#### Submissions Status Tabs Enhancement
+- **File**: `src/components/admin/components/SubmissionsStatusTabs.tsx` - **UPDATED**
+  - Added summary section showing count of recent applications
+  - Added gradient background banner for recent applications summary
+  - Shows filtered vs total new applications count
+  - Added helpful messaging about recent applications display
+  - Integrated with existing filtering system
+
+### Visual Indicators for New Applications:
+
+#### Table Row Styling:
+- **Blue Background**: Subtle blue background (`bg-blue-50/50`)
+- **Left Border**: Blue left border (`border-l-4 border-l-blue-500`)
+- **New Badge**: Blue badge with sparkles icon next to candidate name
+- **Recent Label**: "Recent" text under application date
+
+#### Summary Banner:
+- **Gradient Background**: Blue gradient background
+- **Count Badge**: Shows number of new applications
+- **Time Indicator**: "Last 7 days" with clock icon
+- **Contextual Message**: Explains how many recent applications are shown
+
+### User Experience Improvements
+- **Immediate Awareness**: Users instantly see which applications are recent
+- **Visual Hierarchy**: New applications stand out from older ones
+- **Quick Assessment**: Summary banner shows total recent applications at a glance
+- **Filter Integration**: Works seamlessly with existing search and filter functionality
+- **Professional Design**: Clean, modern visual indicators that don't overwhelm
+
+### Technical Benefits
+- **Real-time Detection**: Automatically identifies applications within 7 days
+- **Performance Optimized**: Efficient date comparison logic
+- **Responsive Design**: Works on all screen sizes
+- **Accessibility**: Clear visual indicators with proper contrast
+- **Maintainable**: Centralized logic for new application detection
+
 ## 2025-01-03 20:45 - Updated Archive Button Placement and Header Design
 
 ### User Request
