@@ -3,7 +3,8 @@ import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Search, X, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
+import { Search, X, ArrowUpDown, ArrowUp, ArrowDown, Folder } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 interface SubmissionsFiltersProps {
   searchTerm: string;
@@ -23,6 +24,7 @@ interface SubmissionsFiltersProps {
   positions: Array<{ id: string; name: string }>;
   locations: Array<{ id: string; name: string }>;
   uniqueHrManagers: string[];
+  isArchive?: boolean;
 }
 
 const SubmissionsFilters: React.FC<SubmissionsFiltersProps> = ({
@@ -42,15 +44,20 @@ const SubmissionsFilters: React.FC<SubmissionsFiltersProps> = ({
   setSortOrder,
   positions,
   locations,
-  uniqueHrManagers
+  uniqueHrManagers,
+  isArchive = false
 }) => {
-  const hasActiveFilters = searchTerm !== '' || positionFilter !== 'all' || locationFilter !== 'all' || statusFilter !== 'all' || hrManagerFilter !== 'all';
+  const navigate = useNavigate();
+  
+  const hasActiveFilters = searchTerm !== '' || positionFilter !== 'all' || locationFilter !== 'all' || (statusFilter !== 'all' && !isArchive) || hrManagerFilter !== 'all';
 
   const clearAllFilters = () => {
     setSearchTerm('');
     setPositionFilter('all');
     setLocationFilter('all');
-    setStatusFilter('all');
+    if (!isArchive) {
+      setStatusFilter('all');
+    }
     setHrManagerFilter('all');
     setSortBy('date');
     setSortOrder('desc');
@@ -58,6 +65,10 @@ const SubmissionsFilters: React.FC<SubmissionsFiltersProps> = ({
 
   const toggleSortOrder = () => {
     setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+  };
+
+  const handleArchiveClick = () => {
+    navigate('/admin/archive-submissions');
   };
 
   return (
@@ -114,24 +125,26 @@ const SubmissionsFilters: React.FC<SubmissionsFiltersProps> = ({
             </SelectContent>
           </Select>
 
-          <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className="w-full sm:w-48">
-              <SelectValue placeholder="All Statuses" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Statuses</SelectItem>
-              <SelectItem value="application_submitted">Application Submitted</SelectItem>
-              <SelectItem value="under_review">Under Review</SelectItem>
-              <SelectItem value="shortlisted">Shortlisted</SelectItem>
-              <SelectItem value="interviewed">Interviewed</SelectItem>
-              <SelectItem value="hired">Hired</SelectItem>
-              <SelectItem value="rejected">Rejected</SelectItem>
-              <SelectItem value="waiting_list">Waiting List</SelectItem>
-            </SelectContent>
-          </Select>
+          {!isArchive && (
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="w-full sm:w-48">
+                <SelectValue placeholder="All Statuses" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Statuses</SelectItem>
+                <SelectItem value="application_submitted">Application Submitted</SelectItem>
+                <SelectItem value="under_review">Under Review</SelectItem>
+                <SelectItem value="shortlisted">Shortlisted</SelectItem>
+                <SelectItem value="interviewed">Interviewed</SelectItem>
+                <SelectItem value="hired">Hired</SelectItem>
+                <SelectItem value="rejected">Rejected</SelectItem>
+                <SelectItem value="waiting_list">Waiting List</SelectItem>
+              </SelectContent>
+            </Select>
+          )}
         </div>
 
-        {/* Second Row: Sorting and Clear */}
+        {/* Second Row: Sorting and Actions */}
         <div className="flex flex-col space-y-4 sm:space-y-0 sm:flex-row sm:gap-4 sm:items-center">
           <div className="flex items-center gap-2">
             <span className="text-sm font-medium text-gray-700">Sort by:</span>
@@ -159,16 +172,28 @@ const SubmissionsFilters: React.FC<SubmissionsFiltersProps> = ({
 
           <div className="flex-1" />
 
-          {hasActiveFilters && (
-            <Button
-              variant="outline"
-              onClick={clearAllFilters}
-              className="whitespace-nowrap text-sm px-3"
-            >
-              <X className="w-4 h-4 mr-2" />
-              Clear Filters
-            </Button>
-          )}
+          <div className="flex items-center gap-2">
+            {!isArchive && (
+              <Button
+                onClick={handleArchiveClick}
+                className="flex items-center gap-2 bg-[#005188] hover:bg-[#004070] text-white"
+              >
+                <Folder className="w-4 h-4" />
+                Archive
+              </Button>
+            )}
+            
+            {hasActiveFilters && (
+              <Button
+                variant="outline"
+                onClick={clearAllFilters}
+                className="whitespace-nowrap text-sm px-3"
+              >
+                <X className="w-4 h-4 mr-2" />
+                Clear Filters
+              </Button>
+            )}
+          </div>
         </div>
       </div>
     </div>

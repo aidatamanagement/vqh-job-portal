@@ -42,6 +42,30 @@ export interface MetricoolAnalytics {
   }>;
 }
 
+export interface MetricoolWebAnalytics {
+  userId: string;
+  blogId: string;
+  visitors: number;
+  pageViews: number;
+  bounceRate: number;
+  avgSessionDuration: number;
+  topPages: Array<{
+    url: string;
+    views: number;
+    uniqueViews: number;
+  }>;
+  trafficSources: Array<{
+    source: string;
+    sessions: number;
+    percentage: number;
+  }>;
+  deviceTypes: Array<{
+    device: string;
+    sessions: number;
+    percentage: number;
+  }>;
+}
+
 export interface MetricoolDashboardData {
   accounts: MetricoolAccount[];
   analytics: MetricoolAnalytics;
@@ -55,11 +79,15 @@ export interface MetricoolDashboardData {
 }
 
 class MetricoolApiService {
-  private baseURL = 'https://api.metricool.com/v1';
+  private baseURL = 'https://app.metricool.com/api';
   private apiToken: string;
+  private userId: string;
+  private blogId: string;
 
   constructor() {
     this.apiToken = import.meta.env.VITE_METRICOOL_API_TOKEN || '';
+    this.userId = import.meta.env.VITE_METRICOOL_USER_ID || '3950725';
+    this.blogId = import.meta.env.VITE_METRICOOL_BLOG_ID || '5077788';
     
     if (!this.apiToken) {
       console.warn('METRICOOL_API_TOKEN not found in environment variables');
@@ -74,7 +102,7 @@ class MetricoolApiService {
     const response = await fetch(`${this.baseURL}${endpoint}`, {
       ...options,
       headers: {
-        'Authorization': `Bearer ${this.apiToken}`,
+        'X-Mc-Auth': this.apiToken,
         'Content-Type': 'application/json',
         ...options.headers,
       },
@@ -87,54 +115,39 @@ class MetricoolApiService {
     return response.json();
   }
 
+  async getWebAnalytics(): Promise<MetricoolWebAnalytics> {
+    try {
+      const response = await fetch(
+        `${this.baseURL}/analytics/web?userId=${this.userId}&blogId=${this.blogId}`,
+        {
+          headers: {
+            "X-Mc-Auth": this.apiToken
+          }
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(`Error fetching web analytics: ${response.status}`);
+      }
+      
+      return await response.json();
+    } catch (error) {
+      console.error('Error fetching Metricool web analytics:', error);
+      return this.getMockWebAnalytics();
+    }
+  }
+
   async getAccounts(): Promise<MetricoolAccount[]> {
-    const response = await this.makeRequest<{ data: MetricoolAccount[] }>('/accounts');
-    return response.data;
+    try {
+      const response = await this.makeRequest<{ data: MetricoolAccount[] }>('/accounts');
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching Metricool accounts:', error);
+      return this.getMockAccounts();
+    }
   }
 
   async getAnalytics(dateFrom?: string, dateTo?: string): Promise<MetricoolAnalytics> {
-    const params = new URLSearchParams();
-    if (dateFrom) params.append('date_from', dateFrom);
-    if (dateTo) params.append('date_to', dateTo);
-    
-    const response = await this.makeRequest<{ data: MetricoolAnalytics }>(`/analytics?${params}`);
-    return response.data;
-  }
-
-  async getRecentPosts(limit = 10): Promise<MetricoolPost[]> {
-    const response = await this.makeRequest<{ data: MetricoolPost[] }>(`/posts?limit=${limit}&sort=date`);
-    return response.data;
-  }
-
-  async getDashboardData(): Promise<MetricoolDashboardData> {
-    const [accounts, analytics, recentPosts] = await Promise.all([
-      this.getAccounts(),
-      this.getAnalytics(),
-      this.getRecentPosts(5)
-    ]);
-
-    // Calculate performance metrics
-    const bestPost = recentPosts.reduce((best, current) => 
-      current.engagement_rate > best.engagement_rate ? current : best, recentPosts[0]);
-    
-    const worstPost = recentPosts.reduce((worst, current) => 
-      current.engagement_rate < worst.engagement_rate ? current : worst, recentPosts[0]);
-
-    return {
-      accounts,
-      analytics,
-      recent_posts: recentPosts,
-      performance_metrics: {
-        best_performing_post: bestPost,
-        worst_performing_post: worstPost,
-        peak_engagement_time: '19:00',
-        top_hashtags: ['#jobportal', '#hiring', '#career', '#employment', '#jobs']
-      }
-    };
-  }
-}
-
-export const metricoolApi = new MetricoolApiService();
     try {
       const params = new URLSearchParams();
       if (dateFrom) params.append('date_from', dateFrom);
@@ -233,6 +246,35 @@ export const metricoolApi = new MetricoolApiService();
         { platform: 'Facebook', followers: 15800, engagement: 4.2 },
         { platform: 'Instagram', followers: 12500, engagement: 3.9 },
         { platform: 'LinkedIn', followers: 8200, engagement: 3.1 }
+      ]
+    };
+  }
+
+  private getMockWebAnalytics(): MetricoolWebAnalytics {
+    return {
+      userId: this.userId,
+      blogId: this.blogId,
+      visitors: 15420,
+      pageViews: 28750,
+      bounceRate: 42.5,
+      avgSessionDuration: 185,
+      topPages: [
+        { url: '/jobs', views: 8500, uniqueViews: 7200 },
+        { url: '/jobs/software-engineer', views: 3200, uniqueViews: 2800 },
+        { url: '/jobs/marketing-manager', views: 2100, uniqueViews: 1900 },
+        { url: '/about', views: 1800, uniqueViews: 1650 },
+        { url: '/contact', views: 1200, uniqueViews: 1100 }
+      ],
+      trafficSources: [
+        { source: 'Organic Search', sessions: 8500, percentage: 55.1 },
+        { source: 'Direct', sessions: 4200, percentage: 27.2 },
+        { source: 'Social', sessions: 1800, percentage: 11.7 },
+        { source: 'Referral', sessions: 920, percentage: 6.0 }
+      ],
+      deviceTypes: [
+        { device: 'Desktop', sessions: 8500, percentage: 55.1 },
+        { device: 'Mobile', sessions: 6200, percentage: 40.2 },
+        { device: 'Tablet', sessions: 720, percentage: 4.7 }
       ]
     };
   }

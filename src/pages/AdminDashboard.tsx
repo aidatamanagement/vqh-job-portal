@@ -8,6 +8,7 @@ import Dashboard from '@/components/admin/Dashboard';
 import PostJob from '@/components/admin/PostJob';
 import ManageJobs from '@/components/admin/ManageJobs';
 import Submissions from '@/components/admin/Submissions';
+import ArchiveSubmissions from '@/components/admin/ArchiveSubmissions';
 import Interviews from '@/components/admin/Interviews';
 import Settings from '@/components/admin/Settings';
 import EmailManagement from '@/components/admin/EmailManagement';
@@ -18,6 +19,8 @@ import CrmReports from '@/components/admin/CrmReports';
 import GuideTraining from '@/components/admin/GuideTraining';
 import ContentManager from '@/components/admin/ContentManager';
 import ProfileSettings from '@/components/admin/ProfileSettings';
+import WebAnalytics from '@/components/admin/WebAnalytics';
+import WebAnalyticsTest from '@/components/admin/WebAnalyticsTest';
 import { File, Star, Bell } from 'lucide-react'; // Added lucide-react imports for icons
 
 type AdminView = 
@@ -25,6 +28,7 @@ type AdminView =
   | 'post-job' 
   | 'manage-jobs' 
   | 'submissions'
+  | 'archive-submissions'
   | 'interviews'
   | 'settings' 
   | 'email-management' 
@@ -34,7 +38,9 @@ type AdminView =
   | 'crm-reports'
   | 'training-videos'
   | 'content-manager'
-  | 'profile-settings';
+  | 'profile-settings'
+  | 'web-analytics'
+  | 'web-analytics-test';
 
 const AdminDashboard: React.FC = () => {
   const { isAuthenticated } = useAppContext();
@@ -53,6 +59,7 @@ const AdminDashboard: React.FC = () => {
       'post-job': 'post-job',
       'manage-jobs': 'manage-jobs',
       'submissions': 'submissions',
+      'archive-submissions': 'archive-submissions',
       'interviews': 'interviews',
       'email-management': 'email-management',
       'guide-training': 'guide-training',
@@ -62,7 +69,9 @@ const AdminDashboard: React.FC = () => {
       'training-videos': 'training-videos',
       'content-manager': 'content-manager',
       'settings': 'settings',
-      'profile-settings': 'profile-settings'
+      'profile-settings': 'profile-settings',
+      'web-analytics': 'web-analytics',
+      'web-analytics-test': 'web-analytics-test'
     };
     
     return pathToView[path] || 'dashboard';
@@ -94,6 +103,8 @@ const AdminDashboard: React.FC = () => {
         return <ManageJobs />;
       case 'submissions':
         return <Submissions />;
+      case 'archive-submissions':
+        return <ArchiveSubmissions />;
       case 'interviews':
         return <Interviews />;
       case 'email-management':
@@ -110,6 +121,10 @@ const AdminDashboard: React.FC = () => {
         return <TrainingVideos />;
       case 'content-manager':
         return <ContentManager />;
+      case 'web-analytics':
+        return <WebAnalytics />;
+      case 'web-analytics-test':
+        return <WebAnalyticsTest />;
       case 'settings':
         return <Settings />;
       case 'profile-settings':

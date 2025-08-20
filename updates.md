@@ -1,4 +1,210 @@
+ - 2025-08-12  — Profile Page: Updated `ProfileForm` location selector to use `location.name` as the Select value instead of `location.id`, aligning with stored `profiles.location` string. Fixes mismatch from Figma design where the visible value should reflect human-readable location names.
 # Vqh Job Portal Updates
+
+## 2025-01-03 20:30 - Implemented Archive Submissions Feature
+
+### User Request
+- **Request**: Add archive button to submissions page hero card that opens a page showing rejected applications
+- **Goal**: Provide easy access to view and manage rejected applications in a dedicated archive view
+
+### Changes Made
+
+#### Archive Submissions Page
+- **File**: `src/components/admin/ArchiveSubmissions.tsx` - **NEW FILE**
+  - Created dedicated archive page for rejected applications
+  - Shows only applications with 'rejected' status
+  - Includes comprehensive filtering and search capabilities
+  - Card-based layout with application details and action buttons
+  - View details and delete functionality for each archived application
+  - Back navigation to main submissions page
+  - Empty state with helpful messaging when no rejected applications exist
+
+#### Submissions Header Enhancement
+- **File**: `src/components/admin/components/SubmissionsHeader.tsx` - **UPDATED**
+  - Added archive button with folder icon in the header
+  - Button navigates to `/admin/archive-submissions` route
+  - Clean, professional design matching existing UI patterns
+  - Updated button styling to use primary blue color scheme (`#005188`)
+
+#### Archive Page Styling
+- **File**: `src/components/admin/ArchiveSubmissions.tsx` - **UPDATED**
+  - Updated back button styling to use primary blue color scheme (`#005188`)
+  - Consistent button styling across the application
+
+#### Routing Integration
+- **File**: `src/pages/AdminDashboard.tsx` - **UPDATED**
+  - Added `archive-submissions` to AdminView type
+  - Added route mapping for archive page navigation
+  - Imported ArchiveSubmissions component
+  - Added case handling in renderContent function
+
+#### Filter Component Enhancement
+- **File**: `src/components/admin/components/SubmissionsFilters.tsx` - **UPDATED**
+  - Added `isArchive` prop to disable status filter in archive mode
+  - Status filter hidden when viewing archived submissions
+  - Updated filter logic to handle archive mode appropriately
+  - Maintains all other filtering capabilities (search, position, location, manager)
+
+### Features Implemented
+- ✅ **Archive Button**: Folder icon button in submissions header
+- ✅ **Dedicated Archive Page**: Separate view for rejected applications
+- ✅ **Comprehensive Filtering**: Search, position, location, and manager filters
+- ✅ **Card Layout**: Clean, readable display of archived applications
+- ✅ **Action Buttons**: View details and delete functionality
+- ✅ **Navigation**: Seamless back navigation to main submissions
+- ✅ **Empty State**: Helpful messaging when no rejected applications exist
+- ✅ **Responsive Design**: Works on desktop and mobile devices
+- ✅ **Consistent UI**: Matches existing design patterns and styling
+
+### User Experience
+- **Easy Access**: One-click archive button from main submissions page
+- **Focused View**: Archive page shows only rejected applications
+- **Full Functionality**: All filtering and search capabilities maintained
+- **Quick Actions**: View details or delete applications directly from archive
+- **Clear Navigation**: Back button returns to main submissions page
+- **Professional Interface**: Clean, modern design consistent with admin theme
+
+### Technical Benefits
+- **Separation of Concerns**: Archive functionality isolated in dedicated component
+- **Reusable Components**: Leverages existing submissions components and hooks
+- **Type Safety**: Full TypeScript support with proper interfaces
+- **Performance**: Efficient filtering and rendering of archived applications
+- **Maintainability**: Clean code structure with clear component responsibilities
+
+### Files Created/Updated
+- `src/components/admin/ArchiveSubmissions.tsx` - New archive page component
+- `src/components/admin/components/SubmissionsHeader.tsx` - Added archive button
+- `src/pages/AdminDashboard.tsx` - Added archive route handling
+- `src/components/admin/components/SubmissionsFilters.tsx` - Enhanced for archive mode
+
+### Impact
+Complete archive submissions feature providing admins with easy access to view and manage rejected applications through a dedicated, professional interface with full filtering and search capabilities.
+
+## 2025-01-03 20:45 - Updated Archive Button Placement and Header Design
+
+### User Request
+- **Request**: Move archive button inside the filters card and remove duplicate submissions heading
+- **Goal**: Improve UI organization and reduce visual clutter
+
+### Changes Made
+
+#### Submissions Header Removal
+- **File**: `src/components/admin/components/SubmissionsHeader.tsx` - **DELETED**
+  - Removed duplicate header component entirely
+  - Eliminated redundant "Submissions" heading
+  - Cleaner, more streamlined interface
+
+#### Submissions Component Update
+- **File**: `src/components/admin/Submissions.tsx` - **UPDATED**
+  - Removed SubmissionsHeader import and usage
+  - Simplified component structure
+  - Eliminated duplicate heading display
+
+#### Filter Component Enhancement
+- **File**: `src/components/admin/components/SubmissionsFilters.tsx` - **UPDATED**
+  - Moved archive button into filters card second row
+  - Positioned next to clear filters button for better UX
+  - Archive button only shows when not in archive mode
+  - Maintains blue color scheme (`#005188`)
+  - Better visual organization and accessibility
+
+### User Experience Improvements
+- **Better Organization**: Archive button now logically grouped with other filter actions
+- **Cleaner Interface**: Removed duplicate heading for cleaner appearance
+- **Improved Accessibility**: Button placement follows natural user flow
+- **Consistent Styling**: Maintains blue color scheme throughout
+- **Reduced Clutter**: Eliminated redundant UI elements
+- **Correct Page Titles**: Admin header now shows "Archived Submissions" when on archive page
+
+## 2025-01-03 20:00 - Implemented Metricool Web Analytics Integration
+
+### User Request
+- **Request**: Implement Metricool web analytics integration for tracking website performance
+- **Goal**: Add comprehensive web analytics dashboard to monitor visitor metrics, traffic sources, and page performance
+
+### Changes Made
+
+#### API Integration
+- **File**: `src/utils/metricoolApi.ts` - **UPDATED**
+  - Added `MetricoolWebAnalytics` interface for web analytics data structure
+  - Implemented `getWebAnalytics()` function using Metricool API
+  - Added proper error handling with fallback to mock data
+  - Updated authentication to use `X-Mc-Auth` header as per Metricool API docs
+  - Added environment variable support for `VITE_METRICOOL_USER_ID` and `VITE_METRICOOL_BLOG_ID`
+
+#### Custom Hook
+- **File**: `src/hooks/useMetricoolAnalytics.ts` - **NEW FILE**
+  - Created React hook for fetching and managing web analytics data
+  - Includes loading states, error handling, and refresh functionality
+  - Provides clean interface for components to consume analytics data
+
+#### Web Analytics Dashboard
+- **File**: `src/components/admin/WebAnalytics.tsx` - **NEW FILE**
+  - Comprehensive dashboard showing key metrics: visitors, page views, bounce rate, session duration
+  - Traffic sources breakdown with percentage visualization
+  - Device type distribution with icons and progress bars
+  - Top pages table with view counts
+  - Professional UI with cards, progress bars, and data tables
+  - Loading states and error handling with skeleton components
+
+#### Navigation Integration
+- **File**: `src/pages/AdminDashboard.tsx` - **UPDATED**
+  - Added `web-analytics` to AdminView type
+  - Added WebAnalytics component import and route handling
+  - Updated URL path mapping for web analytics navigation
+
+- **File**: `src/components/admin/AdminSidebar.tsx` - **UPDATED**
+  - Added `web-analytics` to AdminView type
+  - Added web analytics menu item under Marketing section
+  - Added BarChart3 icon import for web analytics menu item
+
+- **File**: `src/components/admin/Dashboard.tsx` - **UPDATED**
+  - Added `web-analytics` to AdminView type
+  - Updated Marketing module card to include Web Analytics navigation
+  - Added Content Manager and Web Analytics links to marketing section
+
+### Features Implemented
+- ✅ **Web Analytics Dashboard**: Complete analytics overview with key metrics
+- ✅ **Real-time Data**: Live connection to Metricool API with automatic refresh
+- ✅ **Traffic Analysis**: Detailed breakdown of traffic sources and device types
+- ✅ **Page Performance**: Top pages with view counts and unique visitors
+- ✅ **Professional UI**: Modern dashboard design with cards, progress bars, and tables
+- ✅ **Error Handling**: Graceful fallback to mock data when API is unavailable
+- ✅ **Loading States**: Skeleton components and loading indicators
+- ✅ **Responsive Design**: Works on desktop and mobile devices
+- ✅ **Navigation Integration**: Seamless integration with existing admin navigation
+
+### Environment Variables Required
+```env
+VITE_METRICOOL_API_TOKEN=your_metricool_api_token_here
+VITE_METRICOOL_USER_ID=3950725
+VITE_METRICOOL_BLOG_ID=5077788
+```
+
+### User Experience
+- **Admin Access**: Navigate to Marketing → Web Analytics in admin sidebar
+- **Dashboard Overview**: View key metrics at a glance with visual indicators
+- **Data Refresh**: Click refresh button to update analytics data
+- **Error Recovery**: Clear error messages when API is unavailable
+- **Professional Interface**: Clean, modern design matching existing admin theme
+
+### Technical Benefits
+- **API Integration**: Proper Metricool API integration with authentication
+- **Type Safety**: Full TypeScript support with proper interfaces
+- **Error Resilience**: Fallback to mock data ensures dashboard always works
+- **Performance**: Efficient data fetching with loading states
+- **Scalability**: Easy to extend with additional metrics and visualizations
+
+### Files Created/Updated
+- `src/utils/metricoolApi.ts` - Enhanced with web analytics functionality
+- `src/hooks/useMetricoolAnalytics.ts` - New hook for analytics data management
+- `src/components/admin/WebAnalytics.tsx` - New web analytics dashboard component
+- `src/pages/AdminDashboard.tsx` - Added web analytics route
+- `src/components/admin/AdminSidebar.tsx` - Added web analytics navigation
+- `src/components/admin/Dashboard.tsx` - Added web analytics to module cards
+
+### Impact
+Complete web analytics integration providing admins with comprehensive website performance insights, traffic analysis, and visitor behavior data through a professional dashboard interface.
 
 ## 2025-01-03 19:30 - Implemented Default Branch Manager Assignment System
 

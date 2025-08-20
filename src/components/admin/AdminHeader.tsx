@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { useAppContext } from '@/contexts/AppContext';
-import { LogOut, User, Menu, BarChart3, Plus, Briefcase, FileText, Calendar, Mail, BookOpen, Users, MapPin, ClipboardList, Video, Settings, Building } from 'lucide-react';
+import { LogOut, User, Menu, BarChart3, Plus, Briefcase, FileText, Calendar, Mail, BookOpen, Users, MapPin, ClipboardList, Video, Settings, Building, Archive } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 interface AdminHeaderProps {
@@ -53,6 +53,7 @@ const AdminHeader: React.FC<AdminHeaderProps> = ({ onMenuClick, onNavigate, curr
                  currentView === 'post-job' ? <Plus className="w-4 h-4 text-white" /> :
                  currentView === 'manage-jobs' ? <Briefcase className="w-4 h-4 text-white" /> :
                  currentView === 'submissions' ? <FileText className="w-4 h-4 text-white" /> :
+                 currentView === 'archive-submissions' ? <Archive className="w-4 h-4 text-white" /> :
                  currentView === 'interviews' ? <Calendar className="w-4 h-4 text-white" /> :
                  currentView === 'email-management' ? <Mail className="w-4 h-4 text-white" /> :
                  currentView === 'guide-training' ? <BookOpen className="w-4 h-4 text-white" /> :
@@ -76,6 +77,7 @@ const AdminHeader: React.FC<AdminHeaderProps> = ({ onMenuClick, onNavigate, curr
                  currentView === 'post-job' ? 'Post Job' :
                  currentView === 'manage-jobs' ? 'Manage Jobs' :
                  currentView === 'submissions' ? 'Submissions' :
+                 currentView === 'archive-submissions' ? 'Archived Submissions' :
                  currentView === 'interviews' ? 'Interviews' :
                  currentView === 'email-management' ? 'Email Management' :
                  currentView === 'guide-training' ? 'Guide Training' :

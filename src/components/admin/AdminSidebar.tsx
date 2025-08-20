@@ -18,7 +18,8 @@ import {
   ChevronRight,
   Home,
   Layout,
-  Calendar
+  Calendar,
+  BarChart3
 } from 'lucide-react';
 import { useAppContext } from '@/contexts/AppContext';
 import { getRolePermissions } from '@/utils/rolePermissions';
@@ -37,7 +38,9 @@ type AdminView =
   | 'crm-reports'
   | 'training-videos'
   | 'content-manager'
-  | 'profile-settings';
+  | 'profile-settings'
+  | 'web-analytics'
+  | 'web-analytics-test';
 
 interface AdminSidebarProps {
   currentView: AdminView;
@@ -185,9 +188,24 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({ currentView, onViewChange, 
       id: 'marketing',
       label: 'Marketing',
       icon: Layout,
-      type: 'single' as const,
-      view: 'content-manager' as AdminView,
+      type: 'group' as const,
       visible: permissions.canManageContent,
+      children: [
+        {
+          id: 'content-manager',
+          label: 'Content Manager',
+          icon: Layout,
+          view: 'content-manager' as AdminView,
+          visible: permissions.canManageContent,
+        },
+        {
+          id: 'web-analytics',
+          label: 'Web Analytics',
+          icon: BarChart3,
+          view: 'web-analytics' as AdminView,
+          visible: permissions.canManageContent,
+        },
+      ].filter(child => child.visible),
     },
     {
       id: 'settings',

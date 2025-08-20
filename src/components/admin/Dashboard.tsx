@@ -42,7 +42,9 @@ type AdminView =
   | 'crm-reports'
   | 'training-videos'
   | 'content-manager'
-  | 'profile-settings';
+  | 'profile-settings'
+  | 'web-analytics'
+  | 'web-analytics-test';
 
 interface DashboardProps {
   onNavigate: (view: AdminView) => void;
@@ -247,8 +249,8 @@ const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
       borderColor: 'outline-[#92BFFF]',
       textColor: 'text-[#000000]',
       items: [
-        { label: 'Coming Soon', onClick: () => {}, permission: 'canManageContent' },
-        { label: 'Coming Soon', onClick: () => {}, permission: 'canManageContent' },
+        { label: 'Content Manager', onClick: () => onNavigate('content-manager'), permission: 'canManageContent' },
+        { label: 'Web Analytics', onClick: () => onNavigate('web-analytics'), permission: 'canManageContent' },
         { label: 'Coming Soon', onClick: () => {}, permission: 'canManageContent' }
       ]
     }

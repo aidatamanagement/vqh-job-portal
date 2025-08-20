@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { JobApplication } from '@/types';
 import { useSubmissions } from './hooks/useSubmissions';
-import SubmissionsHeader from './components/SubmissionsHeader';
 import SubmissionsFilters from './components/SubmissionsFilters';
 import SubmissionsStatusTabs from './components/SubmissionsStatusTabs';
 import ApplicationDetailsModal from './components/ApplicationDetailsModal';
@@ -77,7 +76,6 @@ const Submissions: React.FC = () => {
   if (loading) {
     return (
       <div className="space-y-6 animate-slide-up">
-        <SubmissionsHeader />
         <div className="flex justify-center items-center h-64">
           <div className="spinner" />
           <span className="ml-2">Loading submissions...</span>
@@ -88,8 +86,6 @@ const Submissions: React.FC = () => {
 
   return (
     <div className="space-y-6 animate-slide-up">
-      <SubmissionsHeader />
-
       {/* Filters */}
       <SubmissionsFilters
         searchTerm={searchTerm}

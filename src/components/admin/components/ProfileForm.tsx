@@ -125,7 +125,7 @@ export function ProfileForm({ userProfile, locations }: ProfileFormProps) {
               </SelectTrigger>
               <SelectContent>
                 {locations.map((location) => (
-                  <SelectItem key={location.id} value={location.id}>
+                  <SelectItem key={location.id} value={location.name}>
                     {location.name}
                   </SelectItem>
                 ))}
