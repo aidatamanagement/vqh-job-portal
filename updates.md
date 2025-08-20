@@ -115,6 +115,49 @@ Complete archive submissions feature providing admins with easy access to view a
 - **Maintainability**: Cleaner code structure with explicit filtering
 - **Consistency**: Archive page is the single source for rejected applications
 
+## 2025-01-03 21:15 - Aligned Email Template Order with Status Filter
+
+### User Request
+- **Request**: Arrange email templates in frontend to match the same order as status filter in submissions page
+- **Goal**: Create consistent ordering between status filter and email template management
+
+### Changes Made
+
+#### Email Templates Table Ordering
+- **File**: `src/components/admin/EmailTemplatesTable.tsx` - **UPDATED**
+  - Added `STATUS_ORDER` array to define the correct order matching submissions filter
+  - Created `sortTemplatesByStatusOrder()` function to sort templates consistently
+  - Templates now display in the same order as status filter options
+  - Non-status templates are sorted alphabetically after status templates
+
+#### Create Template Modal Updates
+- **File**: `src/components/admin/CreateTemplateModal.tsx` - **UPDATED**
+  - Updated template presets to use correct status values
+  - Reordered preset options to match submissions filter order
+  - Fixed template names to be more descriptive and accurate
+  - Added missing status options like `waiting_list`
+
+### Template Order (Matching Status Filter):
+1. **Application Submitted** (`application_submitted`)
+2. **Shortlisted for HR** (`shortlisted_for_hr`)
+3. **HR Interviewed** (`hr_interviewed`)
+4. **Shortlisted for Manager** (`shortlisted_for_manager`)
+5. **Manager Interviewed** (`manager_interviewed`)
+6. **Hired** (`hired`)
+7. **Waiting List** (`waiting_list`)
+8. **Application Rejected** (`application_rejected`)
+
+### User Experience Improvements
+- **Consistent Ordering**: Email templates display in same order as status filter
+- **Better Organization**: Logical flow from application submission to final outcome
+- **Improved Clarity**: Template names are more descriptive and accurate
+- **Easier Management**: Users can easily find templates in expected order
+
+### Technical Benefits
+- **Consistency**: Same ordering logic across different parts of the application
+- **Maintainability**: Centralized status order definition
+- **Scalability**: Easy to add new status templates in correct order
+
 ## 2025-01-03 20:45 - Updated Archive Button Placement and Header Design
 
 ### User Request

@@ -201,28 +201,40 @@ const CreateTemplateModal: React.FC<CreateTemplateModalProps> = ({
                     <span>Application Submitted Confirmation</span>
                   </div>
                 </SelectItem>
-                <SelectItem value="under_review">
+                <SelectItem value="shortlisted_for_hr">
                   <div className="flex items-center space-x-2">
                     <Sparkles className="w-4 h-4" />
-                    <span>Application Under Review</span>
+                    <span>Shortlisted for HR Interview</span>
                   </div>
                 </SelectItem>
-                <SelectItem value="shortlisted">
+                <SelectItem value="hr_interviewed">
                   <div className="flex items-center space-x-2">
                     <Sparkles className="w-4 h-4" />
-                    <span>Shortlisted Candidate</span>
+                    <span>HR Interview Completed</span>
                   </div>
                 </SelectItem>
-                <SelectItem value="interview_scheduled">
+                <SelectItem value="shortlisted_for_manager">
                   <div className="flex items-center space-x-2">
                     <Sparkles className="w-4 h-4" />
-                    <span>Interview Scheduled</span>
+                    <span>Shortlisted for Manager Interview</span>
+                  </div>
+                </SelectItem>
+                <SelectItem value="manager_interviewed">
+                  <div className="flex items-center space-x-2">
+                    <Sparkles className="w-4 h-4" />
+                    <span>Manager Interview Completed</span>
                   </div>
                 </SelectItem>
                 <SelectItem value="hired">
                   <div className="flex items-center space-x-2">
                     <Sparkles className="w-4 h-4" />
                     <span>Job Offer - Welcome to Team</span>
+                  </div>
+                </SelectItem>
+                <SelectItem value="waiting_list">
+                  <div className="flex items-center space-x-2">
+                    <Sparkles className="w-4 h-4" />
+                    <span>Added to Waiting List</span>
                   </div>
                 </SelectItem>
                 <SelectItem value="application_rejected">
