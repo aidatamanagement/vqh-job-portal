@@ -41,7 +41,6 @@ const ApplicationModal: React.FC<ApplicationModalProps> = ({ isOpen, onClose, jo
     certificationSignature: '',
     optInToSMS: false,
     privacyPolicyAccepted: false,
-    confirmTerms: false,
   });
 
   const [files, setFiles] = useState({
@@ -200,14 +199,7 @@ const ApplicationModal: React.FC<ApplicationModalProps> = ({ isOpen, onClose, jo
       return false;
     }
 
-    if (!formData.confirmTerms) {
-      toast({
-        title: "Terms and Conditions",
-        description: "Please confirm that you agree to the terms and conditions",
-        variant: "destructive",
-      });
-      return false;
-    }
+
 
     return true;
   };
@@ -379,7 +371,6 @@ const ApplicationModal: React.FC<ApplicationModalProps> = ({ isOpen, onClose, jo
       certificationSignature: '',
       optInToSMS: false,
       privacyPolicyAccepted: false,
-      confirmTerms: false,
     });
     setFiles({
       resume: null,
@@ -895,18 +886,8 @@ const ApplicationModal: React.FC<ApplicationModalProps> = ({ isOpen, onClose, jo
             </div>
           </Card>
 
-          {/* Terms and Submit */}
+          {/* Submit */}
           <Card className="p-6">
-            <div className="flex items-start space-x-3 mb-6">
-              <Checkbox
-                id="confirmTerms"
-                checked={formData.confirmTerms}
-                onCheckedChange={(checked) => handleInputChange('confirmTerms', !!checked)}
-              />
-              <Label htmlFor="confirmTerms" className="text-sm text-gray-700 leading-relaxed">
-                I confirm that the information provided is accurate and complete. I understand that any false information may lead to rejection of my application or termination of employment. I consent to the processing of my personal data for recruitment purposes. *
-              </Label>
-            </div>
 
             <div className="flex space-x-4">
               <Button
